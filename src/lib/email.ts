@@ -8,15 +8,16 @@
 import { createClient } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+function getClient() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+}
 
 /**
  * Resend email verification link.
  * Rate limited by Supabase (default: 1 per hour).
  */
 export async function resendVerificationLink(email: string) {
-  const client = createClient(supabaseUrl, supabaseAnonKey)
+  const client = getClient()
   const { error } = await client.auth.resend({
     type: 'signup',
     email,
@@ -32,7 +33,7 @@ export async function resendVerificationLink(email: string) {
  * Send password reset email via Supabase.
  */
 export async function sendPasswordResetEmail(email: string) {
-  const client = createClient(supabaseUrl, supabaseAnonKey)
+  const client = getClient()
   const { error } = await client.auth.resetPasswordForEmail(email)
 
   if (error) {
