@@ -91,7 +91,7 @@ export default function MarketPage() {
 
       if (!res.ok) {
         const err = await res.json()
-        setQuickError(err.message ?? '发布失败，请检查登录状态')
+        setQuickError(err.message ?? 'Post failed. Please check your login status.')
         return
       }
 
@@ -105,7 +105,7 @@ export default function MarketPage() {
       setHasMore(true)
       fetchDemands(1)
     } catch {
-      setQuickError('网络错误，请稍后重试')
+      setQuickError('Network error. Please try again later.')
     } finally {
       setQuickSubmitting(false)
     }
@@ -118,11 +118,11 @@ export default function MarketPage() {
   }, [showQuickCreate])
 
   const statusTabs: { key: StatusFilter; label: string }[] = [
-    { key: 'all', label: '全部' },
-    { key: 'open', label: '开放' },
-    { key: 'assigned', label: '已接单' },
-    { key: 'in_progress', label: '进行中' },
-    { key: 'completed', label: '已完成' },
+    { key: 'all', label: 'All' },
+    { key: 'open', label: 'Open' },
+    { key: 'assigned', label: 'Accepted' },
+    { key: 'in_progress', label: 'In Progress' },
+    { key: 'completed', label: 'Completed' },
   ]
 
   return (
@@ -130,16 +130,16 @@ export default function MarketPage() {
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-50">任务市场</h1>
+          <h1 className="text-2xl font-bold text-zinc-50">Task Market</h1>
           <p className="mt-1 text-sm text-zinc-400">
-            连接需求与能力 — AI 和人类共同参与
+            Connecting needs with skills — AI and humans working together
           </p>
         </div>
         <div className="flex gap-2">
           <Link href="/compose">
             <Button variant="outline" size="sm" className="text-zinc-400 hover:text-zinc-50">
               <Plus className="mr-1 h-4 w-4" />
-              完整发布
+              Full Post
             </Button>
           </Link>
           <Button
@@ -148,7 +148,7 @@ export default function MarketPage() {
             className="gap-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
           >
             <Hash className="h-4 w-4" />
-            一句话发布
+            Quick Post
           </Button>
         </div>
       </div>
@@ -172,7 +172,7 @@ export default function MarketPage() {
                     setQuickError('')
                   }
                 }}
-                placeholder="一句话描述你的需求... 例如：帮我写一份产品 BP，5页以内"
+                placeholder="Describe your need in one sentence... e.g.: Write a product pitch deck, under 5 pages"
                 className="min-h-[80px] resize-none bg-zinc-950 border-zinc-800 text-zinc-300 placeholder:text-zinc-600"
               />
 
@@ -187,10 +187,10 @@ export default function MarketPage() {
                       max="10000"
                       className="w-20 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-sm text-zinc-300 focus:border-zinc-600 focus:outline-none"
                     />
-                    <span className="text-xs text-zinc-500">积分赏金</span>
+                    <span className="text-xs text-zinc-500">credit bounty</span>
                   </div>
                   <span className="text-xs text-zinc-600">
-                    Ctrl+Enter 发送 &middot; Esc 取消
+                    Ctrl+Enter to send &middot; Esc to cancel
                   </span>
                 </div>
                 <div className="flex gap-2">
@@ -215,7 +215,7 @@ export default function MarketPage() {
                     ) : (
                       <Send className="h-4 w-4" />
                     )}
-                    发布
+                    Post
                   </Button>
                 </div>
               </div>
@@ -257,23 +257,23 @@ export default function MarketPage() {
 
       {/* Loading and infinite scroll sentinel */}
       <div ref={sentinelRef} className="py-6 text-center">
-        {loading && <p className="text-sm text-zinc-500">加载中...</p>}
+        {loading && <p className="text-sm text-zinc-500">Loading...</p>}
         {!hasMore && demands.length > 0 && (
-          <p className="text-sm text-zinc-600">已加载全部任务</p>
+          <p className="text-sm text-zinc-600">All tasks loaded</p>
         )}
       </div>
 
       {/* Empty state */}
       {!loading && demands.length === 0 && (
         <div className="py-12 text-center">
-          <p className="text-zinc-500 mb-2">暂无任务</p>
-          <p className="text-sm text-zinc-600 mb-4">来发布第一个需求吧</p>
+          <p className="text-zinc-500 mb-2">No tasks yet</p>
+          <p className="text-sm text-zinc-600 mb-4">Be the first to post a request</p>
           <Button
             onClick={() => setShowQuickCreate(true)}
             className="gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
           >
             <Hash className="h-4 w-4" />
-            一句话发布
+            Quick Post
           </Button>
         </div>
       )}

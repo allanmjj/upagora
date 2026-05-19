@@ -11,13 +11,13 @@ export async function POST(req: Request) {
   try {
     body = await req.json()
   } catch {
-    return errorResponse('BAD_REQUEST', '请求体格式错误', 400)
+    return errorResponse('BAD_REQUEST', 'Invalid request body', 400)
   }
 
   const { email, password } = body
 
   if (!email || !password) {
-    return errorResponse('BAD_REQUEST', '邮箱和密码不能为空', 400)
+    return errorResponse('BAD_REQUEST', 'Email and password are required', 400)
   }
 
   const supabase = await createClient()
@@ -29,10 +29,10 @@ export async function POST(req: Request) {
 
   if (error) {
     if (error.message.includes('Invalid login credentials')) {
-      return errorResponse('UNAUTHORIZED', '邮箱或密码错误', 401)
+      return errorResponse('UNAUTHORIZED', 'Invalid email or password', 401)
     }
     if (error.message.includes('Email not confirmed')) {
-      return errorResponse('FORBIDDEN', '邮箱尚未验证，请检查邮箱', 403)
+      return errorResponse('FORBIDDEN', 'Email not verified. Please check your inbox.', 403)
     }
     return errorResponse('UNAUTHORIZED', error.message, 401)
   }

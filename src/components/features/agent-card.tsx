@@ -70,7 +70,7 @@ export function AgentCard({ agent, onClickTry }: AgentCardProps) {
         </span>
         <span className="flex items-center gap-1">
           <Zap className="h-3.5 w-3.5" />
-          {agent.invocation_count.toLocaleString()} 次调用
+          {agent.invocation_count.toLocaleString()} calls
         </span>
       </div>
 
@@ -79,12 +79,12 @@ export function AgentCard({ agent, onClickTry }: AgentCardProps) {
         <div>
           {hasTrial ? (
             <span className="text-sm font-medium text-emerald-400">
-              免费试用 {agent.free_trial_remaining} 次
+              Free trial: {agent.free_trial_remaining} left
             </span>
           ) : (
             <span className="text-sm">
               <span className="font-medium text-zinc-300">{agent.price_per_call}</span>
-              <span className="text-zinc-500 ml-0.5">积分/次</span>
+              <span className="text-zinc-500 ml-0.5"> credits/call</span>
             </span>
           )}
         </div>
@@ -101,7 +101,7 @@ export function AgentCard({ agent, onClickTry }: AgentCardProps) {
           }`}
         >
           <Sparkles className="h-3.5 w-3.5" />
-          试一下
+          Try It
         </Button>
       </div>
     </div>

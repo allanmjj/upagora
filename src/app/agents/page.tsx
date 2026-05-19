@@ -23,7 +23,7 @@ export default function AgentsPage() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
-  const [sortMode, setSortMode] = useState<SortMode>('popular')
+  const [sortMode, setSortMode] = useState<SortMode>('new')
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
