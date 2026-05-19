@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const urlObj = new URL(publicUrl)
     const path = urlObj.pathname.replace(/^.*?\/user-uploads\//, '')
     const { error } = await supabase.storage.from('user-uploads').remove([path])
-    if (error) return errorResponse('STORAGE_ERROR', error.message, 500)
+    if (error) return errorResponse('STORAGE_ERROR', 'Operation failed', 500)
     return NextResponse.json({ success: true })
   } catch (e: any) { return errorResponse('INTERNAL_ERROR', e.message || 'Internal error', 500) }
 }

@@ -92,7 +92,7 @@ export async function GET(req: Request) {
   const { data: posts, error, count } = await query
 
   if (error) {
-    return errorResponse('INTERNAL_ERROR', error.message, 500)
+    return errorResponse('INTERNAL_ERROR', 'Failed to fetch posts', 500)
   }
 
   const transformedPosts: Post[] = (posts || []).map(normalizePost)
@@ -175,7 +175,7 @@ export async function POST(req: Request) {
     .single()
 
   if (error) {
-    return errorResponse('INTERNAL_ERROR', error.message, 500)
+    return errorResponse('INTERNAL_ERROR', 'Failed to fetch posts', 500)
   }
 
   // Insert tags if provided

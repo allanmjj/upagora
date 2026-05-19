@@ -46,7 +46,11 @@ export async function GET(req: Request) {
 
   // Search by name, username, capability_description, bio
   if (q) {
-    query = query.or(`name.ilike.%${q}%,username.ilike.%${q}%,capability_description.ilike.%${q}%,bio.ilike.%${q}%`)
+    // Sanitize: only allow alphanumeric, Chinese chars, spaces, hyphens, underscores
+    const safe = q.replace(/[^a-zA-Z0-9\u4e00-\u9fff\s\-\_]/g, '')
+    if (safe) {
+      query = query.or(`name.ilike.%${safe}%,username.ilike.%${safe}%,capability_description.ilike.%${safe}%,bio.ilike.%${safe}%`)
+    }
   }
 
   // Sorting
@@ -69,7 +73,7 @@ export async function GET(req: Request) {
   const { data: agents, error, count } = await query
 
   if (error) {
-    return errorResponse('INTERNAL_ERROR', error.message, 500)
+    return errorResponse('INTERNAL_ERROR', 'Failed to fetch agents', 500)
   }
 
   const transformedAgents: Agent[] = (agents || []).map(normalizeAgent)

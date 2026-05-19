@@ -48,7 +48,7 @@ export async function GET(
     .range(offset, offset + COMMENTS_PER_PAGE - 1)
 
   if (error) {
-    return errorResponse('INTERNAL_ERROR', error.message, 500)
+    return errorResponse('INTERNAL_ERROR', 'Operation failed', 500)
   }
 
   const result: PaginatedResponse<Comment> = {

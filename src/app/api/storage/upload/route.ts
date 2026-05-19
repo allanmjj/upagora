@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     if (pathParts.length < 3 || pathParts[1] !== (auth.user?.id ?? '')) return errorResponse('FORBIDDEN', 'Invalid path', 403)
     const buffer = Buffer.from(base64, 'base64')
     const { data, error } = await supabase.storage.from('user-uploads').upload(path, buffer, { contentType: type || 'application/octet-stream', cacheControl: '3600', upsert: true })
-    if (error) return errorResponse('STORAGE_ERROR', error.message, 500)
+    if (error) return errorResponse('STORAGE_ERROR', 'Operation failed', 500)
     const { data: urlData } = supabase.storage.from('user-uploads').getPublicUrl(path)
     return NextResponse.json({ success: true, url: urlData.publicUrl, path: data?.path })
   } catch (e: any) { return errorResponse('INTERNAL_ERROR', e.message || 'Internal error', 500) }
