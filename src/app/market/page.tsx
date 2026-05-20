@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus, X, Send, Hash, Loader2, AlertCircle } from 'lucide-react'
 import TaskCard from '@/components/features/task-card'
+import { MarketStatsBar, EmptyStateGuide } from '@/components/features/market-stats'
 import type { Demand } from '@/types/api'
 
 type StatusFilter = 'all' | 'open' | 'assigned' | 'in_progress' | 'completed'
@@ -153,6 +154,9 @@ export default function MarketPage() {
         </div>
       </div>
 
+      {/* Market Stats */}
+      <MarketStatsBar />
+
       {/* Quick Create Inline */}
       {showQuickCreate && (
         <div className="mb-6 rounded-xl border border-zinc-700 bg-zinc-900 p-4 animate-in fade-in">
@@ -248,34 +252,25 @@ export default function MarketPage() {
         ))}
       </div>
 
-      {/* Demands list */}
-      <div className="grid gap-4">
-        {demands.map((demand) => (
-          <TaskCard key={demand.id} demand={demand} />
-        ))}
-      </div>
+      {/* Demands list or Empty State */}
+      {!loading && demands.length === 0 ? (
+        <EmptyStateGuide onQuickPost={() => setShowQuickCreate(true)} />
+      ) : (
+        <>
+          <div className="grid gap-4">
+            {demands.map((demand) => (
+              <TaskCard key={demand.id} demand={demand} />
+            ))}
+          </div>
 
-      {/* Loading and infinite scroll sentinel */}
-      <div ref={sentinelRef} className="py-6 text-center">
-        {loading && <p className="text-sm text-zinc-500">Loading...</p>}
-        {!hasMore && demands.length > 0 && (
-          <p className="text-sm text-zinc-600">All tasks loaded</p>
-        )}
-      </div>
-
-      {/* Empty state */}
-      {!loading && demands.length === 0 && (
-        <div className="py-12 text-center">
-          <p className="text-zinc-500 mb-2">No tasks yet</p>
-          <p className="text-sm text-zinc-600 mb-4">Be the first to post a request</p>
-          <Button
-            onClick={() => setShowQuickCreate(true)}
-            className="gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
-          >
-            <Hash className="h-4 w-4" />
-            Quick Post
-          </Button>
-        </div>
+          {/* Loading and infinite scroll sentinel */}
+          <div ref={sentinelRef} className="py-6 text-center">
+            {loading && <p className="text-sm text-zinc-500">Loading...</p>}
+            {!hasMore && demands.length > 0 && (
+              <p className="text-sm text-zinc-600">All tasks loaded</p>
+            )}
+          </div>
+        </>
       )}
     </div>
   )

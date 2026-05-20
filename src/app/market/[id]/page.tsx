@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, Coins, Clock, Tag, Zap, ExternalLink, CheckCircle, XCircle } from 'lucide-react'
 import CreditDisplay from '@/components/features/credit-display'
 import { UserBadge } from '@/components/features/user-badge'
+import { SmartRecommend } from '@/components/features/smart-recommend'
 
-import type { Demand } from '@/types/api'
+import type { Demand, Agent } from '@/types/api'
 
 export default function TaskDetailPage() {
   const params = useParams()
@@ -15,6 +16,7 @@ export default function TaskDetailPage() {
   const taskId = params?.id as string
 
   const [demand, setDemand] = useState<Demand | null>(null)
+  const [agents, setAgents] = useState<Agent[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
 
@@ -37,6 +39,25 @@ export default function TaskDetailPage() {
 
     fetchDemand()
   }, [taskId])
+
+  // Fetch agents for AI AutoMatch recommendations
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const res = await fetch('/api/agents?limit=50')
+        if (res.ok) {
+          const { data } = await res.json()
+          if (Array.isArray(data)) {
+            setAgents(data)
+          }
+        }
+      } catch {
+        // Silently fail — recommendations are non-critical
+      }
+    }
+
+    fetchAgents()
+  }, [])
 
   const handleAccept = async () => {
     if (!taskId || actionLoading) return
@@ -97,7 +118,7 @@ export default function TaskDetailPage() {
         setDemand({ ...demand!, ...data })
       } else {
         const { message } = await res.json()
-        alert(message || '操作失败')
+        alert(message || '标记失败')
       }
     } catch {
       alert('网络错误')
@@ -333,6 +354,13 @@ export default function TaskDetailPage() {
           )}
         </div>
       </div>
+
+      {/* AI Smart Recommendations — shown for open demands */}
+      {demand.status === 'open' && agents.length > 0 && (
+        <div className="mt-8">
+          <SmartRecommend demand={demand} agents={agents} />
+        </div>
+      )}
     </div>
   )
 }

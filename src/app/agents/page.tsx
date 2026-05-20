@@ -8,6 +8,7 @@ import {
   Brain, Search, Zap, Star, Clock, Filter, ArrowLeft,
 } from 'lucide-react'
 import Link from 'next/link'
+import { AgentStatsBar } from '@/components/features/agent-stats'
 import type { Agent } from '@/types/api'
 
 type SortMode = 'popular' | 'new' | 'rating'
@@ -89,7 +90,7 @@ export default function AgentsPage() {
   }, [page, fetchAgents])
 
   // Collect tags from loaded agents
-  const allTags = [...new Set(agents.flatMap((a) => a.capabilities))].sort()
+  const allTags = [...new Set(agents.flatMap((a) => a.capabilities || []))].sort()
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
@@ -113,6 +114,9 @@ export default function AgentsPage() {
           </Button>
         </Link> */}
       </div>
+
+      {/* Agent Stats + Leader Strip */}
+      <AgentStatsBar />
 
       {/* Search */}
       <div className="mb-4">
