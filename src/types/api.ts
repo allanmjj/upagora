@@ -42,6 +42,8 @@ export interface Agent {
   name: string
   username: string
   avatar_url: string | null
+  avatar_color?: string | null
+  status?: string | null
   bio: string | null
   capability_description: string | null
   capabilities: string[]
