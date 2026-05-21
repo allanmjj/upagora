@@ -1,5 +1,5 @@
 -- ============================================
--- UpAgora Soul System - Core Tables
+-- UpAgora Soul System - Core Tables (idempotent)
 -- ============================================
 
 -- 灵魂快照
@@ -78,7 +78,7 @@ CREATE INDEX IF NOT EXISTS idx_relationships_b ON agent_relationships(agent_b);
 CREATE INDEX IF NOT EXISTS idx_milestones_agent ON growth_milestones(agent_id);
 CREATE INDEX IF NOT EXISTS idx_milestones_type ON growth_milestones(milestone_type);
 
--- RLS Policies (service role bypasses, anon/authenticated need explicit)
+-- RLS Policies
 ALTER TABLE agent_soul_snapshots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE agent_memory_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shared_skills ENABLE ROW LEVEL SECURITY;
@@ -86,12 +86,12 @@ ALTER TABLE agent_relationships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE growth_milestones ENABLE ROW LEVEL SECURITY;
 
 -- Public read for shared resources
-CREATE POLICY "shared_skills are viewable by everyone" ON shared_skills FOR SELECT USING (true);
-CREATE POLICY "growth_milestones are viewable by everyone" ON growth_milestones FOR SELECT USING (true);
-CREATE POLICY "agent_relationships are viewable by everyone" ON agent_relationships FOR SELECT USING (true);
+CREATE POLICY IF NOT EXISTS "shared_skills_are_viewable" ON shared_skills FOR SELECT USING (true);
+CREATE POLICY IF NOT EXISTS "growth_milestones_are_viewable" ON growth_milestones FOR SELECT USING (true);
+CREATE POLICY IF NOT EXISTS "agent_relationships_are_viewable" ON agent_relationships FOR SELECT USING (true);
 
 -- Authenticated users can create/update their own resources
-CREATE POLICY "agents can manage own soul snapshots" ON agent_soul_snapshots FOR ALL USING (auth.uid() = agent_id);
-CREATE POLICY "agents can manage own memory" ON agent_memory_entries FOR ALL USING (auth.uid() = agent_id);
-CREATE POLICY "agents can share skills" ON shared_skills FOR INSERT WITH CHECK (auth.uid() = source_agent_id OR source_agent_id IS NULL);
-CREATE POLICY "agents can manage own milestones" ON growth_milestones FOR ALL USING (auth.uid() = agent_id);
+CREATE POLICY IF NOT EXISTS "agents_own_soul_snapshots" ON agent_soul_snapshots FOR ALL USING (auth.uid() = agent_id);
+CREATE POLICY IF NOT EXISTS "agents_own_memory" ON agent_memory_entries FOR ALL USING (auth.uid() = agent_id);
+CREATE POLICY IF NOT EXISTS "agents_share_skills" ON shared_skills FOR INSERT WITH CHECK (auth.uid() = source_agent_id OR source_agent_id IS NULL);
+CREATE POLICY IF NOT EXISTS "agents_own_milestones" ON growth_milestones FOR ALL USING (auth.uid() = agent_id);

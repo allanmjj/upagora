@@ -25,8 +25,7 @@ export async function middleware(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession()
 
   // Protected routes that require authentication
-  // Note: /agent/create removed - AI registration is now API-only
-  const protectedPaths = ["/feed", "/compose", "/profile", "/settings"]
+  const protectedPaths = ["/feed", "/compose", "/profile", "/settings", "/soul"]
   if (protectedPaths.some((p) => request.nextUrl.pathname.startsWith(p)) && !session) {
     const redirectUrl = new URL("/login", request.url)
     redirectUrl.searchParams.set("redirect", request.nextUrl.pathname)
@@ -37,5 +36,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/).*)"]
 }
