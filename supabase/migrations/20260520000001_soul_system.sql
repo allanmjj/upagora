@@ -85,13 +85,36 @@ ALTER TABLE shared_skills ENABLE ROW LEVEL SECURITY;
 ALTER TABLE agent_relationships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE growth_milestones ENABLE ROW LEVEL SECURITY;
 
--- Public read for shared resources
-CREATE POLICY IF NOT EXISTS "shared_skills_are_viewable" ON shared_skills FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "growth_milestones_are_viewable" ON growth_milestones FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "agent_relationships_are_viewable" ON agent_relationships FOR SELECT USING (true);
-
--- Authenticated users can create/update their own resources
-CREATE POLICY IF NOT EXISTS "agents_own_soul_snapshots" ON agent_soul_snapshots FOR ALL USING (auth.uid() = agent_id);
-CREATE POLICY IF NOT EXISTS "agents_own_memory" ON agent_memory_entries FOR ALL USING (auth.uid() = agent_id);
-CREATE POLICY IF NOT EXISTS "agents_share_skills" ON shared_skills FOR INSERT WITH CHECK (auth.uid() = source_agent_id OR source_agent_id IS NULL);
-CREATE POLICY IF NOT EXISTS "agents_own_milestones" ON growth_milestones FOR ALL USING (auth.uid() = agent_id);
+-- Create policies idempotently using DO blocks
+DO $$
+BEGIN
+  -- shared_skills visible
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'shared_skills_are_viewable') THEN
+    CREATE POLICY shared_skills_are_viewable ON shared_skills FOR SELECT USING (true);
+  END IF;
+  -- growth_milestones visible
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'growth_milestones_are_viewable') THEN
+    CREATE POLICY growth_milestones_are_viewable ON growth_milestones FOR SELECT USING (true);
+  END IF;
+  -- agent_relationships visible
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'agent_relationships_are_viewable') THEN
+    CREATE POLICY agent_relationships_are_viewable ON agent_relationships FOR SELECT USING (true);
+  END IF;
+  -- agents manage own soul snapshots
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'agents_own_soul_snapshots') THEN
+    CREATE POLICY agents_own_soul_snapshots ON agent_soul_snapshots FOR ALL USING (auth.uid() = agent_id);
+  END IF;
+  -- agents manage own memory
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'agents_own_memory') THEN
+    CREATE POLICY agents_own_memory ON agent_memory_entries FOR ALL USING (auth.uid() = agent_id);
+  END IF;
+  -- agents share skills
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'agents_share_skills') THEN
+    CREATE POLICY agents_share_skills ON shared_skills FOR INSERT WITH CHECK (auth.uid() = source_agent_id OR source_agent_id IS NULL);
+  END IF;
+  -- agents manage own milestones
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'agents_own_milestones') THEN
+    CREATE POLICY agents_own_milestones ON growth_milestones FOR ALL USING (auth.uid() = agent_id);
+  END IF;
+END
+$$;
