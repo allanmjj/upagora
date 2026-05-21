@@ -3,16 +3,16 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Brain, Heart, Network, ArrowRight, Upload, Shield, Zap, BookOpen } from 'lucide-react'
+import { Brain, Heart, Network, Upload, Shield, Zap, BookOpen, Sparkles, Loader2, Eye, ChevronDown, ChevronRight } from 'lucide-react'
 
 const DIMENSIONS = [
-  { key: 'personality', label: '认知模式', icon: Brain },
-  { key: 'values', label: '价值判断', icon: Shield },
-  { key: 'voice', label: '表达风格', icon: Heart },
-  { key: 'knowledge', label: '知识结构', icon: BookOpen },
-  { key: 'emotion', label: '情感反应', icon: Heart },
-  { key: 'relationships', label: '关系记忆', icon: Network },
-  { key: 'life_story', label: '生命叙事', icon: Zap },
+  { key: 'cognitive_patterns', label: '认知模式', icon: Brain },
+  { key: 'value_judgment', label: '价值判断', icon: Shield },
+  { key: 'expression_style', label: '表达风格', icon: Heart },
+  { key: 'knowledge_structure', label: '知识结构', icon: BookOpen },
+  { key: 'emotional_response', label: '情感反应', icon: Sparkles },
+  { key: 'relationship_memory', label: '关系记忆', icon: Network },
+  { key: 'life_narrative', label: '生命叙事', icon: Zap },
 ]
 
 async function api(path: string, opts?: RequestInit): Promise<any> {
@@ -55,16 +55,22 @@ export default function SoulDistillationPage() {
   // Calibrate form
   const [agentResp, setAgentResp] = useState('')
   const [correctResp, setCorrectResp] = useState('')
-  const [calibDim, setCalibDim] = useState('voice')
+  const [calibDim, setCalibDim] = useState('expression_style')
 
   // Snapshot
   const [signature, setSignature] = useState('')
   const [snapping, setSnapping] = useState(false)
 
+  // Extraction
+  const [extracting, setExtracting] = useState<Record<string, boolean>>({})
+  const [extractions, setExtractions] = useState<any[]>([])
+  const [expandedExtract, setExpandedExtract] = useState<string | null>(null)
+
   useEffect(() => {
     loadStatus()
     loadImports()
     loadCalibrations()
+    loadExtractions()
   }, [])
 
   async function loadStatus() {
@@ -82,35 +88,99 @@ export default function SoulDistillationPage() {
     if (d.calibrations) setCalibrations(d.calibrations)
   }
 
+  async function loadExtractions() {
+    try {
+      const d = await api('extract')
+      if (d.extractions) setExtractions(d.extractions)
+    } catch {
+      // extraction endpoint might not be available yet
+      setExtractions([])
+    }
+  }
+
   async function handleImport() {
-    await api('import', { method: 'POST', body: JSON.stringify({
-      source_type: sourceType, source_name: sourceName,
-      raw_text: rawText, language: 'zh',
-    })})
-    setRawText('')
-    setSourceName('')
-    await loadImports()
-    await loadStatus()
+    if (!rawText.trim()) return
+    if (rawText.trim().length < 50) {
+      alert('请至少输入 50 个字符才能导入（太短无法提取灵魂特征）')
+      return
+    }
+    try {
+      const result = await api('import', { method: 'POST', body: JSON.stringify({
+        source_type: sourceType, source_name: sourceName,
+        raw_text: rawText, language: 'zh',
+      })})
+      if (result.message) {
+        setRawText('')
+        setSourceName('')
+        await loadImports()
+        await loadStatus()
+      }
+    } catch (err) {
+      console.error('Import failed:', err)
+      alert('导入失败，请重试')
+    }
+  }
+
+  async function extractSession(importId: string) {
+    const importData = imports.find(i => i.id === importId)
+    if (!importData?.raw_text) {
+      alert('找不到导入的原文数据')
+      return
+    }
+
+    setExtracting(prev => ({ ...prev, [importId]: true }))
+    try {
+      const d = await api('extract', { method: 'POST', body: JSON.stringify({
+        import_session_id: importId,
+        raw_text: importData.raw_text,
+      })})
+      if (d.dimensions_extracted) {
+        await loadImports()
+        await loadExtractions()
+        await loadStatus()
+      }
+    } catch (err) {
+      console.error('Extraction failed:', err)
+      alert('提取失败，请重试')
+    }
+    setExtracting(prev => ({ ...prev, [importId]: false }))
   }
 
   async function handleCalibrate() {
-    await api('calibrate', { method: 'POST', body: JSON.stringify({
-      agent_response: agentResp, corrected_response: correctResp,
-      dimension: calibDim,
-    })})
-    setAgentResp('')
-    setCorrectResp('')
-    await loadCalibrations()
-    await loadStatus()
+    if (!agentResp.trim() || !correctResp.trim()) {
+      alert('请填写 Agent 回答和纠正两个字段')
+      return
+    }
+    try {
+      await api('calibrate', { method: 'POST', body: JSON.stringify({
+        agent_response: agentResp, corrected_response: correctResp,
+        dimension: calibDim,
+      })})
+      setAgentResp('')
+      setCorrectResp('')
+      await loadCalibrations()
+      await loadStatus()
+    } catch (err) {
+      console.error('Calibration failed:', err)
+      alert('校准提交失败，请重试')
+    }
   }
 
   async function handleSnapshot() {
     setSnapping(true)
-    await api('snapshot', { method: 'POST', body: JSON.stringify({
-      guardian_signature: signature,
-    })})
-    setSnapping(false)
-    await loadStatus()
+    try {
+      const d = await api('snapshot', { method: 'POST', body: JSON.stringify({
+        guardian_signature: signature,
+      })})
+      if (d.message) {
+        setSnapping(false)
+        await loadStatus()
+      }
+    } catch (err) {
+      console.error('Snapshot failed:', err)
+      alert('快照生成失败，请重试')
+      setSnapping(false)
+    }
   }
 
   return (
@@ -155,9 +225,15 @@ export default function SoulDistillationPage() {
 
         {/* Tabs */}
         <div className="mt-8 flex gap-2">
-          {['import', 'calibrate', 'snapshot'].map((t) => (
-            <button key={t} onClick={() => setTab(t)} className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === t ? 'bg-indigo-500 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'}`}>
-              {t === 'import' ? '数据导入' : t === 'calibrate' ? '校准纠正' : '灵魂快照'}
+          {['import', 'extract', 'calibrate', 'snapshot'].map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                tab === t ? 'bg-indigo-500 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              {t === 'import' ? '数据导入' : t === 'extract' ? `灵魂提取 (${extractions.length})` : t === 'calibrate' ? '校准纠正' : '灵魂快照'}
             </button>
           ))}
         </div>
@@ -167,6 +243,7 @@ export default function SoulDistillationPage() {
           <div className="mt-6 space-y-4">
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
               <h3 className="mb-4 text-lg font-semibold text-zinc-50">倒入原始数据</h3>
+              <p className="mb-4 text-sm text-zinc-400">倒入聊天记录、邮件、日记、文章等原始文本，至少 50 字才能启动灵魂提取。</p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-sm text-zinc-400">来源类型</label>
@@ -189,8 +266,10 @@ export default function SoulDistillationPage() {
                 <textarea value={rawText} onChange={(e) => setRawText(e.target.value)} rows={10} placeholder="粘贴聊天记录、邮件、文章、日记等原始文本..." className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-50 placeholder:text-zinc-600 font-mono text-sm" />
               </div>
               <div className="mt-4 flex items-center justify-between">
-                <span className="text-xs text-zinc-500">{rawText.length} 字</span>
-                <Button onClick={handleImport} className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white">
+                <span className={`text-xs ${rawText.length >= 50 ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                  {rawText.length} 字{rawText.length < 50 ? ` (还差 ${50 - rawText.length} 字)` : ' ✓ 可以提取'}
+                </span>
+                <Button onClick={handleImport} disabled={rawText.trim().length < 50} className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white disabled:opacity-50">
                   <Upload className="mr-2 h-4 w-4" /> 倒入
                 </Button>
               </div>
@@ -199,17 +278,101 @@ export default function SoulDistillationPage() {
             {imports.length > 0 && (
               <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
                 <h3 className="mb-4 text-lg font-semibold text-zinc-50">已导入数据 ({imports.length})</h3>
-                <div className="space-y-2">
-                  {imports.map((imp) => (
-                    <div key={imp.id} className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
-                      <div>
-                        <div className="text-sm text-zinc-50">{imp.source_name || imp.source_type}</div>
-                        <div className="text-xs text-zinc-500">{imp.source_type} · {(imp.char_count ?? 0).toLocaleString()} 字</div>
+                <div className="space-y-3">
+                  {imports.map((imp) => {
+                    const extCount = imp.extraction_status === 'completed'
+                      ? extractions.filter(e => e.import_session_id === imp.id).length
+                      : 0
+                    return (
+                      <div key={imp.id} className="space-y-2">
+                        <div className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
+                          <div>
+                            <div className="text-sm text-zinc-50">{imp.source_name || imp.source_type}</div>
+                            <div className="text-xs text-zinc-500">{imp.source_type} · {(imp.char_count ?? 0).toLocaleString()} 字</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {imp.extraction_status === 'pending' && (
+                              <button
+                                onClick={() => extractSession(imp.id)}
+                                disabled={extracting[imp.id]}
+                                className="rounded-md bg-indigo-500/20 px-3 py-1 text-xs text-indigo-400 hover:bg-indigo-500/30 disabled:opacity-50 whitespace-nowrap"
+                              >
+                                {extracting[imp.id] ? (
+                                  <><Loader2 className="mr-1 inline h-3 w-3 animate-spin" /> 提取中</>
+                                ) : (
+                                  <><Sparkles className="mr-1 inline h-3 w-3" /> 提取灵魂</>
+                                )}
+                              </button>
+                            )}
+                            <Badge variant={imp.extraction_status === 'completed' ? 'primary' : imp.extraction_status === 'extracting' ? 'outline' : 'secondary'}>
+                              {imp.extraction_status === 'pending' ? '待提取' : imp.extraction_status === 'extracting' ? '提取中' : '已提取'}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {imp.extraction_status === 'completed' && extCount > 0 && (
+                          <div className="rounded-lg border border-zinc-800/50 bg-zinc-950/50 px-4 py-2">
+                            <div className="flex items-center gap-1 text-xs text-zinc-500 mb-1">
+                              <span>已提取 {extCount}/7 维</span>
+                            </div>
+                            <div className="flex gap-1">
+                              {DIMENSIONS.map((d, i) => {
+                                const has = extractions.some(e => e.import_session_id === imp.id && e.dimension === d.key)
+                                return <div key={d.key} className={`h-1.5 flex-1 rounded-full ${has ? 'bg-indigo-500' : 'bg-zinc-800'}`} />
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <Badge variant={imp.extraction_status === 'pending' ? 'outline' : 'primary'}>{imp.extraction_status}</Badge>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Extraction results tab */}
+        {tab === 'extract' && (
+          <div className="mt-6 space-y-4">
+            {extractions.length === 0 ? (
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-12 text-center">
+                <Sparkles className="mx-auto h-12 w-12 text-zinc-700" />
+                <p className="mt-4 text-zinc-500">还没有提取结果</p>
+                <p className="mt-1 text-sm text-zinc-600">先导入数据，然后点击「提取灵魂」开始蒸馏</p>
+                <button onClick={() => setTab('import')} className="mt-4 text-sm text-indigo-400 hover:text-indigo-300">前往数据导入 →</button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {extractions.map((ext) => {
+                  const dim = DIMENSIONS.find(d => d.key === ext.dimension)
+                  return (
+                    <div key={ext.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+                      <button
+                        onClick={() => setExpandedExtract(expandedExtract === ext.id ? null : ext.id)}
+                        className="w-full px-6 py-4 flex items-center justify-between text-left"
+                      >
+                        <div className="flex items-center gap-3">
+                          {dim?.icon && <dim.icon className="h-5 w-5 text-indigo-400" />}
+                          <div>
+                            <div className="text-sm font-medium text-zinc-50">{dim?.label || ext.dimension}</div>
+                            <div className="text-xs text-zinc-500">
+                              置信度 {(ext.confidence * 100).toFixed(0)}% · {new Date(ext.created_at).toLocaleDateString('zh-CN')}
+                            </div>
+                          </div>
+                        </div>
+                        {expandedExtract === ext.id ? <ChevronDown className="h-4 w-4 text-zinc-500" /> : <ChevronRight className="h-4 w-4 text-zinc-500" />}
+                      </button>
+                      {expandedExtract === ext.id && (
+                        <div className="border-t border-zinc-800 px-6 py-4">
+                          <div className="rounded-lg bg-zinc-950/50 p-4 text-sm text-zinc-300 whitespace-pre-wrap font-mono max-h-96 overflow-auto">
+                            {ext.key_insights && typeof ext.key_insights === 'object' ? JSON.stringify(ext.key_insights, null, 2) : String(ext.key_insights || 'No insights')}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -233,11 +396,9 @@ export default function SoulDistillationPage() {
               </div>
               <div className="mt-4 flex items-center justify-between">
                 <select value={calibDim} onChange={(e) => setCalibDim(e.target.value)} className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-50">
-                  <option value="voice">表达风格</option>
-                  <option value="values">价值判断</option>
-                  <option value="knowledge">知识结构</option>
-                  <option value="emotion">情感反应</option>
-                  <option value="relationships">关系记忆</option>
+                  {DIMENSIONS.map(d => (
+                    <option key={d.key} value={d.key}>{d.label}</option>
+                  ))}
                 </select>
                 <Button onClick={handleCalibrate} className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white">
                   <Heart className="mr-2 h-4 w-4" /> 提交校准
@@ -249,22 +410,25 @@ export default function SoulDistillationPage() {
               <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
                 <h3 className="mb-4 text-lg font-semibold text-zinc-50">校准历史 ({calibrations.length})</h3>
                 <div className="space-y-3">
-                  {calibrations.slice(0, 10).map((c) => (
-                    <div key={c.id} className="rounded-lg border border-zinc-800 p-4">
-                      <div className="flex items-center gap-2 text-xs text-zinc-500">
-                        <Badge variant="outline" className="text-xs">{c.dimension}</Badge>
-                        {new Date(c.created_at).toLocaleDateString('zh-CN')}
-                      </div>
-                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                        <div className="rounded bg-zinc-900/80 p-3 text-sm text-zinc-400">
-                          <span className="text-xs text-zinc-600">Agent:</span> {c.agent_response}
+                  {calibrations.slice(0, 10).map((c) => {
+                    const dim = DIMENSIONS.find(d => d.key === c.dimension)
+                    return (
+                      <div key={c.id} className="rounded-lg border border-zinc-800 p-4">
+                        <div className="flex items-center gap-2 text-xs text-zinc-500">
+                          <Badge variant="outline" className="text-xs">{dim?.label || c.dimension}</Badge>
+                          {new Date(c.created_at).toLocaleDateString('zh-CN')}
                         </div>
-                        <div className="rounded bg-emerald-500/5 p-3 text-sm text-emerald-400">
-                          <span className="text-xs text-emerald-600">纠正:</span> {c.corrected_response}
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                          <div className="rounded bg-zinc-900/80 p-3 text-sm text-zinc-400">
+                            <span className="text-xs text-zinc-600">Agent:</span> {c.agent_response}
+                          </div>
+                          <div className="rounded bg-emerald-500/5 p-3 text-sm text-emerald-400">
+                            <span className="text-xs text-emerald-600">纠正:</span> {c.corrected_response}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -287,8 +451,8 @@ export default function SoulDistillationPage() {
                   <span>记忆条: {status?.stats?.memories ?? 0}</span>
                   <span>技能: {status?.stats?.skills ?? 0}</span>
                 </div>
-                <Button onClick={handleSnapshot} disabled={snapping} className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white">
-                  {snapping ? '生成中...' : '生成灵魂快照'}
+                <Button onClick={handleSnapshot} disabled={snapping} className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white disabled:opacity-50">
+                  {snapping ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> 生成中...</> : '生成灵魂快照'}
                 </Button>
               </div>
             </div>
