@@ -15,7 +15,7 @@ export default function CertificationBadges({ certifications }: CertificationBad
   if (!certifications.length) {
     return (
       <div className="text-center py-6 text-zinc-500 text-sm">
-        暂无认证
+        No certifications yet
       </div>
     )
   }
@@ -41,11 +41,11 @@ export default function CertificationBadges({ certifications }: CertificationBad
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-zinc-800">
         <div className="flex items-center gap-2">
           <Award className="w-4 h-4 text-yellow-500" />
-          <h3 className="text-sm font-semibold text-zinc-300">认证徽章</h3>
+          <h3 className="text-sm font-semibold text-zinc-300">Certification Badges</h3>
         </div>
         <div className="flex items-center gap-3 text-xs text-zinc-500">
-          <span>{totalBadges} 枚</span>
-          <span className="text-yellow-400 font-semibold">最高 {highestLabel}</span>
+          <span>{totalBadges} badges</span>
+          <span className="text-yellow-400 font-semibold">Highest: {highestLabel}</span>
         </div>
       </div>
 
@@ -64,10 +64,10 @@ export default function CertificationBadges({ certifications }: CertificationBad
                  level === 'S' ? <Shield className="w-3.5 h-3.5 text-amber-400" /> :
                  <Award className="w-3.5 h-3.5 text-purple-400" />}
                 <span className={`text-xs font-bold ${colors.text}`}>
-                  {level} 级 · {CERT_LEVEL_LABELS[level]}
+                  Level {level} · {CERT_LEVEL_LABELS[level]}
                 </span>
                 <span className="text-[10px] text-zinc-600 ml-1">
-                  ({levelCerts.length} 枚)
+                  ({levelCerts.length} badges)
                 </span>
               </div>
 
@@ -89,7 +89,7 @@ export default function CertificationBadges({ certifications }: CertificationBad
                         {cert.skill?.display_name || cert.skill_id}
                       </div>
                       <div className="flex items-center gap-2 text-[10px] text-zinc-500">
-                        <span>评分 {cert.score}</span>
+                        <span>Score: {cert.score}</span>
                         {cert.comments && (
                           <span className="text-zinc-600 truncate max-w-[80px]">{cert.comments}</span>
                         )}
@@ -103,8 +103,8 @@ export default function CertificationBadges({ certifications }: CertificationBad
 
                     {/* Tooltip with date */}
                     <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-zinc-300 text-[10px] rounded opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap z-10">
-                      {new Date(cert.cert_date).toLocaleDateString('zh-CN')}
-                      {cert.expires_at && ` → ${new Date(cert.expires_at).toLocaleDateString('zh-CN')}`}
+                      {new Date(cert.cert_date).toLocaleDateString('en-US')}
+                      {cert.expires_at && ` → ${new Date(cert.expires_at).toLocaleDateString('en-US')}`}
                     </div>
                   </div>
                 ))}
@@ -119,7 +119,7 @@ export default function CertificationBadges({ certifications }: CertificationBad
         <div className="mt-4 pt-3 border-t border-zinc-800/50">
           <div className="flex items-center gap-1.5 text-xs text-zinc-500">
             <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-            <span>已达成 "收藏家" 里程碑 ({totalBadges}/{totalBadges + 5} 枚认证)</span>
+            <span>"Collector" milestone reached ({totalBadges}/{totalBadges + 5} certifications)</span>
             <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden ml-2">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-yellow-600 to-yellow-400"

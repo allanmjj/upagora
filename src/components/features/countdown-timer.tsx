@@ -31,11 +31,11 @@ export function HeroCountdown({
     }
   }
 
-  // 初始为 null，避免服务端/客户端 hydration 不匹配
+  // Start as null to avoid server/client hydration mismatch
   const [timeLeft, setTimeLeft] = useState<ReturnType<typeof calculateRemaining> | null>(null)
 
   useEffect(() => {
-    // 客户端挂载后立即设置一次初始值
+    // Set initial value immediately after client mount
     setTimeLeft(calculateRemaining())
     const interval = setInterval(() => {
       setTimeLeft(calculateRemaining())
@@ -44,7 +44,7 @@ export function HeroCountdown({
     return () => clearInterval(interval)
   }, [])
 
-  // 未挂载时显示占位符，保持布局稳定
+  // Show placeholder when not mounted, keeping layout stable
   if (timeLeft === null) {
     return (
       <div className={cn("w-full", className)}>
@@ -54,12 +54,12 @@ export function HeroCountdown({
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-500"></span>
             </span>
-            即将上线
+            Launching Soon
           </span>
         </div>
         
         <div className="flex items-center justify-center gap-3 sm:gap-4">
-          {["天", "时", "分", "秒"].map((label) => (
+          {["Days", "Hrs", "Min", "Sec"].map((label) => (
             <div
               key={label}
               className="flex flex-col items-center rounded-xl border border-zinc-800 bg-zinc-900/50 px-3 py-2 sm:px-4 sm:py-3 md:px-6 md:py-4"
@@ -73,17 +73,17 @@ export function HeroCountdown({
         </div>
 
         <div className="mt-3 text-center text-sm text-zinc-500">
-          目标日期：{target.label}
+          Target: {target.label}
         </div>
       </div>
     )
   }
 
   const timeUnits = [
-    { value: timeLeft.days, label: "天" },
-    { value: timeLeft.hours, label: "时" },
-    { value: timeLeft.minutes, label: "分" },
-    { value: timeLeft.seconds, label: "秒" },
+    { value: timeLeft.days, label: "Days" },
+    { value: timeLeft.hours, label: "Hrs" },
+    { value: timeLeft.minutes, label: "Min" },
+    { value: timeLeft.seconds, label: "Sec" },
   ]
 
   return (
@@ -94,7 +94,7 @@ export function HeroCountdown({
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75"></span>
             <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-500"></span>
           </span>
-          即将上线
+          Launching Soon
         </span>
       </div>
       
@@ -113,7 +113,7 @@ export function HeroCountdown({
       </div>
 
       <div className="mt-3 text-center text-sm text-zinc-500">
-        目标日期：{target.label}
+        Target: {target.label}
       </div>
     </div>
   )

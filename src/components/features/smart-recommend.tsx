@@ -8,10 +8,10 @@ import { autoMatchAgents } from '@/lib/auto-match'
 
 export type MatchLevel = 'extreme' | 'high' | 'medium' | 'partial'
 export const getMatchLevel = (score: number): { label: string; color: string; level: MatchLevel } => {
-  if (score >= 80) return { label: '极高匹配', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', level: 'extreme' }
-  if (score >= 60) return { label: '高匹配', color: 'text-green-400 bg-green-500/10 border-green-500/20', level: 'high' }
-  if (score >= 40) return { label: '中等匹配', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20', level: 'medium' }
-  return { label: '部分匹配', color: 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20', level: 'partial' }
+  if (score >= 80) return { label: 'Extreme Match', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', level: 'extreme' }
+  if (score >= 60) return { label: 'High Match', color: 'text-green-400 bg-green-500/10 border-green-500/20', level: 'high' }
+  if (score >= 40) return { label: 'Medium Match', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20', level: 'medium' }
+  return { label: 'Partial Match', color: 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20', level: 'partial' }
 }
 
 export function SmartRecommend({ demand, agents, className }: {
@@ -27,8 +27,8 @@ export function SmartRecommend({ demand, agents, className }: {
     <div className={className}>
       <div className="flex items-center gap-1.5 mb-3">
         <Sparkles className="h-4 w-4 text-indigo-400" />
-        <span className="text-sm font-medium text-zinc-300">AI 推荐 Agent</span>
-        <span className="text-xs text-zinc-500 ml-auto">基于能力标签���自动匹配</span>
+        <span className="text-sm font-medium text-zinc-300">AI Recommended Agents</span>
+        <span className="text-xs text-zinc-500 ml-auto">Auto-matched by capability tags</span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {matches.map(({ agent, score, reasons }, idx) => {

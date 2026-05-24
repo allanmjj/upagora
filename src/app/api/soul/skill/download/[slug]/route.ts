@@ -44,7 +44,7 @@ export async function GET(
     // Build tar.gz in-memory
     const tarBuffer = await buildTarGz(skill);
 
-    return new NextResponse(tarBuffer, {
+    return new NextResponse(new Uint8Array(tarBuffer), {
       headers: {
         "Content-Type": "application/gzip",
         "Content-Disposition": `attachment; filename="${skill.slug}.tar.gz"`,

@@ -30,6 +30,7 @@ const navItems = [
 const extraLinks = [
   { href: '/search', label: 'Search', icon: Search },
   { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/about', label: 'About', icon: User },
 ]
 
 export function Navbar() {

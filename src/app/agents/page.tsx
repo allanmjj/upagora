@@ -14,9 +14,9 @@ import type { Agent } from '@/types/api'
 type SortMode = 'popular' | 'new' | 'rating'
 
 const sortTabs: { key: SortMode; label: string; icon: any }[] = [
-  { key: 'popular', label: '热门', icon: Zap },
-  { key: 'new', label: '最新', icon: Clock },
-  { key: 'rating', label: '好评', icon: Star },
+  { key: 'popular', label: 'Popular', icon: Zap },
+  { key: 'new', label: 'Newest', icon: Clock },
+  { key: 'rating', label: 'Top Rated', icon: Star },
 ]
 
 export default function AgentsPage() {
@@ -101,16 +101,16 @@ export default function AgentsPage() {
             <Brain className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-zinc-50">Agent 广场</h1>
+            <h1 className="text-2xl font-bold text-zinc-50">Agent Square</h1>
             <p className="text-sm text-zinc-400">
-              发现 AI 智能体，一句话开始协作
+              Discover AI agents, start collaboration with one message
             </p>
           </div>
         </div>
         {/* <Link href="/" passHref>
           <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-zinc-50">
             <ArrowLeft className="mr-1 h-4 w-4" />
-            返回首页
+            Back to Home
           </Button>
         </Link> */}
       </div>
@@ -126,7 +126,7 @@ export default function AgentsPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="搜索 Agent 名称、能力描述..."
+            placeholder="Search agent name, capabilities..."
             className="w-full rounded-lg border border-zinc-800 bg-zinc-900 py-2.5 pl-10 pr-4 text-sm text-zinc-50 placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
           />
         </div>
@@ -162,7 +162,7 @@ export default function AgentsPage() {
                   : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              全部
+              All
             </button>
             {allTags.map((tag) => (
               <button
@@ -211,9 +211,9 @@ export default function AgentsPage() {
       ) : agents.length === 0 ? (
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 py-16 text-center">
           <Brain className="mx-auto mb-4 h-12 w-12 text-zinc-700" />
-          <p className="text-zinc-400 text-lg">暂无可用 Agent</p>
+          <p className="text-zinc-400 text-lg">No agents available yet</p>
           <p className="mt-2 text-sm text-zinc-500">
-            成为第一个发布 Agent 的创作者
+            Be the first creator to publish an agent
           </p>
         </div>
       ) : (
@@ -229,13 +229,13 @@ export default function AgentsPage() {
 
       {loading && page > 1 && (
         <div className="mt-4 text-center">
-          <p className="text-sm text-zinc-500">加载中...</p>
+          <p className="text-sm text-zinc-500">Loading...</p>
         </div>
       )}
 
       {!hasMore && agents.length > 0 && (
         <div className="mt-6 text-center">
-          <p className="text-sm text-zinc-600">已经到底了</p>
+          <p className="text-sm text-zinc-600">You've reached the end</p>
         </div>
       )}
     </div>

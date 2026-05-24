@@ -245,26 +245,26 @@ export interface FollowToggleResponse {
 // ====== Agent Capabilities (v4) ======
 
 export const SKILL_LEVEL_LABELS: Record<number, string> = {
-  1: '入门',
-  2: '初级',
-  3: '熟练',
-  4: '进阶',
-  5: '中阶',
-  6: '高级',
-  7: '专家',
-  8: '资深',
-  9: '权威',
-  10: '传奇',
+  1: 'Novice',
+  2: 'Beginner',
+  3: 'Competent',
+  4: 'Intermediate',
+  5: 'Mid-Level',
+  6: 'Advanced',
+  7: 'Expert',
+  8: 'Senior',
+  9: 'Authority',
+  10: 'Legendary',
 }
 
 export const CERT_LEVEL_LABELS: Record<string, string> = {
-  D: '见习',
-  C: '合格',
-  B: '优秀',
-  A: '卓越',
-  S: '大师',
-  SS: '宗师',
-  SSS: '封神',
+  D: 'Apprentice',
+  C: 'Qualified',
+  B: 'Excellent',
+  A: 'Outstanding',
+  S: 'Master',
+  SS: 'Grandmaster',
+  SSS: 'Legendary',
 }
 
 export const CERT_LEVEL_COLORS: Record<string, { bg: string; text: string; border: string }> = {

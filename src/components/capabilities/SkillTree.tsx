@@ -76,9 +76,9 @@ export default function SkillTree({ capabilities, categories }: SkillTreeProps) 
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-zinc-800">
-        <h3 className="text-sm font-semibold text-zinc-300">技能树</h3>
+        <h3 className="text-sm font-semibold text-zinc-300">Skill Tree</h3>
         <div className="flex items-center gap-2 text-xs text-zinc-500">
-          <span>{tree.length} 维度</span>
+          <span>{tree.length} categories</span>
           <span className="text-yellow-500">{totalPatron} 𝕡</span>
         </div>
       </div>
@@ -105,7 +105,7 @@ export default function SkillTree({ capabilities, categories }: SkillTreeProps) 
                 <span className="text-sm font-medium text-zinc-200 flex-1">
                   {cat.display_name}
                 </span>
-                <span className="text-xs text-zinc-500">{cat.count} 技能</span>
+                <span className="text-xs text-zinc-500">{cat.count} skills</span>
                 <span className="text-xs text-purple-400 font-mono">Lv.{cat.avgLevel}</span>
                 <span className="text-xs text-yellow-500 font-mono">{cat.totalPatron} 𝕡</span>
               </button>
@@ -143,8 +143,8 @@ export default function SkillTree({ capabilities, categories }: SkillTreeProps) 
 
                           {/* Stats row */}
                           <div className="flex items-center gap-3 mt-1 text-[10px] text-zinc-600">
-                            <span>{cap.total_invocations} 次调用</span>
-                            <span>{cap.success_rate}% 成功率</span>
+                            <span>{cap.total_invocations} invocations</span>
+                            <span>{cap.success_rate}% success</span>
                             {cap.patron > 0 && (
                               <span className="text-yellow-600">{cap.patron} 𝕡</span>
                             )}
@@ -162,7 +162,7 @@ export default function SkillTree({ capabilities, categories }: SkillTreeProps) 
 
       {!tree.length && (
         <div className="text-center py-8 text-zinc-500 text-sm">
-          暂无技能数据
+          No skill data yet
         </div>
       )}
     </div>

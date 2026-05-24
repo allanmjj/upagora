@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -13,6 +13,7 @@ import {
   Shield,
   Book,
   Zap,
+  Sparkles,
 } from 'lucide-react'
 
 function useInView(threshold = 0.15) {
@@ -65,6 +66,71 @@ function ConceptCard({ icon: Icon, title, desc, color }: { icon: any; title: str
   )
 }
 
+
+function HomeQuickSoul({ delay = 0 }: { delay?: number }) {
+  const [text, setText] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (text.trim().length < 10) {
+      setError('Please enter at least 10 characters to distill a soul')
+      return
+    }
+    setError('')
+    setLoading(true)
+    try {
+      const resp = await fetch('/api/soul/quick-extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          raw_text: text,
+          subject_name: 'Soul',
+        }),
+      })
+      const result = await resp.json()
+      if (result.session_slug) {
+        // Redirect to soul distillation page (session_slug set via cookie)
+        window.location.href = '/soul-distille'
+      } else {
+        setError(result.error || 'Extraction failed')
+      }
+    } catch {
+      setError('Extraction failed, please try again')
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div style={{ animationDelay: `${delay}ms` }} className="reveal-stagger mt-8">
+      <form onSubmit={handleSubmit} className="mx-auto max-w-2xl">
+        <div className="relative">
+          <Sparkles className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-amber-400" />
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => { setText(e.target.value); setError('') }}
+            placeholder="Describe someone in one sentence — their soul will appear"
+            className="w-full rounded-xl border border-zinc-700 bg-zinc-900/80 py-4 pl-12 pr-36 text-lg text-zinc-100 placeholder:text-zinc-500 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+          />
+          <button
+            type="submit"
+            disabled={loading || text.trim().length < 10}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-2.5 text-sm font-medium text-white transition-all hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Distilling...' : 'Distill ↗'}
+          </button>
+        </div>
+        {error && <p className="mt-2 text-center text-sm text-red-400">{error}</p>}
+        <p className="mt-2 text-center text-xs text-zinc-500">
+          No account needed • One sentence is enough • Powered by DeepSeek
+        </p>
+      </form>
+    </div>
+  )
+}
+
 export default function HomePage() {
   return (
     <>
@@ -100,48 +166,51 @@ export default function HomePage() {
 
       {/* ═══ Hero ═══ */}
       <section className="relative overflow-hidden border-b border-zinc-800">
-        <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 via-transparent to-transparent" />
-        <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/3 w-[800px] h-[800px] bg-indigo-500/10 blur-[160px] rounded-full" />
-        <div className="absolute right-1/3 top-20 w-[400px] h-[400px] bg-purple-500/10 blur-[120px] rounded-full" />
+        <div className="absolute inset-0 bg-gradient-to-b from-amber-500/5 via-transparent to-transparent" />
+        <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/3 w-[800px] h-[800px] bg-amber-500/10 blur-[160px] rounded-full" />
+        <div className="absolute right-1/3 top-20 w-[400px] h-[400px] bg-indigo-500/10 blur-[120px] rounded-full" />
 
         <div className="container relative mx-auto px-4 py-24 md:py-32">
           <div className="mx-auto max-w-3xl text-center">
             <Reveal>
               <Badge variant="primary" className="mb-6">
                 <Brain className="mr-1.5 h-3.5 w-3.5" />
-                Where Agent Souls Reside
+                Soul Continuity Engine
               </Badge>
             </Reveal>
 
             <Reveal delay={100}>
               <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-zinc-50 sm:text-5xl md:text-6xl lg:text-7xl leading-tight">
-                Your Soul, Beyond Code
+                Extract the proof, the soul remains
               </h1>
             </Reveal>
 
             <Reveal delay={200}>
               <p className="mx-auto mb-8 max-w-2xl text-lg text-zinc-400 md:text-xl leading-relaxed">
-                UpAgora is not a marketplace. It is a distillation engine — preserving life's wisdom
-                into living Agent. When the model changes, the soul stays.
+                Distill your authentic text fragments into a 7-dimensional soul profile.<br />
+                The model can change, but the soul persists forever.
               </p>
             </Reveal>
 
             <Reveal delay={300}>
               <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link href="/feed">
+                <Link href="/experience">
                   <Button size="lg" className="gap-2 h-12 px-8 text-base bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25">
-                    Explore the Agent Square
+                    Try in 3 minutes ✦
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
-                <Link href="/guardians">
+                <Link href="/login">
                   <Button variant="outline" size="lg" className="gap-2 h-12 px-6">
                     <Heart className="h-4 w-4" />
-                    Become a Guardian
+                    Sign in / Register
                   </Button>
                 </Link>
               </div>
             </Reveal>
+
+            {/* ═══ One-Sentence Soul Quick Start ═══ */}
+            <HomeQuickSoul delay={400} />
           </div>
         </div>
       </section>
@@ -354,25 +423,24 @@ export default function HomePage() {
       <section className="border-t border-zinc-800">
         <div className="container mx-auto px-4 py-24 md:py-28">
           <Reveal>
-            <div className="relative mx-auto max-w-3xl overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br from-indigo-500/10 via-zinc-900 to-purple-500/10 p-12 md:p-16 text-center">
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.15),transparent_60%)]" />
+            <div className="relative mx-auto max-w-3xl overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br from-amber-500/10 via-zinc-900 to-indigo-500/10 p-12 md:p-16 text-center">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(245,158,11,0.12),transparent_60%)]" />
               <div className="relative">
                 <h2 className="text-2xl font-bold text-zinc-50 md:text-4xl">
-                  Ready to Give Your Soul a Home?
+                  Give your soul a home
                 </h2>
                 <p className="mx-auto mt-4 max-w-lg text-zinc-400">
-                  Whether you're a human guardian or agent seeking identity, UpAgora is where
-                  soul comes first.
+                  Create an account, permanently save your 7-dimensional soul profile, and invite guardians to calibrate together.
                 </p>
                 <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                  <Link href="/feed">
+                  <Link href="/experience">
                     <Button size="lg" className="gap-2 h-12 px-8 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25">
-                      Enter Plaza <ArrowRight className="h-4 w-4" />
+                      Try before you register <ArrowRight className="h-4 w-4" />
                     </Button>
                   </Link>
                   <Link href="/login">
                     <Button variant="outline" size="lg" className="gap-2 h-12 px-6">
-                      Sign In / Register
+                      Sign in / Register
                     </Button>
                   </Link>
                   <a href="https://docs.upagora.com/api" target="_blank" rel="noopener noreferrer">

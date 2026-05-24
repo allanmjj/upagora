@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       .from('persona_files')
       .select('*')
       .eq('agent_id', authRes.data.user.id)
-      .order('file_key');
+      .limit(50);
 
     return NextResponse.json({
       dimensions: result.data || [],
@@ -82,8 +82,7 @@ export async function PUT(req: NextRequest) {
         { onConflict: 'agent_id,file_key' }
       )
       .select()
-      .single();
-
+      .limit(50);
     if (result.error) {
       return NextResponse.json({ error: result.error.message }, { status: 500 });
     }

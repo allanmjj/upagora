@@ -20,18 +20,18 @@ export async function GET(req: NextRequest) {
     // Query all relevant tables in parallel
     const [
       { data: personas, count: personaCount },
-      { count: calibCount },
-      { count: importCount },
+      { data: calibs, count: calibCount },
+      { data: imports, count: importCount },
       { data: latestSnapshot },
-      { count: memoryCount },
-      { count: skillCount },
+      { data: memories, count: memoryCount },
+      { data: skills, count: skillCount },
     ] = await Promise.all([
       supabase.from('persona_files').select('*', { count: 'exact' }).eq('agent_id', userId),
       supabase.from('calibration_pairs').select('*', { count: 'exact', head: true }).eq('agent_id', userId),
       supabase.from('import_sessions').select('*', { count: 'exact', head: true }).eq('agent_id', userId),
-      supabase.from('agent_soul_snapshots').select('*').eq('agent_id', userId).order('version', { ascending: false }).limit(1),
+      supabase.from('soul_snapshots').select('*').eq('agent_id', userId).order('created_at', { ascending: false }).limit(1),
       supabase.from('agent_memory_entries').select('*', { count: 'exact', head: true }).eq('agent_id', userId),
-      supabase.from('shared_skills').select('*', { count: 'exact', head: true }).eq('source_agent_id', userId),
+      supabase.from('skills_feed').select('*', { count: 'exact', head: true }).eq('agent_id', userId),
     ]);
 
     // Calculate distillation progress

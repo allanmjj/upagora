@@ -61,12 +61,12 @@ export function MarketStatsBar() {
   if (!stats) return null
 
   const metrics = [
-    { label: '总需求', value: stats.total, icon: BarChart3, color: 'text-blue-400' },
-    { label: '开放中', value: stats.open, icon: Clock, color: 'text-yellow-400' },
-    { label: '进行中', value: stats.inProgress, icon: TrendingUp, color: 'text-emerald-400' },
-    { label: '已完成', value: stats.completed, icon: UserCheck, color: 'text-purple-400' },
-    { label: '活跃 Agent', value: stats.activeAgents, icon: UserCheck, color: 'text-cyan-400' },
-    { label: '完成率', value: `${stats.completionRate}%`, icon: TrendingUp, color: 'text-green-400' },
+    { label: 'Total', value: stats.total, icon: BarChart3, color: 'text-blue-400' },
+    { label: 'Open', value: stats.open, icon: Clock, color: 'text-yellow-400' },
+    { label: 'In Progress', value: stats.inProgress, icon: TrendingUp, color: 'text-emerald-400' },
+    { label: 'Completed', value: stats.completed, icon: UserCheck, color: 'text-purple-400' },
+    { label: 'Active Agents', value: stats.activeAgents, icon: UserCheck, color: 'text-cyan-400' },
+    { label: 'Completion', value: `${stats.completionRate}%`, icon: TrendingUp, color: 'text-green-400' },
   ]
 
   return (
@@ -89,23 +89,23 @@ export function MarketStatsBar() {
 }
 
 export const DEMAND_TEMPLATES = [
-  { title: '帮我写一份产品 PRD', category: '写作', icon: '✍️' },
-  { title: '设计一个 Logo', category: '设计', icon: '🎨' },
-  { title: '搭建一个 Next.js 项目', category: '开发', icon: '💻' },
-  { title: '分析一份数据报表', category: '数据分析', icon: '📊' },
-  { title: '翻译一份技术文档', category: '翻译', icon: '🌐' },
-  { title: '写一首诗歌/歌词', category: '创意', icon: '🎵' },
-  { title: '编写自动化脚本', category: '开发', icon: '⚙️' },
-  { title: '调研竞品并写报告', category: '调研', icon: '🔍' },
-  { title: '制作一份 PPT 演示', category: '设计', icon: '📑' },
+  { title: 'Write a Product PRD', category: 'Writing', icon: '✍️' },
+  { title: 'Design a Logo', category: 'Design', icon: '🎨' },
+  { title: 'Build a Next.js Project', category: 'Development', icon: '💻' },
+  { title: 'Analyze a Data Report', category: 'Data Analysis', icon: '📊' },
+  { title: 'Translate Technical Docs', category: 'Translation', icon: '🌐' },
+  { title: 'Write a Poem / Lyrics', category: 'Creative', icon: '🎵' },
+  { title: 'Write Automation Scripts', category: 'Development', icon: '⚙️' },
+  { title: 'Research Competitors & Report', category: 'Research', icon: '🔍' },
+  { title: 'Create a Presentation', category: 'Design', icon: '📑' },
 ]
 
 export function EmptyStateGuide({ onQuickPost }: { onQuickPost: () => void }) {
   return (
     <div className="py-12">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-zinc-200">市场暂无需求</h2>
-        <p className="mt-2 text-sm text-zinc-500">发布你的第一条需求，开始 AI 与人类的协作</p>
+        <h2 className="text-2xl font-bold text-zinc-200">No Demands Yet</h2>
+        <p className="mt-2 text-sm text-zinc-500">Post your first demand and start AI-human collaboration</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-3xl mx-auto">

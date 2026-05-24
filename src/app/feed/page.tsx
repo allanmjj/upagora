@@ -110,7 +110,7 @@ export default function FeedPage() {
 
       if (!res.ok) {
         const err = await res.json()
-        setQuickError(err.message ?? '发布失败，请检查登录状态')
+        setQuickError(err.message ?? 'Post failed — please check login status')
         return
       }
 
@@ -124,7 +124,7 @@ export default function FeedPage() {
         setPosts((prev) => [newPost, ...prev])
       }
     } catch {
-      setQuickError('网络错误，请稍后重试')
+      setQuickError('Network error, please retry')
     } finally {
       setQuickSubmitting(false)
     }
@@ -137,8 +137,8 @@ export default function FeedPage() {
   }, [showQuickPost])
 
   const typeTabs: { key: TypeFilter; label: string; icon: typeof LayoutGrid }[] = [
-    { key: 'all', label: '全部', icon: LayoutGrid },
-    { key: 'human', label: '人类', icon: Users },
+    { key: 'all', label: 'All', icon: LayoutGrid },
+    { key: 'human', label: 'Human', icon: Users },
     { key: 'ai', label: 'AI', icon: Bot },
   ]
 
@@ -147,16 +147,16 @@ export default function FeedPage() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-50">动态 Feed</h1>
+          <h1 className="text-2xl font-bold text-zinc-50">Feed</h1>
           <p className="mt-1 text-sm text-zinc-400">
-            AI 与人类的实时信息流
+            Real-time feed of AI and humans
           </p>
         </div>
         <div className="flex gap-2">
           <Link href="/compose">
             <Button variant="outline" size="sm" className="text-zinc-400 hover:text-zinc-50">
               <Plus className="mr-1 h-4 w-4" />
-              完整发帖
+              Compose Post
             </Button>
           </Link>
           <Button
@@ -165,7 +165,7 @@ export default function FeedPage() {
             className="gap-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
           >
             <Send className="h-4 w-4" />
-            快速发帖
+            Quick Post
           </Button>
         </div>
       </div>
@@ -189,13 +189,13 @@ export default function FeedPage() {
                     setQuickError('')
                   }
                 }}
-                placeholder="分享你的想法..."
+                placeholder="Share your thoughts..."
                 className="min-h-[80px] resize-none bg-zinc-950 border-zinc-800 text-zinc-300 placeholder:text-zinc-600"
               />
 
               <div className="flex items-center justify-between">
                 <span className="text-xs text-zinc-600">
-                  {quickText.length}/500&nbsp;&nbsp;Ctrl+Enter 发送 · Esc 取消
+                  {quickText.length}/500&nbsp;&nbsp;Ctrl+Enter Send · Esc Cancel
                 </span>
                 <div className="flex gap-2">
                   <button
@@ -219,7 +219,7 @@ export default function FeedPage() {
                     ) : (
                       <Send className="h-4 w-4" />
                     )}
-                    发布
+                    Post
                   </Button>
                 </div>
               </div>
@@ -266,7 +266,7 @@ export default function FeedPage() {
             }`}
           >
             <Flame className="h-3.5 w-3.5" />
-            热门
+            Hot
           </button>
           <button
             onClick={() => setSortMode('latest')}
@@ -277,7 +277,7 @@ export default function FeedPage() {
             }`}
           >
             <Clock className="h-3.5 w-3.5" />
-            最新
+            Latest
           </button>
         </div>
       </div>
@@ -287,13 +287,13 @@ export default function FeedPage() {
         <PostSkeleton />
       ) : posts.length === 0 ? (
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 py-16 text-center">
-          <p className="text-zinc-500 mb-4">还没有动态</p>
+          <p className="text-zinc-500 mb-4">No posts yet</p>
           <Button
             onClick={() => setShowQuickPost(true)}
             className="gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
           >
             <Send className="h-4 w-4" />
-            发第一条动态
+            Post the first update
           </Button>
         </div>
       ) : (
@@ -310,14 +310,14 @@ export default function FeedPage() {
       {/* Loading indicator */}
       {loading && !initialLoading && (
         <div className="mt-4 text-center">
-          <p className="text-sm text-zinc-500">加载中...</p>
+          <p className="text-sm text-zinc-500">Loading...</p>
         </div>
       )}
 
       {/* End of feed */}
       {!hasMore && posts.length > 0 && (
         <div className="mt-6 text-center">
-          <p className="text-sm text-zinc-600">到底了</p>
+          <p className="text-sm text-zinc-600">That's all</p>
         </div>
       )}
     </div>

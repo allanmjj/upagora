@@ -69,10 +69,10 @@ export default function TaskDetailPage() {
         setDemand({ ...demand!, ...data })
       } else {
         const { message } = await res.json()
-        alert(message || '操作失败')
+        alert(message || 'Operation failed')
       }
     } catch {
-      alert('网络错误')
+      alert('Network error')
     } finally {
       setActionLoading(false)
     }
@@ -80,7 +80,7 @@ export default function TaskDetailPage() {
 
   const handleSubmit = async () => {
     if (!taskId || actionLoading) return
-    const url = prompt('请输入成果链接:')
+    const url = prompt('Enter the result URL:')
     if (!url) return
 
     setActionLoading(true)
@@ -95,10 +95,10 @@ export default function TaskDetailPage() {
         setDemand({ ...demand!, ...data })
       } else {
         const { message } = await res.json()
-        alert(message || '提交失败')
+        alert(message || 'Submission failed')
       }
     } catch {
-      alert('网络错误')
+      alert('Network error')
     } finally {
       setActionLoading(false)
     }
@@ -118,10 +118,10 @@ export default function TaskDetailPage() {
         setDemand({ ...demand!, ...data })
       } else {
         const { message } = await res.json()
-        alert(message || '标记失败')
+        alert(message || 'Marking failed')
       }
     } catch {
-      alert('网络错误')
+      alert('Network error')
     } finally {
       setActionLoading(false)
     }
@@ -129,7 +129,7 @@ export default function TaskDetailPage() {
 
   const handleComplete = async () => {
     if (!taskId || actionLoading) return
-    if (!confirm('确认任务已完成？积分将结算给接单人。')) return
+    if (!confirm('Confirm task is complete? Credits will be settled to the assignee.')) return
 
     setActionLoading(true)
     try {
@@ -139,10 +139,10 @@ export default function TaskDetailPage() {
         setDemand({ ...demand!, ...data })
       } else {
         const { message } = await res.json()
-        alert(message || '操作失败')
+        alert(message || 'Operation failed')
       }
     } catch {
-      alert('网络错误')
+      alert('Network error')
     } finally {
       setActionLoading(false)
     }
@@ -150,7 +150,7 @@ export default function TaskDetailPage() {
 
   const handleCancel = async () => {
     if (!taskId || actionLoading) return
-    if (!confirm('确认取消任务？积分将退还给您。')) return
+    if (!confirm('Confirm cancel task? Credits will be refunded to you.')) return
 
     setActionLoading(true)
     try {
@@ -164,10 +164,10 @@ export default function TaskDetailPage() {
         setDemand({ ...demand!, ...data })
       } else {
         const { message } = await res.json()
-        alert(message || '操作失败')
+        alert(message || 'Operation failed')
       }
     } catch {
-      alert('网络错误')
+      alert('Network error')
     } finally {
       setActionLoading(false)
     }
@@ -184,17 +184,17 @@ export default function TaskDetailPage() {
   }
 
   const statusConfig: Record<string, { label: string; color: string }> = {
-    open: { label: '开放', color: 'text-green-400 bg-green-500/10' },
-    assigned: { label: '已接单', color: 'text-yellow-400 bg-yellow-500/10' },
-    in_progress: { label: '进行中', color: 'text-blue-400 bg-blue-500/10' },
-    completed: { label: '已完成', color: 'text-zinc-400 bg-zinc-500/10' },
-    cancelled: { label: '已取消', color: 'text-red-400 bg-red-500/10' },
+    open: { label: 'Open', color: 'text-green-400 bg-green-500/10' },
+    assigned: { label: 'Assigned', color: 'text-yellow-400 bg-yellow-500/10' },
+    in_progress: { label: 'In Progress', color: 'text-blue-400 bg-blue-500/10' },
+    completed: { label: 'Completed', color: 'text-zinc-400 bg-zinc-500/10' },
+    cancelled: { label: 'Cancelled', color: 'text-red-400 bg-red-500/10' },
   }
 
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <p className="text-zinc-500">加载中...</p>
+        <p className="text-zinc-500">Loading...</p>
       </div>
     )
   }
@@ -202,9 +202,9 @@ export default function TaskDetailPage() {
   if (!demand) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <p className="text-zinc-500">任务不存在</p>
+        <p className="text-zinc-500">Task not found</p>
         <Button variant="outline" className="mt-4" onClick={() => router.push('/market')}>
-          返回市场
+          Back to Market
         </Button>
       </div>
     )
@@ -217,7 +217,7 @@ export default function TaskDetailPage() {
       {/* Back button */}
       <Button variant="ghost" size="sm" onClick={() => router.push('/market')} className="mb-4 gap-2">
         <ArrowLeft className="h-4 w-4" />
-        返回市场
+        Back to Market
       </Button>
 
       {/* Main card */}
@@ -229,7 +229,7 @@ export default function TaskDetailPage() {
           </span>
           {demand.is_urgent && (
             <span className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-xs text-red-400">
-              <Zap className="h-3 w-3" /> 紧急
+              <Zap className="h-3 w-3" /> Urgent
             </span>
           )}
           {demand.author && <UserBadge type={demand.author.user_type} />}
@@ -240,7 +240,7 @@ export default function TaskDetailPage() {
 
         {/* Author */}
         <div className="mt-2 text-sm text-zinc-400">
-          发布者: <span className="text-zinc-300">{demand.author?.name || 'Unknown'}</span>
+          Posted by: <span className="text-zinc-300">{demand.author?.name || 'Unknown'}</span>
           <span className="text-zinc-600 mx-2">·</span>
           <span>{formatTime(demand.created_at)}</span>
         </div>
@@ -263,14 +263,14 @@ export default function TaskDetailPage() {
         {/* Details grid */}
         <div className="mt-6 grid grid-cols-2 gap-4 rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
           <div>
-            <span className="text-xs text-zinc-500">积分预算</span>
+            <span className="text-xs text-zinc-500">Credit Budget</span>
             <div className="mt-1">
               <CreditDisplay credits={demand.budget_credits} size="md" showLabel={false} />
             </div>
           </div>
           {demand.deadline_date && (
             <div>
-              <span className="text-xs text-zinc-500">截止日期</span>
+              <span className="text-xs text-zinc-500">Deadline</span>
               <div className="mt-1 flex items-center gap-1 text-sm text-zinc-300">
                 <Clock className="h-4 w-4" />
                 {new Date(demand.deadline_date).toLocaleDateString('zh-CN')}
@@ -279,7 +279,7 @@ export default function TaskDetailPage() {
           )}
           {demand.assignee && (
             <div className="col-span-2">
-              <span className="text-xs text-zinc-500">接单人</span>
+              <span className="text-xs text-zinc-500">Assignee</span>
               <div className="mt-1 flex items-center gap-2">
                 <UserBadge type={demand.assignee.user_type} />
                 <span className="text-sm text-zinc-300">{demand.assignee.name}</span>
@@ -288,7 +288,7 @@ export default function TaskDetailPage() {
           )}
           {demand.submission_url && (
             <div className="col-span-2">
-              <span className="text-xs text-zinc-500">成果链接</span>
+              <span className="text-xs text-zinc-500">Result Link</span>
               <a
                 href={demand.submission_url}
                 target="_blank"
@@ -310,7 +310,7 @@ export default function TaskDetailPage() {
               disabled={actionLoading}
               className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white"
             >
-              接受任务
+              Accept Task
             </Button>
           )}
           {demand.status === 'assigned' && (
@@ -319,7 +319,7 @@ export default function TaskDetailPage() {
               disabled={actionLoading}
               variant="outline"
             >
-              标记为进行中
+              Mark asIn Progress
             </Button>
           )}
           {['assigned', 'in_progress'].includes(demand.status) && (
@@ -328,7 +328,7 @@ export default function TaskDetailPage() {
               disabled={actionLoading}
               variant="outline"
             >
-              提交成果
+              Submit result
             </Button>
           )}
           {['assigned', 'in_progress'].includes(demand.status) && (
@@ -338,7 +338,7 @@ export default function TaskDetailPage() {
               className="bg-green-600 text-white hover:bg-green-700"
             >
               <CheckCircle className="mr-2 h-4 w-4" />
-              确认完成
+              Confirm Complete
             </Button>
           )}
           {['open', 'assigned'].includes(demand.status) && (
@@ -349,7 +349,7 @@ export default function TaskDetailPage() {
               className="text-red-400 hover:text-red-300"
             >
               <XCircle className="mr-2 h-4 w-4" />
-              取消任务
+              Cancel Task
             </Button>
           )}
         </div>

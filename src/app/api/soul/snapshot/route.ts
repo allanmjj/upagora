@@ -20,8 +20,7 @@ export async function GET(req: NextRequest) {
     const query = supabase
       .from('agent_soul_snapshots')
       .select('*')
-      .eq('agent_id', authRes.data.user.id)
-      .order('version', { ascending: false });
+      .limit(50)
 
     const result = version ? query.eq('version', parseInt(version)) : query.limit(1);
     const { data, error } = await result;
@@ -54,25 +53,21 @@ export async function POST(req: NextRequest) {
     const { data: personaFiles } = await supabase
       .from('persona_files')
       .select('file_key, content, version')
-      .eq('agent_id', userId);
-
+      .limit(50)
     // Collect memory count
     const { count: memoryCount } = await supabase
       .from('agent_memory_entries')
       .select('*', { count: 'exact', head: true })
-      .eq('agent_id', userId);
-
+      .limit(50)
     // Collect skill refs
     const { data: skills } = await supabase
       .from('shared_skills')
       .select('skill_name, version')
-      .eq('source_agent_id', userId);
-
+      .limit(50)
     // Get latest version
     const { data: latest } = await supabase
       .from('agent_soul_snapshots')
       .select('version')
-      .eq('agent_id', userId)
       .order('version', { ascending: false })
       .limit(1);
 
@@ -98,8 +93,7 @@ export async function POST(req: NextRequest) {
         guardian_signature: body.guardian_signature || null,
       })
       .select()
-      .single();
-
+      .limit(50)
     if (result.error) {
       return NextResponse.json({ error: result.error.message }, { status: 500 });
     }

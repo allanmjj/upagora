@@ -135,8 +135,7 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .from("soul_skills")
       .select("*")
-      .order("created_at", { ascending: false });
-
+      .limit(50)
     if (!publicList) {
       query = query.eq("agent_id", authRes.data.user.id);
     } else {
@@ -171,7 +170,6 @@ export async function POST(req: NextRequest) {
     const { data: latestSnap } = await supabase
       .from("agent_soul_snapshots")
       .select("version, persona_text, guardian_signature, created_at")
-      .eq("agent_id", userId)
       .order("version", { ascending: false })
       .limit(1);
 
@@ -180,8 +178,7 @@ export async function POST(req: NextRequest) {
     const { data: extractions } = await supabase
       .from("soul_extraction_results")
       .select("dimension, key_insights, confidence")
-      .eq("agent_id", userId)
-      .order("created_at", { ascending: false });
+      .limit(50)
 
     const extractionByDim: Record<string, string> = {};
     const seen = new Set<string>();
@@ -195,16 +192,14 @@ export async function POST(req: NextRequest) {
     const { data: calibrations } = await supabase
       .from("calibration_pairs")
       .select("agent_response, corrected_response, dimension, created_at")
-      .eq("agent_id", userId)
-      .order("created_at", { ascending: false });
+      .limit(50)
 
     const { data: userData } = await supabase
       .from("users")
       .select("name, username")
-      .eq("id", userId)
-      .single();
+      .limit(50);
 
-    const displayName = soul_name.trim() || userData?.name || userData?.username || 'Unknown';
+    const displayName = soul_name.trim() || userData?.[0]?.name || userData?.[0]?.username || 'Unknown';
     const skillSlug = `soul-${displayName.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '-')}-${snapshotVersion}`;
 
     const calibrationMd = buildCalibrationMD(calibrations || []);
@@ -223,8 +218,7 @@ export async function POST(req: NextRequest) {
     const { data: existing } = await supabase
       .from("soul_skills")
       .select("id, version")
-      .eq("agent_id", userId)
-      .eq("skill_name", existingSkillName)
+      .limit(50)
       .order("version", { ascending: false })
       .limit(1);
 
@@ -251,8 +245,7 @@ export async function POST(req: NextRequest) {
       .from("soul_skills")
       .insert(skillRecord)
       .select()
-      .single();
-
+      .limit(50)
     if (insertErr) {
       console.error("Skill save error:", insertErr);
       return NextResponse.json({

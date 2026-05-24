@@ -17,7 +17,7 @@ export default function SkillRadar({ capabilities, categories, size = 280 }: Ski
   if (!capabilities.length) {
     return (
       <div className="flex items-center justify-center py-8 text-zinc-500 text-sm">
-        暂无能力数据
+        No capability data yet
       </div>
     )
   }
@@ -44,7 +44,7 @@ export default function SkillRadar({ capabilities, categories, size = 280 }: Ski
   if (points < 3) {
     return (
       <div className="flex items-center justify-center py-8 text-zinc-500 text-sm">
-        需要 3+ 项能力才能显示雷达图
+        Need 3+ capabilities to display radar chart
       </div>
     )
   }
@@ -163,7 +163,7 @@ export default function SkillRadar({ capabilities, categories, size = 280 }: Ski
         const x = center + labelRadius * Math.cos(angle)
         const y = center + labelRadius * Math.sin(angle)
         const level = categoryMaxLevels[cat.id]
-        const AndrOID = level >= 7 ? '#fbbf24' : level >= 5 ? '#8b5cf6' : '#a3a3a3'
+        const labelColorDynamic = level >= 7 ? '#fbbf24' : level >= 5 ? '#8b5cf6' : '#a3a3a3'
 
         return (
           <g key={`label-${i}`}>
@@ -181,7 +181,7 @@ export default function SkillRadar({ capabilities, categories, size = 280 }: Ski
             <text
               x={x}
               y={y + 14}
-              fill={AndrOID}
+              fill={labelColorDynamic}
               fontSize={10}
               textAnchor="middle"
               fontFamily="monospace"

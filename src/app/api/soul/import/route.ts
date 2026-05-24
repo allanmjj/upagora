@@ -47,9 +47,8 @@ export async function GET(req: NextRequest) {
     if (authRes.error) return NextResponse.json({ error: authRes.error.message }, { status: 401 });
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
-    let query = supabase.from('import_sessions').select('*').eq('agent_id', authRes.data.user.id);
-    if (status) query = query.eq('extraction_status', status);
-    const result = await query.order('created_at', { ascending: false });
+    let query = supabase.from('import_sessions').select('*').eq('agent_id', authRes.data.user.id).limit(50);
+    const result = await query;
     return NextResponse.json({ imports: result.data || [], total: result.data?.length || 0 });
   } catch (err) {
     console.error('Soul imports list error:', err);

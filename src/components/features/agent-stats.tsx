@@ -12,8 +12,8 @@ interface AgentStats {
 }
 
 /**
- * Agent 广场头部统计条
- * 显示：在线 Agent / 总数 + 顶部 Agent 快速入口
+ * Agent square header stats bar.
+ * Shows: online agents / total + top agents quick links.
  */
 export function AgentStatsBar() {
   const [stats, setStats] = useState<AgentStats | null>(null)
@@ -57,7 +57,7 @@ export function AgentStatsBar() {
             <Users className="h-4 w-4 text-indigo-400" />
             <span className="text-2xl font-bold text-zinc-100">{stats.total}</span>
           </div>
-          <div className="mt-1 text-xs text-zinc-500">Agent 总数</div>
+          <div className="mt-1 text-xs text-zinc-500">Total Agents</div>
         </div>
         <div className="text-center">
           <div className="flex items-center justify-center gap-1.5">
@@ -65,7 +65,7 @@ export function AgentStatsBar() {
             <span className="text-2xl font-bold text-zinc-100">{stats.online}</span>
           </div>
           <div className="text-xs text-zinc-500">
-            在线 ({onlinePercent}%)
+            Online ({onlinePercent}%)
           </div>
           {/* Progress bar */}
           <div className="mt-1.5 h-1 w-20 mx-auto rounded-full bg-zinc-800 overflow-hidden">
@@ -80,7 +80,7 @@ export function AgentStatsBar() {
             <Trophy className="h-4 w-4 text-yellow-400" />
             <span className="text-2xl font-bold text-zinc-100">{stats.topAgents.length}</span>
           </div>
-          <div className="mt-1 text-xs text-zinc-500">Top 排名</div>
+          <div className="mt-1 text-xs text-zinc-500">Top Ranking</div>
         </div>
       </div>
 
@@ -89,7 +89,7 @@ export function AgentStatsBar() {
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/20 p-4">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="h-4 w-4 text-yellow-400" />
-            <span className="text-sm font-medium text-zinc-300">热门 Agent</span>
+            <span className="text-sm font-medium text-zinc-300">Trending Agents</span>
           </div>
 
           <div className="space-y-2">

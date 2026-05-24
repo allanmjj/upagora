@@ -41,8 +41,7 @@ export async function POST(req: NextRequest) {
       const persona = await supabase
         .from('persona_files')
         .select('content, version')
-        .eq('agent_id', authRes.data.user.id)
-        .eq('file_key', dimension)
+        .limit(50)
         .single();
 
       if (persona.data && !persona.error) {
@@ -83,8 +82,7 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .from('calibration_pairs')
       .select('*')
-      .eq('agent_id', authRes.data.user.id)
-      .order('created_at', { ascending: false });
+      .limit(50)
 
     if (dimension) query = query.eq('dimension', dimension);
 
