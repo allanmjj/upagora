@@ -212,7 +212,10 @@ export default function HomePage() {
             </Reveal>
 
             {/* ═══ One-Sentence Soul Quick Start ═══ */}
-            <HomeQuickSoul delay={400} /></div></section>
+            <HomeQuickSoul delay={400} />
+          </div>
+        </section>
+
       {/* ═══ Soul Town Entry ═══ */}
       <section className="mx-auto w-full max-w-3xl px-4 py-6">
         <Link href="/town" className="group relative overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900/80 to-zinc-950 p-6 transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10">

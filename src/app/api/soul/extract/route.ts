@@ -451,6 +451,7 @@ export async function GET(req: NextRequest) {
         { status: 401 },
       );
 
+    const userId = authRes.data.user.id;
     const { searchParams } = new URL(req.url);
     const dimension = searchParams.get("dimension");
     
@@ -459,6 +460,8 @@ export async function GET(req: NextRequest) {
       .select("*")
       .eq("agent_id", userId)
       .limit(50);
+
+    if (dimension) {
       query = query.eq("dimension", dimension);
     }
 

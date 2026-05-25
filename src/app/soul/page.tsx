@@ -86,11 +86,12 @@ export default function SoulDistillationPage() {
   async function loadTimelineData() {
     setTimelineLoading(true)
     try {
+      const token = await (async () => {
+        const t = await (async () => { try { return await api('auth/user') } catch { return {} } })()
+        return t?.user?.aud || ''
+      })()
       const r = await fetch('/api/snapshots', {
-        headers: { 'x-supabase-token': (await (async () => {
-          const t = await (async () => { try { return await api('auth/user') } catch { return {} } })()
-          return t?.user?.aud || ''
-        })() },
+        headers: { 'x-supabase-token': token },
       })
       if (r.ok) {
         const d = await r.json()
@@ -273,7 +274,7 @@ export default function SoulDistillationPage() {
                 type="text"
                 value={quickText}
                 onChange={(e) => setQuickText(e.target.value)}
-                placeholder="Describe a person: 'My grandma loved making braised pork, loved singing opera...""
+                placeholder={"Describe a person: 'My grandma loved making braised pork, loved singing opera...'"}
                 className="flex-1 rounded-xl border border-zinc-700 bg-zinc-900 px-6 py-4 text-lg text-zinc-50 placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
                 onKeyDown={(e) => e.key === 'Enter' && handleQuickExtract()}
               />

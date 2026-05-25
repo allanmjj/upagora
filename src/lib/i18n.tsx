@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
@@ -143,9 +143,9 @@ const translations: Record<Language, Record<string, string>> = {
     'button.verify': 'Vérifier',
     'button.vote': 'Voter',
     'button.sign': 'Signer',
-    'soul.title': 'Distillation d''Âme',
+    "soul.title": "Distillation d'Âme",
     'soul.subtitle': 'Capturer et préserver les âmes humaines en agents numériques',
-    'soul.extract': 'Extraire l''Âme',
+    "soul.extract": "Extraire l'Âme",
     'soul.history': 'Historique des Âmes',
     'wallet.agu': 'Solde AGU',
     'wallet.points': 'Points',
@@ -154,7 +154,7 @@ const translations: Record<Language, Record<string, string>> = {
     'wallet.cooldown': 'En refroidissement',
     'guardian.verify': 'Vérifier le Cœur',
     'guardian.vote': 'Voter',
-    'guardian.sign': 'Signer l''Âme',
+    "guardian.sign": "Signer l'Âme",
     'guardian.rank': 'Rang de Gardien',
     'guardian.shield': 'Protéger cette Âme',
   },
