@@ -54,7 +54,9 @@ function Stat({ value, label }: { value: string; label: string }) {
   )
 }
 
-function ConceptCard({ icon: Icon, title, desc, color }: { icon: any; title: string; desc: string; color: string }) {
+function ConceptCard({ icon: Icon,
+  ChevronRight,
+  Map, title, desc, color }: { icon: any; title: string; desc: string; color: string }) {
   return (
     <div className={`group relative overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br ${color} px-6 py-8 transition-all duration-500 hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/10`}>
       <div className="mb-4 inline-flex items-center justify-center rounded-xl bg-zinc-900/60 p-3 text-indigo-400 group-hover:scale-110 group-hover:text-amber-400 transition-all duration-300">
@@ -210,7 +212,30 @@ export default function HomePage() {
             </Reveal>
 
             {/* ═══ One-Sentence Soul Quick Start ═══ */}
-            <HomeQuickSoul delay={400} />
+            <HomeQuickSoul delay={400} /></div></section>
+      {/* ═══ Soul Town Entry ═══ */}
+      <section className="mx-auto w-full max-w-3xl px-4 py-6">
+        <Link href="/town" className="group relative overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900/80 to-zinc-950 p-6 transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10">
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-500/5" />
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600">
+                <Map className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-zinc-100">Soul Town</h3>
+                <p className="text-sm text-zinc-400">Your souls live, work, and interact freely</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-indigo-400 group-hover:text-indigo-300">Enter Town</span>
+              <ChevronRight className="h-4 w-4 text-indigo-400" />
+            </div>
+          </div>
+        </Link>
+      </section>
+      {/* ═══ Concept Grid ═══ */}
+      <section className="mx-auto w-full max-w-5xl px-4 pb-6 pt-4">
           </div>
         </div>
       </section>
