@@ -1,4 +1,4 @@
-"use server";
+// Server-side model switcher (no "use server" directive needed for next/headers usage)
 
 import { cookies } from "next/headers";
 
