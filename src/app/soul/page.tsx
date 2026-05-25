@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { SoulCard } from '@/components/soul/SoulCard'
 import SoulTimeline from '@/components/soul/SoulTimeline'
 import SoulRadarChart from '@/components/soul/SoulRadarChart'
+import SoulGrowthTrajectory from '@/components/soul/SoulGrowthTrajectory'
 import { Badge } from '@/components/ui/badge'
 import { Brain, Heart, Network, Upload, Shield, Zap, BookOpen, Sparkles, Loader2, Eye, ChevronDown, ChevronRight, Share2 } from 'lucide-react'
 
@@ -322,7 +323,7 @@ export default function SoulDistillationPage() {
         {status && timelineData.length > 0 && (
           <div className="mx-auto mt-8 max-w-4xl">
             <div className="flex gap-2 rounded-lg bg-zinc-900/50 p-1">
-              {['overview', 'timeline', 'radar'].map((tab) => (
+              {['overview', 'timeline', 'radar', 'growth'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setTimelineTab(tab as any)}
@@ -332,7 +333,7 @@ export default function SoulDistillationPage() {
                       : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  {tab === 'overview' ? 'Overview' : tab === 'timeline' ? 'Timeline' : 'Radar'}
+                  {tab === 'overview' ? 'Overview' : tab === 'timeline' ? 'Timeline' : tab === 'radar' ? 'Radar' : 'Growth'}
                 </button>
               ))}
             </div>
@@ -363,6 +364,18 @@ export default function SoulDistillationPage() {
                     Soul evolution overview
                   </p>
                 </div>
+              )}
+              {timelineTab === 'growth' && (
+                <SoulGrowthTrajectory
+                  snapshots={timelineData.map((snap: any) => ({
+                    version: snap.version || snap.snapshot_version || 0,
+                    created_at: snap.created_at,
+                    dimensions: snap.dimensions || {},
+                    guardian_signature: snap.guardian_signature,
+                  }))}
+                  isLoading={timelineLoading}
+                  onSelectSnapshot={(version) => console.log('Selected snapshot v' + version)}
+                />
               )}
             </div>
           </div>
