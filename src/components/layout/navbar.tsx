@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -20,18 +20,21 @@ import {
   ChevronDown,
   Map,
   FileText,
+  Sparkles,
+  Ghost,
 } from 'lucide-react'
 
 const navItems = [
   { href: '/', label: 'Home', icon: Brain },
+  { href: '/soul', label: 'Soul', icon: Ghost },
+  { href: '/chat', label: 'Chat', icon: MessageCircle },
   { href: '/agents', label: 'Agents', icon: BadgeIcon },
-  { href: '/market', label: 'Market', icon: ShoppingBag },
   { href: '/feed', label: 'Feed', icon: MessageCircle },
 ]
 
 const extraLinks = [
+  { href: '/soul/marketplace', label: 'Marketplace', icon: ShoppingBag },
   { href: '/town', label: 'Town', icon: Map },
-  { href: '/chat', label: 'Chat', icon: MessageCircle },
   { href: '/reports', label: 'Reports', icon: FileText },
   { href: '/search', label: 'Search', icon: Search },
   { href: '/settings', label: 'Settings', icon: Settings },
@@ -46,6 +49,13 @@ export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
+
+  // Check if user has completed onboarding
+  const [onboardingDone, setOnboardingDone] = useState(true)
+  useEffect(() => {
+    const done = localStorage.getItem('onboarding_complete')
+    setOnboardingDone(done === 'true')
+  }, [])
 
   // Close user menu on outside click
   useEffect(() => {
@@ -76,7 +86,7 @@ export function Navbar() {
             <span className="text-lg font-bold tracking-tight text-zinc-50">
               UpAgora
             </span>
-            <span className="ml-1 text-xs text-zinc-500">AI x Human</span>
+            <span className="hidden sm:inline-block ml-1 text-xs text-zinc-500">Soul Distillation</span>
           </Link>
 
           {/* Desktop Nav */}
@@ -97,6 +107,17 @@ export function Navbar() {
               </Link>
             ))}
 
+            {/* CTA: Create Soul (shown only when user exists and no soul yet) */}
+            {user && !onboardingDone && (
+              <Link
+                href="/onboarding"
+                className="ml-2 flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-medium bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transition-colors"
+              >
+                <Sparkles className="h-4 w-4" />
+                Create Soul
+              </Link>
+            )}
+
             {/* More Menu */}
             <div className="relative ml-1">
               <button
@@ -108,7 +129,7 @@ export function Navbar() {
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-48 rounded-lg border border-zinc-800 bg-zinc-900 shadow-lg py-1 z-50">
+                <div className="absolute right-0 mt-2 w-52 rounded-lg border border-zinc-800 bg-zinc-900 shadow-lg py-1 z-50">
                   {extraLinks.map(({ href, label, icon: Icon }) => (
                     <Link
                       key={href}
@@ -164,6 +185,16 @@ export function Navbar() {
                       <User className="h-4 w-4" />
                       Profile
                     </Link>
+                    {!onboardingDone && (
+                      <Link
+                        href="/onboarding"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-purple-400 hover:text-purple-300 hover:bg-zinc-800"
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        Create Your First Soul
+                      </Link>
+                    )}
                     <Link
                       href="/settings"
                       onClick={() => setUserMenuOpen(false)}
@@ -221,6 +252,16 @@ export function Navbar() {
                   {label}
                 </Link>
               ))}
+              {user && !onboardingDone && (
+                <Link
+                  href="/onboarding"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-purple-400 hover:text-purple-300"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Create Soul
+                </Link>
+              )}
               {extraLinks.map(({ href, label, icon: Icon }) => (
                 <Link
                   key={href}
@@ -266,3 +307,5 @@ export function Navbar() {
     </header>
   )
 }
+
+export default Navbar
