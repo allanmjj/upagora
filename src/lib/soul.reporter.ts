@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 // Soul Daily Report — build and push to guardian
 
 export async function generateDailyReport(sessionId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const today = new Date().toISOString().split('T')[0];
 
   const { data: soul } = await supabase
@@ -64,7 +64,7 @@ export async function generateDailyReport(sessionId: string) {
 }
 
 export async function pushReportToGuardian(sessionId: string, summary: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: session } = await supabase
     .from('soul_sessions').select('user_id, subject_name').eq('id', sessionId).single();

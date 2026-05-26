@@ -286,9 +286,9 @@ export default function DistillationPage() {
             <h2 className="text-xl font-bold mb-6">① Import Donald Trump Source Texts</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 text-sm">
               <div className="bg-white/5 rounded-lg p-4">
-                <div className="text-amber-400 font-semibold mb-2">Poetry ({TRUMP_CORPUS.poetry.length} works)</div>
+                <div className="text-amber-400 font-semibold mb-2">Speeches ({TRUMP_CORPUS.speeches.length} works)</div>
                 <ul className="text-gray-400 space-y-1">
-                  {TRUMP_CORPUS.poetry.map(p => <li key={p.title}>• {p.title}</li>)}
+                  {TRUMP_CORPUS.speeches.map(p => <li key={p.title}>• {p.title}</li>)}
                 </ul>
               </div>
               <div className="bg-white/5 rounded-lg p-4">

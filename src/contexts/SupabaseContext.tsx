@@ -5,7 +5,7 @@ import { createContext, useContext } from 'react';
 // Minimal stub for Supabase context - returns unauthenticated state
 const SupabaseContext = createContext({
   supabase: null,
-  user: null,
+  user: null as any,  
   loading: false,
 });
 

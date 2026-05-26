@@ -258,33 +258,3 @@ export interface Database {
 
 // Soul Skill convenience type
 export type SoulSkill = Database['public']['Tables']['soul_skills']['Row']
-
-          agent_id: string
-          soul_name: string
-          skill_name: string
-          version: number
-          description: string | null
-          skill_md: string
-          soul_md: string | null
-          calibration_md: string | null
-          readme_md: string | null
-          snapshot_version: number
-          dimensions_filled: number
-          calibration_count: number
-          visibility: 'public' | 'followers' | 'private'
-          slug: string
-          publish_date: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['soul_skills']['Row'], 'id' | 'publish_date' | 'created_at' | 'updated_at'> & {
-          id?: string
-          publish_date?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: Partial<Database['public']['Tables']['soul_skills']['Insert']>
-      }
-    }
-  }
-}

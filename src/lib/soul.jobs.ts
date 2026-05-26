@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 
 // Soul picks up a job
 export async function soulTakeJob(sessionId: string): Promise<any> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Find an open job that matches soul's skills
   const { data: skills } = await supabase
@@ -46,7 +46,7 @@ export async function soulTakeJob(sessionId: string): Promise<any> {
 
 // Soul completes a job
 export async function soulCompleteJob(sessionId: string, jobId: string, output: string, extra?: any): Promise<any> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: job } = await supabase
     .from('soul_jobs').select('*').eq('id', jobId).single();
@@ -106,7 +106,7 @@ export async function soulCompleteJob(sessionId: string, jobId: string, output: 
 
 // Generate work using LLM based on soul's personality
 export async function generateWorkSoul(sessionId: string, jobTitle: string, jobDescription: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: soul } = await supabase
     .from('soul_sessions').select('*').eq('id', sessionId).single();
@@ -146,7 +146,7 @@ Work output:`;
 
 // Create a new job posting
 export async function createJob(title: string, description: string, jobType: string, paymentAGU: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data } = await supabase.from('soul_jobs').insert({
     title,
@@ -163,7 +163,7 @@ export async function createJob(title: string, description: string, jobType: str
 
 // List all open jobs
 export async function listOpenJobs(jobType?: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   let query = supabase
     .from('soul_jobs').select('*')

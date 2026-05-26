@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 
 // Initiate a conversation between two souls
 export async function soulsChat(soulA: string, soulB: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Load both souls
   const { data: soulAData } = await supabase.from('soul_sessions').select('*').eq('id', soulA).single();
@@ -112,7 +112,7 @@ async function updateRelationship(supabase: any, soulA: string, soulB: string) {
 
 // Get soul's social network
 export async function getSocialNetwork(sessionId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Load relationships where soul is A
   const { data: asA } = await supabase
@@ -152,7 +152,7 @@ export async function getSocialNetwork(sessionId: string) {
 
 // Find random soul for social interaction (weighted by personality compatibility)
 export async function findChatPartner(sessionId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: others } = await supabase
     .from('soul_sessions').select('id, subject_name')
