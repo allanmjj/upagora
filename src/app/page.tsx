@@ -214,6 +214,7 @@ export default function HomePage() {
             {/* ═══ One-Sentence Soul Quick Start ═══ */}
             <HomeQuickSoul delay={400} />
           </div>
+          </div>
         </section>
 
       {/* ═══ Soul Town Entry ═══ */}
@@ -239,8 +240,6 @@ export default function HomePage() {
       </section>
       {/* ═══ Concept Grid ═══ */}
       <section className="mx-auto w-full max-w-5xl px-4 pb-6 pt-4">
-          </div>
-        </div>
       </section>
 
       {/* ═══ The Shift ═══ */}

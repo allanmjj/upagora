@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { soulTakeJob, soulCompleteJob, generateWorkOutput, createJob, listOpenJobs } from '@/lib/soul.jobs';
+import { soulTakeJob, soulCompleteJob, generateWorkSoul, createJob, listOpenJobs } from '@/lib/soul.jobs';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     if (action === 'complete') {
       const { job_id } = body;
       if (!job_id) return NextResponse.json({ error: 'job_id required' }, { status: 400 });
-      const output = await generateWorkOutput(session_id, job_id);
+      const output = await generateWorkSoul(session_id, 'task', 'job task');
       const result = await soulCompleteJob(session_id, job_id, output || '');
       return NextResponse.json({ success: true, result });
     }
