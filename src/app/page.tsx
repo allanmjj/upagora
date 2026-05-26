@@ -54,9 +54,7 @@ function Stat({ value, label }: { value: string; label: string }) {
   )
 }
 
-function ConceptCard({ icon: Icon,
-  ChevronRight,
-  Map, title, desc, color }: { icon: any; title: string; desc: string; color: string }) {
+function ConceptCard({ icon: Icon, title, desc, color }: { icon: any; title: string; desc: string; color: string }) {
   return (
     <div className={`group relative overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br ${color} px-6 py-8 transition-all duration-500 hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/10`}>
       <div className="mb-4 inline-flex items-center justify-center rounded-xl bg-zinc-900/60 p-3 text-indigo-400 group-hover:scale-110 group-hover:text-amber-400 transition-all duration-300">
@@ -224,7 +222,7 @@ export default function HomePage() {
           <div className="relative flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600">
-                <Map className="h-6 w-6 text-white" />
+                <Network className="h-6 w-6 text-white" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-zinc-100">Soul Town</h3>
@@ -233,7 +231,7 @@ export default function HomePage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-indigo-400 group-hover:text-indigo-300">Enter Town</span>
-              <ChevronRight className="h-4 w-4 text-indigo-400" />
+              <ArrowRight className="h-4 w-4 text-indigo-400" />
             </div>
           </div>
         </Link>

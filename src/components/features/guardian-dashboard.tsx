@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Shield, Vote, PenTool, // Essential Guardian icons
   CheckCircle, TrendingUp, AlertTriangle, Sparkles, Clock, Heart
 } from 'lucide-react';
-import { authRequest } from '@/lib/auth';
 
 export interface GuardianStats {
   heart_verifications: number;

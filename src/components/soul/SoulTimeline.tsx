@@ -216,7 +216,7 @@ export default function SoulTimeline({
                     {isExpanded && (
                       <div className="mt-4 pt-4 border-t border-zinc-800 animate-in fade-in-100">
                         <div className="text-sm text-zinc-400 mb-2">Changes in this version:</div>
-                        {snapshot.changes?.length > 0 ? (
+                        {snapshot.changes && snapshot.changes.length > 0 ? (
                           <ul className="space-y-2">
                             {snapshot.changes.map((change, i) => (
                               <li key={i} className="flex items-start gap-2 text-sm text-zinc-400">

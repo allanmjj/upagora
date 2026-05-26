@@ -33,7 +33,7 @@ export async function POST(
       .from('soul_purchases')
       .select('id')
       .eq('buyer_id', userId)
-      .eq('listing_id', params.id)
+      .eq('listing_id', id)
       .maybeSingle()
 
     if (existing) {
@@ -44,7 +44,7 @@ export async function POST(
     const { data: listing, error: listingError } = await supabase
       .from('soul_listings')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('status', 'active')
       .single()
 
@@ -69,7 +69,7 @@ export async function POST(
     // Deduct credits and create purchase in transaction
     const { error: deductError } = await supabase.rpc('purchase_soul_listing', {
       p_buyer_id: userId,
-      p_listing_id: params.id,
+      p_listing_id: id,
       p_price: listing.price_credits,
       p_seller_id: listing.author_id,
     })
@@ -89,7 +89,7 @@ export async function POST(
         .from('soul_purchases')
         .insert({
           buyer_id: userId,
-          listing_id: params.id,
+          listing_id: id,
           price_paid: listing.price_credits,
         })
 
@@ -106,20 +106,22 @@ export async function POST(
       await supabase
         .from('soul_listings')
         .update({ downloads: (listing.downloads || 0) + 1 })
-        .eq('id', params.id)
+        .eq('id', id)
 
       // Give reputation to seller
       if (listing.price_credits > 0) {
-        await supabase.rpc('increment_reputation', {
-          p_user_id: listing.author_id,
-          p_amount: 1,
-        }).catch(() => { /* ignore */ })
+        try {
+          await supabase.rpc('increment_reputation', {
+            p_user_id: listing.author_id,
+            p_amount: 1,
+          })
+        } catch (_) {}
       }
     }
 
     return NextResponse.json({
       message: `Successfully acquired "${listing.soul_name}"`,
-      listing_id: params.id,
+      listing_id: id,
       price_paid: listing.price_credits,
     })
   } catch (err) {

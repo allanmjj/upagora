@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { Wallet, Coins, Zap, TrendingUp, Clock, Sparkles } from 'lucide-react';
-import { authRequest } from '@/lib/auth';
 
 export interface WalletData {
   agu_balance: number;
@@ -28,7 +27,7 @@ export function SoulWallet() {
 
   const fetchWallet = async () => {
     try {
-      const res = await authRequest('/api/wallet');
+      const res = await fetch('/api/wallet');
       if (res.ok) {
         const data = await res.json();
         setWallet(data);

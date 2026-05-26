@@ -51,7 +51,7 @@ interface ProfileUser extends AuthUser {
 
 export default function UserProfilePage() {
   const params = useParams()
-  const username = params.username as string
+  const username = (params?.username as string) || ''
 
   const [profileUser, setProfileUser] = useState<ProfileUser | null>(null)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)

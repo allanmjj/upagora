@@ -79,7 +79,7 @@ export default function SoulDistillationPage() {
   const [expandedExtract, setExpandedExtract] = useState<string | null>(null)
 
   // Timeline / Radar tabs
-  const [timelineTab, setTimelineTab] = useState<'overview' | 'timeline' | 'radar'>('overview')
+  const [timelineTab, setTimelineTab] = useState<'overview' | 'timeline' | 'radar' | 'growth'>('overview')
   const [timelineData, setTimelineData] = useState<any[]>([])
   const [timelineLoading, setTimelineLoading] = useState(false)
 
@@ -355,7 +355,6 @@ export default function SoulDistillationPage() {
               {timelineTab === 'radar' && (
                 <SoulRadarChart
                   dimensions={extractions || []}
-                  isLoading={loading}
                 />
               )}
               {timelineTab === 'overview' && (

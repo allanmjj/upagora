@@ -268,7 +268,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       message: `Skill "${existingSkillName}" v${nextVersion} generated and saved`,
       skill: {
-        id: inserted?.id,
+        id: inserted?.[0]?.id,
         slug: skillSlug,
         skill_name: existingSkillName,
         version: nextVersion,

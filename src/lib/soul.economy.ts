@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 
 // ----- Mining -----
 export async function soulMine(sessionId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const now = new Date();
 
   let { data: wallet } = await supabase
@@ -48,7 +48,7 @@ export async function soulMine(sessionId: string) {
 
 // ----- Buy House -----
 export async function buyHouse(sessionId: string, houseId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const now = new Date();
 
   const { data: house } = await supabase
@@ -84,7 +84,7 @@ export async function buyHouse(sessionId: string, houseId: string) {
 
 // ----- Sell House -----
 export async function sellHouse(sessionId: string, houseId: string, price: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   await supabase.from('soul_households').update({
     is_for_sale: true, sale_price_agu: price, sale_listed_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

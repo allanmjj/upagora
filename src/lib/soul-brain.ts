@@ -122,8 +122,7 @@ export async function fetchTrendingCode(): Promise<string> {
 }
 
 // ============================================
-// Soul Insight Engine (灵魂思考
-)
+// Soul Insight Engine (灵魂思考)
 // ============================================
 
 export async function soulThink(

@@ -207,9 +207,8 @@ export default function ExperiencePage() {
 
   // Download radar image
   const downloadRadar = () => {
-    const slug = params?.session_slug;
-    if (!slug) return;
-    window.open(`/api/soul/export-image?session_slug=${slug}`, "_blank");
+    if (!sessionSlug) return;
+    window.open(`/api/soul/export-image?session_slug=${sessionSlug}`, "_blank");
   };
 
   // ─── Render Steps ───
