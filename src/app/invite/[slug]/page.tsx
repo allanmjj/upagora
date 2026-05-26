@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
 const DIMENSIONS = [
   { key: "cognitive_patterns", label: "Cognitive Patterns", color: "#6366f1" },
@@ -100,8 +101,9 @@ function RadarChart({ data }: { data: { score: number }[] | undefined }) {
 }
 
 // ─── Page ───
-export default function InvitePage({ params }: { params: { slug: string } }) {
-  const slug = params?.slug;
+export default function InvitePage() {
+  const params = useParams();
+  const slug = typeof params?.slug === 'string' ? params.slug : Array.isArray(params?.slug) ? params.slug[0] : '';
   const [session, setSession] = useState<any>(null);
   const [dimensions, setDimensions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

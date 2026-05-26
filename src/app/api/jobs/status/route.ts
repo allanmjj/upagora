@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
     // Award credits for completion
     const { data: wallet } = await supabase
       .from('soul_wallets')
-      .select('agu_balance')
+      .select('agu_balance, agu_lifetime_earned')
       .eq('user_id', userId)
       .maybeSingle();
 
