@@ -79,16 +79,18 @@ export async function POST(req: NextRequest) {
           .from('soul_extractions')
           .upsert(extractions, { onConflict: 'session_id,dimension' })
           .then(() => {
-            // Update dimension filled count
-            return supabase
-              .from('soul_sessions')
-              .update({
-                extraction_status: 'completed',
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', session.id)
-          })
-          .catch((err) => console.error('Extraction save error:', err))
+            try {
+          // Update dimension filled count
+          await supabase
+            .from('soul_sessions')
+            .update({
+              extraction_status: 'completed',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', session.id)
+        } catch (err) {
+          console.error('Extraction save error:', err)
+        }
       }
     }
 

@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       : hour >= 17 && hour < 21 ? 'evening' : 'night';
 
     // Call the soul brain engine
-    const decision = await soulBrainThink(session, dimensions, memories, timeOfDay);
+    const decision = await soulBrainThink(session, dimensions || [], memories || [], timeOfDay);
 
     // Update brain state
     let updatedBrain = null;

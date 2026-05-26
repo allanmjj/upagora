@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
       supabase.from('guardian_calibrations').select('id').eq('user_id', userId),
       supabase.from('guardian_signatures').select('id').eq('guardian_id', userId),
       supabase.from('soul_feedback').select('id, rating').eq('user_id', userId),
-      supabase.from('soul_wallets').select('agu_balance, mine_streak').eq('user_id', userId),
+      supabase.from('soul_wallets').select('agu_balance, mine_streak, last_mine_claim_at, total_blocks_mined').eq('user_id', userId),
       supabase.from('soul_extraction_results').select('id').eq('user_id', userId),
     ]);
 
@@ -40,6 +40,9 @@ export async function GET(req: NextRequest) {
     const sigCount = (sigs.data || []).length;
     const feedbackList = feedbacks.data || [];
     const wallet = wallets.data?.[0];
+    const avgRating = feedbackList.length > 0
+      ? feedbackList.reduce((sum, f) => sum + (f.rating || 0), 0) / feedbackList.length
+      : 0;
 
     // Define badges with unlock conditions
     const badgeDefs = [

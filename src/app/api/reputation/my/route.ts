@@ -52,8 +52,9 @@ export async function GET(req: NextRequest) {
     const avgFeedback = feedbacksList.length > 0
       ? feedbacksList.reduce((sum, f) => sum + (f.rating || 0), 0) / feedbacksList.length
       : 0;
-    const avgConfidence = (extractions.data || []).length > 0
-      ? extractions.data.reduce((sum, e) => sum + (e.confidence_score || 0), 0) / extractions.data.length
+    const extractionsList = extractions.data || [];
+    const avgConfidence = extractionsList.length > 0
+      ? extractionsList.reduce((sum, e) => sum + (e.confidence_score || 0), 0) / extractionsList.length
       : 0;
 
     const score = Math.round(

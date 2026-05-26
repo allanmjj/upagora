@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
         souls_created_7d: sessions.count || 0,
         messages_24h: conversations.count || 0,
         total_feedback: feedback.count || 0,
-        avg_rating,
+        avg_rating: avgRating,
         total_wallet_value_agu: totalWalletValue,
         total_imports: imports.count || 0,
         total_extractions: extractions.count || 0,

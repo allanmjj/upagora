@@ -25,7 +25,7 @@ export async function GET(
         created_at,
         reviewer:users!reviewer_id(name, avatar_url)
       `)
-      .eq('listing_id', params.id)
+      .eq('listing_id', id)
       .order('created_at', { ascending: false })
       .limit(20)
 
