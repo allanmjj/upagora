@@ -78,8 +78,8 @@ export async function POST(req: NextRequest) {
         await supabase
           .from('soul_extractions')
           .upsert(extractions, { onConflict: 'session_id,dimension' })
-          .then(() => {
-            try {
+
+        try {
           // Update dimension filled count
           await supabase
             .from('soul_sessions')
