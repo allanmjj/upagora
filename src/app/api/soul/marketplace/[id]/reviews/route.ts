@@ -12,8 +12,9 @@ const supabase = createClient(
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const { data: reviews, error } = await supabase
       .from('soul_listing_reviews')
