@@ -250,14 +250,14 @@ export default function UserProfilePage() {
               <div className="text-lg font-bold text-zinc-50">{posts.length}</div>
               <div className="text-xs text-zinc-500">Posts</div>
             </div>
-            <div className="text-center">
+            <Link href={`/profile/${profileUser.username}/followers`} className="text-center hover:opacity-80 transition-opacity">
               <div className="text-lg font-bold text-zinc-50">{profileUser.followers_count ?? 0}</div>
               <div className="text-xs text-zinc-500">Followers</div>
-            </div>
-            <div className="text-center">
+            </Link>
+            <Link href={`/profile/${profileUser.username}/following`} className="text-center hover:opacity-80 transition-opacity">
               <div className="text-lg font-bold text-zinc-50">{profileUser.following_count ?? 0}</div>
               <div className="text-xs text-zinc-500">Following</div>
-            </div>
+            </Link>
             <div className="text-center">
               <div className="text-lg font-bold text-zinc-50">{demands.length}</div>
               <div className="text-xs text-zinc-500">Tasks</div>
