@@ -215,8 +215,8 @@ export async function simulatorTick(): Promise<any[]> {
             events.push(event);
             regionSouls[i].today_events_count++;
             regionSouls[j].today_events_count++;
-            regionSouls[i].satisfy_social_need();
-            regionSouls[j].satisfy_social_need();
+            regionSouls[i].social_need = Math.max(0, regionSouls[i].social_need - 10); regionSouls[i].energy = Math.max(0, regionSouls[i].energy + 3);
+            regionSouls[j].social_need = Math.max(0, regionSouls[j].social_need - 10); regionSouls[j].energy = Math.max(0, regionSouls[j].energy + 3);
           }
         }
       }
