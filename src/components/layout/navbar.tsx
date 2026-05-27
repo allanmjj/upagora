@@ -22,6 +22,8 @@ import {
   FileText,
   Sparkles,
   Ghost,
+  Scale,
+  Users,
 } from 'lucide-react'
 
 const navItems = [
@@ -38,6 +40,8 @@ const extraLinks = [
   { href: '/reports', label: 'Reports', icon: FileText },
   { href: '/search', label: 'Search', icon: Search },
   { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/calibrate', label: 'Calibrate', icon: Scale },
+  { href: '/guardians', label: 'Guardians', icon: Users },
   { href: '/about', label: 'About', icon: User },
 ]
 
