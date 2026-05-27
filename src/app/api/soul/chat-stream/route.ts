@@ -106,17 +106,19 @@ ${emotionHint}
       { role: "user", content: message },
     ];
 
-    // 5. Determine provider
-    const provider = process.env.OPENROUTER_API_KEY
-      ? "openrouter"
-      : process.env.ANTHROPIC_API_KEY
-        ? "anthropic"
-        : process.env.OPENAI_API_KEY
-          ? "openai"
-          : null;
+    // 5. Determine provider (DeepSeek first)
+    const provider = process.env.DEEPSEEK_API_KEY
+      ? "deepseek"
+      : process.env.OPENROUTER_API_KEY
+        ? "openrouter"
+        : process.env.ANTHROPIC_API_KEY
+          ? "anthropic"
+          : process.env.OPENAI_API_KEY
+            ? "openai"
+            : null;
 
     if (!provider) {
-      return new Response(JSON.stringify({ error: "LLM provider not configured" }), {
+      return new Response(JSON.stringify({ error: "LLM provider not configured. Set DEEPSEEK_API_KEY." }), {
         status: 503,
         headers: { "Content-Type": "application/json" },
       });

@@ -72,18 +72,20 @@ export async function POST(req: NextRequest) {
     // 4. Build RAG context (simple keyword matching)
     const ragContext = buildRAGContext(message, sourceTexts || [], extractions || []);
 
-    // 5. Check for LLM provider
-    const provider = process.env.OPENROUTER_API_KEY
-      ? "openrouter"
-      : process.env.ANTHROPIC_API_KEY
-        ? "anthropic"
-        : process.env.OPENAI_API_KEY
-          ? "openai"
-          : null;
+    // 5. Check for LLM provider (DeepSeek first)
+    const provider = process.env.DEEPSEEK_API_KEY
+      ? "deepseek"
+      : process.env.OPENROUTER_API_KEY
+        ? "openrouter"
+        : process.env.ANTHROPIC_API_KEY
+          ? "anthropic"
+          : process.env.OPENAI_API_KEY
+            ? "openai"
+            : null;
 
     if (!provider) {
       return NextResponse.json(
-        { error: "LLM provider not configured. Please set OPENROUTER_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY." },
+        { error: "LLM provider not configured. Please set DEEPSEEK_API_KEY, OPENROUTER_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY." },
         { status: 503 },
       );
     }
@@ -234,6 +236,26 @@ async function callSoulLLM(
   messages: { role: string; content: string }[],
 ): Promise<string | null> {
   try {
+    if (provider === "deepseek") {
+      const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...messages,
+          ],
+          max_tokens: 2000,
+        }),
+      });
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || null;
+    }
+
     if (provider === "openrouter") {
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
