@@ -94,43 +94,46 @@ export default function TownPage() {
     return { x: 400, y: 300 }; // default to plaza
   }
 
-  // Initialize with demo souls mapped to regions
+  // Fetch souls from live Supabase database + fallback to demo data
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const demoSouls: Soul[] = [
-      {
-        id: "1", name: "Su Dongpo", name_native: "苏轼", language: "zh",
-        mood: "inspired", energy: 80, social_need: 30, current_region: "plaza",
-        today_events_count: 3, avatar: "🖌️", color: "#f59e0b", category: "poet",
-        x: 460, y: 340, tx: 460, ty: 340, speed: 0.5, isMoving: false
-      },
-      {
-        id: "2", name: "Li Bai", name_native: "李白", language: "zh",
-        mood: "happy", energy: 90, social_need: 20, current_region: "bar",
-        today_events_count: 2, avatar: "🍶", color: "#60a5fa", category: "poet",
-        x: 170, y: 520, tx: 170, ty: 520, speed: 0.3, isMoving: false
-      },
-      {
-        id: "3", name: "Einstein", name_native: "Einstein", language: "en",
-        mood: "inspired", energy: 70, social_need: 40, current_region: "garden",
-        today_events_count: 1, avatar: "🧑‍🔬", color: "#34d399", category: "scientist",
-        x: 690, y: 440, tx: 690, ty: 440, speed: 0.4, isMoving: false
-      },
-      {
-        id: "4", name: "Curie", name_native: "Curie", language: "en",
-        mood: "calm", energy: 60, social_need: 50, current_region: "workshop",
-        today_events_count: 4, avatar: "⚗️", color: "#f472b6", category: "scientist",
-        x: 740, y: 130, tx: 740, ty: 130, speed: 0.35, isMoving: false
-      },
-      {
-        id: "5", name: "Socrates", name_native: "Socrates", language: "en",
-        mood: "calm", energy: 50, social_need: 60, current_region: "plaza",
-        today_events_count: 3, avatar: "🏛️", color: "#fbbf24", category: "philosopher",
-        x: 400, y: 250, tx: 400, ty: 250, speed: 0.25, isMoving: false
-      },
-    ];
-    soulsRef.current = demoSouls;
-    setSoulCount(demoSouls.length);
-    setSoulStates(demoSouls);
+    async function loadSouls() {
+      try {
+        const res = await fetch("/api/town/souls");
+        const json = await res.json();
+        if (json.souls && json.souls.length > 0) {
+          const regionPositions: Record<string, { x: number; y: number }> = {
+            plaza: { x: 400, y: 300 },
+            library: { x: 200, y: 100 },
+            workshop: { x: 700, y: 100 },
+            bar: { x: 150, y: 500 },
+            garden: { x: 650, y: 400 },
+            teahouse: { x: 550, y: 500 },
+          };
+          const souls: Soul[] = json.souls.map((s: Soul) => {
+            const pos = regionPositions[s.current_region] || { x: 400, y: 300 };
+            const variance = Math.random() * 30 - 15;
+            return {
+              ...s,
+              x: pos.x + variance,
+              y: pos.y + variance,
+              tx: pos.x,
+              ty: pos.y,
+              isMoving: false,
+            };
+          });
+          soulsRef.current = souls;
+          setSoulCount(souls.length);
+          setSoulStates(souls);
+        }
+      } catch (e) {
+        console.error("Failed to load souls from DB:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadSouls();
   }, []);
 
   // Main animation loop
