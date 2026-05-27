@@ -72,12 +72,17 @@ ALTER TABLE town_external_souls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE town_daily_reports ENABLE ROW LEVEL SECURITY;
 
 -- Anyone can read soul data and states
-CREATE POLICY IF NOT EXISTS "town_souls_public_read" ON town_souls FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "town_soul_states_public_read" ON town_soul_states FOR SELECT USING (true);
+DROP POLICY IF EXISTS "town_souls_public_read" ON town_souls;
+CREATE POLICY "town_souls_public_read" ON town_souls FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "town_soul_states_public_read" ON town_soul_states;
+CREATE POLICY "town_soul_states_public_read" ON town_soul_states FOR SELECT USING (true);
 
 -- Authenticated users can manage their own external souls
-CREATE POLICY IF NOT EXISTS "external_souls_user_crud" ON town_external_souls
+DROP POLICY IF EXISTS "external_souls_user_crud" ON town_external_souls;
+CREATE POLICY "external_souls_user_crud" ON town_external_souls
   FOR ALL USING (auth.uid() = user_id);
 
 -- Authenticated users can read daily reports
-CREATE POLICY IF NOT EXISTS "daily_reports_public_read" ON town_daily_reports FOR SELECT USING (true);
+DROP POLICY IF EXISTS "daily_reports_public_read" ON town_daily_reports;
+CREATE POLICY "daily_reports_public_read" ON town_daily_reports FOR SELECT USING (true);
