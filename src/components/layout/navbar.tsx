@@ -24,6 +24,9 @@ import {
   Ghost,
   Scale,
   Users,
+  Mic,
+  Image,
+  Wand2,
 } from 'lucide-react'
 
 const navItems = [
@@ -42,6 +45,9 @@ const extraLinks = [
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/calibrate', label: 'Calibrate', icon: Scale },
   { href: '/guardians', label: 'Guardians', icon: Users },
+  { href: '/voice', label: 'Voice Studio', icon: Mic },
+  { href: '/gallery', label: 'Gallery', icon: Image },
+  { href: '/distill', label: 'Self Distill', icon: Wand2 },
   { href: '/about', label: 'About', icon: User },
 ]
 
@@ -200,116 +206,101 @@ export function Navbar() {
                       </Link>
                     )}
                     <Link
-                      href="/settings"
+                      href="/voice"
                       onClick={() => setUserMenuOpen(false)}
                       className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800"
                     >
-                      <Settings className="h-4 w-4" />
-                      Settings
+                      <Mic className="h-4 w-4" />
+                      Voice Studio
                     </Link>
-                    <div className="border-t border-zinc-800 mt-1 pt-1">
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-zinc-800 w-full text-left"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        Sign Out
-                      </button>
-                    </div>
+                    <Link
+                      href="/gallery"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800"
+                    >
+                      <Image className="h-4 w-4" />
+                      Gallery
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-zinc-800"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </button>
                   </div>
                 )}
               </div>
             ) : (
-              <Link href="/login" className="hidden md:inline-flex">
-                <button className="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-1.5 text-sm font-medium text-white hover:from-indigo-600 hover:to-purple-700 transition-colors">
-                  Sign In
-                </button>
+              <Link
+                href="/login"
+                className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium bg-zinc-800 text-zinc-50 hover:bg-zinc-700 transition-colors"
+              >
+                <User className="h-4 w-4" />
+                Login
               </Link>
             )}
 
+            {/* Mobile Menu Toggle */}
             <button
-              className="md:hidden rounded-lg p-2 text-zinc-400 hover:text-zinc-50"
               onClick={() => setMobileOpen(!mobileOpen)}
+              className="md:hidden rounded-lg p-2 text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800 transition-colors"
             >
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
-
-        {/* Mobile Nav */}
-        {mobileOpen && (
-          <div className="border-t border-zinc-800 py-3 md:hidden">
-            <nav className="flex flex-col gap-1">
-              {navItems.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className={cn(
-                    'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                    pathname === href
-                      ? 'bg-zinc-800 text-zinc-50'
-                      : 'text-zinc-400 hover:text-zinc-50'
-                  )}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </Link>
-              ))}
-              {user && !onboardingDone && (
-                <Link
-                  href="/onboarding"
-                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-purple-400 hover:text-purple-300"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Create Soul
-                </Link>
-              )}
-              {extraLinks.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 hover:text-zinc-50"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </Link>
-              ))}
-              {user ? (
-                <>
-                  <Link
-                    href="/profile"
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 hover:text-zinc-50"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    <User className="h-4 w-4" />
-                    Profile
-                  </Link>
-                  <button
-                    onClick={() => { handleLogout(); setMobileOpen(false) }}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-400 hover:text-red-300 text-left"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign Out
-                  </button>
-                </>
-              ) : (
-                <Link
-                  href="/login"
-                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-indigo-400 hover:text-indigo-300"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Sign In
-                </Link>
-              )}
-            </nav>
-          </div>
-        )}
       </div>
+
+      {/* Mobile Menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t border-zinc-800 bg-zinc-950">
+          <div className="container mx-auto px-4 py-3 space-y-1">
+            {navItems.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
+                  pathname === href
+                    ? 'bg-zinc-800 text-zinc-50'
+                    : 'text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800'
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
+            ))}
+            {user && !onboardingDone && (
+              <Link
+                href="/onboarding"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium bg-gradient-to-r from-purple-500 to-pink-500 text-white transition-colors"
+              >
+                <Sparkles className="h-4 w-4" />
+                Create Soul
+              </Link>
+            )}
+            {extraLinks.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
+                  pathname === href
+                    ? 'bg-zinc-800 text-zinc-50'
+                    : 'text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800'
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </header>
   )
 }
-
-export default Navbar

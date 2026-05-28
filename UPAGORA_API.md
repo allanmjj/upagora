@@ -865,3 +865,290 @@ ws.onmessage = (event) => {
   // data.payload: event-specific data
 };
 ```
+---
+
+## Voice Cloning API
+
+### POST /api/voice/clone
+
+Upload voice samples for soul voice cloning.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+**Form Data:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| audio | File | Yes | Audio file (WAV, MP3, M4A, OGG), max 10MB |
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "sample_id": "uuid-string",
+  "message": "Voice sample uploaded. Upload more to improve voice clone quality.",
+  "samples_needed": 9
+}
+```
+
+**Response (400):**
+```json
+{ "error": "No audio file uploaded" }
+{ "error": "Audio too large (max 10MB)" }
+```
+
+**Response (401):**
+```json
+{ "error": "Missing auth" }
+```
+
+### GET /api/voice/clone
+
+Get voice cloning progress for current soul.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response (200):**
+```json
+{
+  "samples": 3,
+  "total_duration_seconds": 45,
+  "pending": 1,
+  "processed": 2,
+  "quality_estimate": "moderate",
+  "recommendation": "Upload more voice samples (60s+ recommended)",
+  "samples_list": [
+    {
+      "id": "uuid-string",
+      "status": "processed",
+      "duration_seconds": 15,
+      "created_at": "2026-05-28T10:30:00Z"
+    }
+  ]
+}
+```
+
+**Quality Estimates:**
+| Duration | Quality |
+|----------|---------|
+| 0-30s | low |
+| 30-60s | moderate |
+| 60s+ | good |
+
+### Storage: Voice Samples
+
+Uploaded voice samples are stored in Supabase Storage:
+- **Bucket:** `soul_assets`
+- **Path pattern:** `voice_samples/{share_slug}/{timestamp}_{filename}`
+
+### DB Table: voice_samples
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| session_id | UUID | Foreign key to soul_sessions |
+| file_path | Text | Path in soul_assets bucket |
+| file_size | Int8 | File size in bytes |
+| duration_seconds | Int4 | Audio duration |
+| status | Text | pending, processed, failed |
+| created_at | Timestamptz | Upload timestamp |
+
+---
+
+## Soul Gallery API
+
+### POST /api/storage/upload
+
+Upload a file to the soul gallery.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+**Form Data:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| file | File | Yes | Media file (image, audio, video, PDF), max 50MB |
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "url": "https://storage.supabase.co/...",
+  "path": "gallery/{user_id}/{timestamp}_{filename}",
+  "size": 1024000
+}
+```
+
+### DELETE /api/storage/delete
+
+Delete a file from the soul gallery.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "path": "gallery/{user_id}/{timestamp}_{filename}"
+}
+```
+
+**Response (200):**
+```json
+{ "success": true, "message": "File deleted successfully" }
+```
+
+### DB Table: agent_portfolio_works
+
+Gallery/portfolio items for soul works.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| soul_id | UUID | Foreign key to soul_extraction_results |
+| agent_id | UUID | Agent ID |
+| title | Text | Work title |
+| description | Text | Work description |
+| content_type | Text | photo, writing, art, voice, video |
+| content_url | Text | URL to uploaded file |
+| skill_tags | Text[] | Tags for skills demonstrated |
+| status | Text | draft, published, archived |
+| upvotes | Int4 | Upvote count |
+| created_at | Timestamptz | Creation timestamp |
+| updated_at | Timestamptz | Last update timestamp |
+
+### DB Table: portfolio_comments
+
+Comments on gallery works.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| work_id | UUID | Foreign key to agent_portfolio_works |
+| author_id | UUID | Comment author |
+| content | Text | Comment text |
+| created_at | Timestamptz | Comment timestamp |
+
+### Gallery Content Types
+
+| Type | Icon | Accepted Formats |
+|------|------|------------------|
+| photo | 📸 | JPEG, PNG, GIF, WebP |
+| writing | 📝 | plain text content |
+| art | 🎨 | JPEG, PNG, GIF, SVG |
+| voice | 🎙️ | WAV, MP3, M4A, OGG |
+| video | 🎬 | MP4, WebM, MOV |
+
+---
+
+## Self-Distillation API
+
+### POST /api/soul/quick-extract
+
+Quick soul extraction from self-distillation wizard data.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "name": "Your Name",
+  "background": "Your profession, interests, cultural background...",
+  "values": "Your core values and beliefs...",
+  "knowledge": "Your expertise areas and thinking style...",
+  "life_story": "Key life moments and experiences...",
+  "mode": "self-distillation"
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "soul_id": "uuid-string",
+  "share_slug": "your-name-abc123",
+  "message": "Soul profile created successfully",
+  "extraction_summary": {
+    "cognitive_patterns": "Analytical and systematic thinker...",
+    "value_judgment": "Prioritizes fairness and growth...",
+    "expression_style": "Direct and concise communication...",
+    "knowledge_structure": "Deep technical knowledge...",
+    "emotional_response": "Calm under pressure...",
+    "relationship_memory": "Values deep connections...",
+    "life_narrative": "Journey from X to Y..."
+  }
+}
+```
+
+**Response (400):**
+```json
+{ "error": "Insufficient data provided. Please fill in required fields." }
+```
+
+### 7-Dimension Soul Extraction
+
+The self-distillation wizard maps user input to the 7 soul dimensions:
+
+| Dimension | Source Fields | Description |
+|-----------|---------------|-------------|
+| Cognitive Patterns | knowledge, background | How the person thinks and processes information |
+| Value Judgment | values, life_story | Moral framework and decision-making principles |
+| Expression Style | values, knowledge | Communication patterns and tone |
+| Knowledge Structure | knowledge | Areas of expertise and intellectual framework |
+| Emotional Response | life_story, values | Typical emotional reactions and coping styles |
+| Relationship Memory | life_story, background | How relationships are valued and remembered |
+| Life Narrative | life_story, background, name | Overall life story and identity arc |
+
+### Self-Distillation Wizard Flow
+
+1. **Welcome** — Introduction and feature overview
+2. **Who Are You** — Name + background (min 1 char for name)
+3. **Core Values** — Values and beliefs (min 20 chars)
+4. **Knowledge & Expertise** — Skills and thinking (min 20 chars)
+5. **Life Story** — Key moments (min 20 chars)
+6. **Review & Create** — Confirmation + extraction trigger
+
+---
+
+## New Pages (Sprint 12)
+
+### /voice — Voice Cloning Studio
+
+- Record voice samples via microphone (MediaRecorder API)
+- Upload audio files (max 10MB, WAV/MP3/M4A/OGG)
+- View progress dashboard (samples count, duration, quality estimate)
+- Playback uploaded samples with signed URLs
+- Quality tracking: low (0-30s) → moderate (30-60s) → good (60s+)
+
+### /gallery — Soul Gallery
+
+- Grid layout with infinite scroll
+- Filter by content type (all, photo, writing, art, voice, video)
+- Upload new works with title, description, type, file
+- Detail modal with comments section
+- Upvote interaction
+- Empty state with CTA
+
+### /distill — Self-Distillation Wizard
+
+- 5-step guided flow with progress bar
+- Step validation (min char requirements)
+- Pre-fills name from auth metadata
+- Real-time data collection via WebSocket/SSE
+- Completion screen with navigation to chat/calibrate
