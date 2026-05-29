@@ -2,6 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { TownClock } from "@/components/town-clock";
+import { EraChronicle } from "@/components/town-chronicle-sidebar";
+import { TownChatPanel } from "@/components/town-chat-panel";
+import { SoulActivityBadge } from "@/components/town-activity-badge";
+import { GuardianMessagePanel } from "@/components/town-guardian-message";
+import { EncounterObserver, EncounterBadge } from "@/components/town-encounter-observer";
 
 interface Soul {
   id: string;
@@ -78,9 +84,17 @@ export default function TownPage() {
   const animRef = useRef<number>(0);
   const router = useRouter();
   const [selectedSoul, setSelectedSoul] = useState<Soul | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatSoul, setChatSoul] = useState<Soul | null>(null);
+  const [chronicleOpen, setChronicleOpen] = useState(false);
+  const [messageOpen, setMessageOpen] = useState(false);
   const [recentEvents, setRecentEvents] = useState<TownEvent[]>([]);
   const [soulCount, setSoulCount] = useState(0);
   const [soulStates, setSoulStates] = useState<any[]>([]);
+  const [encounterActive, setEncounterActive] = useState(false);
+  const [encounterSouls, setEncounterSouls] = useState<{ soulA: Soul; soulB: Soul; space: string } | null>(null);
+  const [encounterCount, setEncounterCount] = useState(0);
+  const [timeFrozen, setTimeFrozen] = useState(false);
 
   // Build building lookup map
   const buildingMap = new Map(BUILDINGS.map(b => [b.id, b]));
@@ -147,9 +161,21 @@ export default function TownPage() {
       if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw background
-      ctx.fillStyle = "#1a2e1a";
+      // Draw background with time-of-day color
+      const bgC = ["#0a0f1a","#0a0f1a","#0d1220","#0d1220","#0d1220","#1a1830","#1a2e1a","#1e3c1e","#1e3c1e","#1e3c1e","#1e3c1e","#1a2a1a","#1a2a1a","#1e3c1e","#1e3c1e","#1e3c1e","#1e3c1e","#2a1a15","#1a1830","#0f1525","#0f1525","#0a0f1a","#0a0f1a","#0a0f1a"];
+      ctx.fillStyle = bgC[nowH] || "#1a2e1a";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Stars at night
+      if (nowH >= 19 || nowH < 5) {
+      ctx.fillStyle = "#ffffff60";
+      for (let i = 0; i < 40; i++) {
+      const sx = (i * 137) % canvas.width;
+      const sy = (i * 251 + 50) % (canvas.height * 0.4);
+      ctx.globalAlpha = Math.sin(Date.now() / 800 + i) * 0.5 + 0.5;
+      ctx.fillRect(sx, sy, 1.5, 1.5);
+      }
+      ctx.globalAlpha = 1;
+      }
 
       // Draw grass texture
       ctx.fillStyle = "#1e331e";
@@ -299,7 +325,12 @@ export default function TownPage() {
       ctx.fillText("🌆 Soul Town", 18, 30);
       ctx.font = "12px sans-serif";
       ctx.fillStyle = "#aaaaaa";
-      ctx.fillText(`${soulCount} souls online`, 18, 50);
+      const nowH = new Date(Date.now() + (new Date().getTimezoneOffset() + 480) * 60000).getHours();
+      const acts = [{l:'😴 Resting'},{'l':'😴 Resting'},{'l':'🧘 Meditating'},{'l':'🧘 Meditating'},{'l':'🧘 Meditating'},{'l':'🌅 Waking'},{'l':'☀️ Morning'},{'l':'✍️ Working'},{'l':'✍️ Working'},{'l':'✍️ Working'},{'l':'✍️ Working'},{'l':'🍱 Lunch'},{'l':'🍱 Lunch'},{'l':'📖 Studying'},{'l':'📖 Studying'},{'l':'🔨 Working'},{'l':'🔨 Working'},{'l':'🍻 Social'},{'l':'🍻 Social'},{'l':'🌆 Gathering'},{'l':'🌆 Gathering'},{'l':'🌙 Winding'},{'l':'🌙 Resting'},{'l':'🌙 Resting'}];
+      const actLabel = acts[nowH] ? acts[nowH].l : '😴 Resting';
+      ctx.font = "10px sans-serif";
+      ctx.fillStyle = "#000000cc";
+      ctx.fillText(actLabel, 18, 68);
       ctx.fillText("Click soul to interact", 18, 68);
 
       animRef.current = requestAnimationFrame(animate);
@@ -348,6 +379,34 @@ export default function TownPage() {
       clearInterval(bubbleInterval);
     };
   }, []);
+
+  // Poll for live encounters
+  useEffect(() => {
+    const pollEncounters = async () => {
+      try {
+        const res = await fetch("/api/town/encounter?qry=recent");
+        if (res.ok) {
+          const data = await res.json();
+          const liveEncounters = (data.encounters || []).filter((e: any) => e.is_live);
+          setEncounterCount(liveEncounters.length);
+          if (liveEncounters.length > 0 && !encounterActive) {
+            const enc = liveEncounters[0];
+            const soulA = soulsRef.current.find(s => s.id === enc.soul1_id);
+            const soulB = soulsRef.current.find(s => s.id === enc.soul2_id);
+            if (soulA && soulB) {
+              setEncounterSouls({ soulA, soulB, space: enc.space || "plaza" });
+            }
+          }
+        }
+      } catch (e) {
+        // Silently fail — encounter polling is non-critical
+        console.debug("Encounter poll failed:", e);
+      }
+    };
+    pollEncounters();
+    const interval = setInterval(pollEncounters, 15000);
+    return () => clearInterval(interval);
+  }, [encounterActive]);
 
   // Connect to SSE for real-time events
   useEffect(() => {
@@ -398,8 +457,22 @@ export default function TownPage() {
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold">🌆 Soul Town</h1>
           <span className="text-sm text-zinc-400">where souls live, work, and grow</span>
+          <TownClock size="compact" />
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => setChronicleOpen(true)}
+            className="rounded-lg bg-zinc-800 px-4 py-2 text-sm hover:bg-zinc-700"
+          >
+            📜 Chronicle
+          </button>
+          <button
+            onClick={() => setTimeFrozen(f => !f)}
+            className={`rounded-lg px-4 py-2 text-sm ${timeFrozen ? "bg-blue-600 hover:bg-blue-500" : "bg-zinc-800 hover:bg-zinc-700"}`}
+            title={timeFrozen ? "Unfreeze town time" : "Freeze town time"}
+          >
+            {timeFrozen ? "❄️ Time Frozen" : "⏱️ Freeze Time"}
+          </button>
           <button
             onClick={() => router.push("/town/report/1")}
             className="rounded-lg bg-zinc-800 px-4 py-2 text-sm hover:bg-zinc-700"
@@ -424,6 +497,7 @@ export default function TownPage() {
       <div className="flex">
         {/* Canvas */}
         <div className="relative flex-1">
+          <EncounterBadge count={encounterCount} onClick={() => encounterSouls && setEncounterActive(true)} />
           <canvas
             ref={canvasRef}
             width={900}
@@ -470,7 +544,7 @@ export default function TownPage() {
 
               <div className="flex flex-col gap-2 pt-2">
                 <button
-                  onClick={() => router.push(`/chat?soul=${selectedSoul.id}`)}
+                  onClick={() => { setChatOpen(true); setChatSoul(selectedSoul); }}
                   className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm hover:bg-indigo-500"
                 >
                   Chat with {selectedSoul.name}
@@ -481,8 +555,41 @@ export default function TownPage() {
                 >
                   Daily Report
                 </button>
+                <button
+                  onClick={() => { setMessageOpen(true); setChatSoul(selectedSoul); }}
+                  className="w-full rounded-lg border border-amber-700/50 bg-amber-900/20 px-4 py-2 text-sm text-amber-400 hover:bg-amber-900/40"
+                >
+                  💌 Send Message
+                </button>
               </div>
             </div>
+          </div>
+        )}
+        {chatOpen && chatSoul && (
+          <div className="w-80 border-l border-zinc-800 bg-zinc-900 p-4 flex flex-col h-[600px]">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold">💬 Chat</h2>
+              <button onClick={() => { setChatOpen(false); setChatSoul(null); }} className="text-sm text-zinc-400 hover:text-white">✕</button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <TownChatPanel soul={chatSoul} onClose={() => { setChatOpen(false); setChatSoul(null); }} />
+            </div>
+          </div>
+        )}
+        {messageOpen && chatSoul && (
+          <div className="w-80 border-l border-zinc-800 bg-zinc-900 p-4 flex flex-col h-[600px]">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold">💌 Message</h2>
+              <button onClick={() => setMessageOpen(false)} className="text-sm text-zinc-400 hover:text-white">✕</button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <GuardianMessagePanel soul={chatSoul} onSent={() => setMessageOpen(false)} />
+            </div>
+          </div>
+        )}
+        {chronicleOpen && (
+          <div className="w-80 border-l border-zinc-800 bg-zinc-900 h-[600px]">
+            <EraChronicle onClose={() => setChronicleOpen(false)} />
           </div>
         )}
       </div>
@@ -510,6 +617,21 @@ export default function TownPage() {
           ))}
         </div>
       </div>
+
+      {/* Encounter Observer Modal */}
+      {encounterActive && encounterSouls && (
+        <EncounterObserver
+          soulA={encounterSouls.soulA}
+          soulB={encounterSouls.soulB}
+          space={encounterSouls.space}
+          onJoin={(soulId) => {
+            const soul = soulsRef.current.find(s => s.id === soulId);
+            if (soul) { setChatOpen(true); setChatSoul(soul); }
+            setEncounterActive(false);
+          }}
+          onClose={() => setEncounterActive(false)}
+        />
+      )}
 
       {/* Legend */}
       <div className="flex justify-center gap-6 border-t border-zinc-800 bg-zinc-900 px-6 py-3 text-xs text-zinc-400">

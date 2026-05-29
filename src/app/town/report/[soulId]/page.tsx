@@ -1,299 +1,192 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
+import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { SoulActivityBadge, SoulActivityLegend, useSoulActivity } from "@/components/town-activity-badge";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
-
-interface DailyReport {
-  id: number;
-  soul_id: string;
-  report_date: string;
-  mood_summary: string;
-  highlights: any[];
-  agd_earned: number;
-}
-
-interface SoulInfo {
-  id: string;
-  name: string;
-  avatar: string;
-  mood: string;
-  energy: number;
-  social_need: number;
-}
-
-const moodEmoji: Record<string, string> = {
-  happy: "😊",
-  calm: "😌",
-  melancholic: "😔",
-  anxious: "😟",
-  inspired: "✨",
+const MOOD_EMOJIS: Record<string, string> = {
+  happy: "😊", calm: "😌", melancholic: "😔", anxious: "😟", inspired: "✨", peace: "😇",
 };
 
-export default function DailyReportPage() {
-  const params = useParams();
-  const router = useRouter();
-  const soulId = params.soulId as string;
+interface SoulData {
+  soul: {
+    soul_id: string; name: string; name_native: string; mood: string; energy: number;
+    region: string; avatar: string; color: string; current_region: string;
+  };
+  today: {
+    events_count: number; encounters: number; activities: any[];
+  };
+  overall: {
+    total_souls: number; total_events_today: number; mood_distribution: Record<string, number>;
+  };
+}
 
-  const [report, setReport] = useState<DailyReport | null>(null);
-  const [soulInfo, setSoulInfo] = useState<SoulInfo | null>(null);
+export default function SoulDailyReportPage({ params }: { params: { soulId: string } }) {
+  const router = useRouter();
+  const [data, setData] = useState<SoulData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { activity, period_name } = useSoulActivity();
+  const refreshRef = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
-    async function loadData() {
+    async function fetch() {
       try {
-        // Load soul info
-        const { data: soulState } = await supabase
-          .from("soul_states")
-          .select("*")
-          .eq("soul_id", soulId)
-          .single();
-
-        const { data: soulData } = await supabase
-          .from("soul_extraction_results")
-          .select("id, name, avatar")
-          .eq("id", soulId)
-          .single();
-
-        if (soulState && soulData) {
-          setSoulInfo({
-            id: soulData.id,
-            name: soulData.name,
-            avatar: soulData.avatar || "🧑",
-            mood: soulState.mood,
-            energy: soulState.energy,
-            social_need: soulState.social_need,
-          });
-        }
-
-        // Load today's report or generate it
-        const today = new Date().toISOString().split("T")[0];
-        const { data: existingReport } = await supabase
-          .from("daily_soul_reports")
-          .select("*")
-          .eq("soul_id", soulId)
-          .eq("report_date", today)
-          .single();
-
-        if (existingReport) {
-          setReport(existingReport);
-        } else {
-          // Generate report via API
-          const res = await fetch("/api/town/report", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ soulId }),
-          });
-
-          if (res.ok) {
-            const data = await res.json();
-            setReport(data.report);
-          } else {
-            setError("Failed to generate today's report");
-          }
-        }
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load data");
+        const res = await fetch(`/api/town/summary?soul_id=${params.soulId}`);
+        const json = await res.json();
+        setData(json);
+      } catch {
+        // silent
       } finally {
         setLoading(false);
       }
     }
-
-    loadData();
-  }, [soulId]);
+    fetch();
+    refreshRef.current = setInterval(fetch, 30000);
+    return () => clearInterval(refreshRef.current);
+  }, [params.soulId]);
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
-        <div className="text-center">
-          <div className="mb-4 text-4xl">📋</div>
-          <p className="text-zinc-400 animate-pulse">Generating daily report...</p>
-        </div>
+      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+        <p className="text-zinc-500">Loading soul report...</p>
       </div>
     );
   }
 
-  if (error || !soulInfo) {
+  if (!data) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
-        <div className="text-center">
-          <div className="mb-4 text-4xl">❌</div>
-          <p className="text-zinc-400">
-            {error || "Soul not found"}
-          </p>
-          <button
-            onClick={() => router.push("/town")}
-            className="mt-4 rounded-lg bg-zinc-800 px-4 py-2 text-sm hover:bg-zinc-700"
-          >
-            ← Back to Town
-          </button>
-        </div>
+      <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center gap-4">
+        <p className="text-zinc-400">Soul not found</p>
+        <button onClick={() => router.push("/town")} className="text-sm text-amber-400 hover:text-amber-300">
+          ← Back to Town
+        </button>
       </div>
     );
   }
 
-  const todayDate = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const soul = data.soul;
+  const moodEmoji = MOOD_EMOJIS[soul.mood] || "😐";
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">{soulInfo.avatar}</span>
-          <div>
-            <h1 className="text-xl font-bold">{soulInfo.name}&apos;s Daily Report</h1>
-            <p className="text-sm text-zinc-400">{todayDate}</p>
-          </div>
+        <div className="flex items-center gap-4">
+          <button onClick={() => router.push("/town")} className="text-zinc-400 hover:text-white">
+            ← Town
+          </button>
+          <h1 className="text-xl font-bold">📋 Daily Report</h1>
+          <SoulActivityBadge />
         </div>
-        <button
-          onClick={() => router.push("/town")}
-          className="rounded-lg bg-zinc-800 px-4 py-2 text-sm hover:bg-zinc-700"
-        >
-          ← Town
-        </button>
+        <div className="text-xs text-zinc-600">
+          {period_name} · Soul ID: {soul.soul_id.slice(0, 8)}
+        </div>
       </div>
 
-      <div className="mx-auto max-w-4xl p-6">
-        {/* Mood & Energy Card */}
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-            <div className="text-sm text-zinc-400">Current Mood</div>
-            <div className="mt-2 flex items-center gap-2">
-              <span className="text-3xl">{moodEmoji[soulInfo.mood] || "🤔"}</span>
-              <span className="text-lg font-medium capitalize">{soulInfo.mood}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+        {/* Right panel - Mood & Energy */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+            {moodEmoji} Soul Status
+          </h2>
+          <p className="text-2xl font-bold mb-1">{soul.name_native || soul.name}</p>
+          <p className="text-sm text-zinc-500 mb-4">{soul.region}</p>
+
+          {/* Mood */}
+          <div className="mb-4">
+            <div className="text-xs text-zinc-500 mb-1">Current Mood</div>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">{moodEmoji}</span>
+              <span className="text-sm font-medium capitalize text-zinc-300">{soul.mood}</span>
             </div>
           </div>
 
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-            <div className="text-sm text-zinc-400">Energy</div>
-            <div className="mt-2">
-              <div className="mb-1 h-3 w-full rounded-full bg-zinc-800">
-                <div
-                  className="h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all"
-                  style={{ width: `${soulInfo.energy}%` }}
-                />
-              </div>
-              <span className="text-sm text-zinc-400">{soulInfo.energy}%</span>
+          {/* Energy bar */}
+          <div className="mb-4">
+            <div className="text-xs text-zinc-500 mb-1">Energy</div>
+            <div className="w-full h-3 rounded-full bg-zinc-800">
+              <div
+                className="h-3 rounded-full transition-all duration-500"
+                style={{
+                  width: `${soul.energy}%`,
+                  backgroundColor: soul.energy > 70 ? "#22c55e" : soul.energy > 30 ? "#eab308" : "#ef4444",
+                }}
+              />
+            </div>
+            <div className="text-right text-xs text-zinc-500 mt-1">{soul.energy}%</div>
+          </div>
+
+          {/* Social need */}
+          <div className="mb-4">
+            <div className="text-xs text-zinc-500 mb-1">Social Need</div>
+            <div className="w-full h-3 rounded-full bg-zinc-800">
+              <div
+                className="h-3 rounded-full bg-pink-500 transition-all duration-500"
+                style={{ width: `${soul.social_need || 50}%` }}
+              />
             </div>
           </div>
 
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-            <div className="text-sm text-zinc-400">Social Energy</div>
-            <div className="mt-2">
-              <div className="mb-1 h-3 w-full rounded-full bg-zinc-800">
-                <div
-                  className="h-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-400 transition-all"
-                  style={{ width: `${soulInfo.social_need}%` }}
-                />
-              </div>
-              <span className="text-sm text-zinc-400">{soulInfo.social_need}%</span>
-            </div>
-          </div>
+          {/* Legend */}
+          <SoulActivityLegend compact />
         </div>
 
-        {/* Mood Summary */}
-        {report?.mood_summary && (
-          <div className="mb-6 rounded-lg border border-amber-900/50 bg-amber-950/20 p-4">
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">📖</span>
-              <div>
-                <div className="text-sm text-amber-400">Today&apos;s Summary</div>
-                <p className="mt-1 text-zinc-200">{report.mood_summary}</p>
-              </div>
+        {/* Main content - Events & Timeline */}
+        <div className="lg:col-span-2 rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <span>📅</span> Today's Activity
+          </h2>
+
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <div className="text-xl font-bold">{data.today.events_count}</div>
+              <div className="text-xs text-zinc-500">Events</div>
+            </div>
+            <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <div className="text-xl font-bold">{data.today.encounters}</div>
+              <div className="text-xs text-zinc-500">Encounters</div>
+            </div>
+            <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
+              <div className="text-xl font-bold">{data.overall.total_souls}</div>
+              <div className="text-xs text-zinc-500">Total Souls</div>
             </div>
           </div>
-        )}
 
-        {/* Highlights Timeline */}
-        <div className="mb-6">
-          <h2 className="mb-4 text-lg font-bold">🌟 Today&apos;s Highlights</h2>
-          {report?.highlights && report.highlights.length > 0 ? (
-            <div className="space-y-3">
-              {report.highlights.map((highlight: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex gap-3 rounded-lg border border-zinc-800 bg-zinc-900 p-4"
-                >
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-indigo-900/50 text-sm">
-                    {idx + 1}
+          {/* Activity timeline */}
+          <div className="text-xs text-zinc-500 mb-2">ACTIVITY TIMELINE</div>
+          {data.today.activities.length === 0 ? (
+            <div className="text-center py-12 text-zinc-600">
+              <p className="text-4xl mb-2">📭</p>
+              <p>No activity recorded today yet.</p>
+              <p className="text-xs mt-2">Events appear here as they happen.</p>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              {data.today.activities.map((evt: any, i: number) => (
+                <div key={evt.id || i} className="flex gap-3 p-3 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/60 transition-colors">
+                  <div className="text-lg mt-0.5">
+                    {evt.event_type === "encounter" && "🤝"}
+                    {evt.event_type === "creation" && "🎨"}
+                    {evt.event_type === "guildaction" && "🏛️"}
+                    {evt.event_type === "guardian_message" && "💌"}
+                    {evt.event_type === "gift_received" && "🎁"}
+                    {evt.event_type === "routine" && "📋"}
+                    {!["encounter", "creation", "guildaction", "guardian_message", "gift_received", "routine"].includes(evt.event_type) && "📌"}
                   </div>
-                  <div className="flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <span className="text-xs text-zinc-500">
-                        {highlight.time
-                          ? new Date(highlight.time).toLocaleTimeString()
-                          : ""}
-                      </span>
-                      <span className="rounded bg-zinc-800 px-2 py-0.5 text-xs capitalize">
-                        {highlight.type}
-                      </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-white">{evt.summary || evt.event_type}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] text-zinc-600">{evt.space}</span>
+                      <span className="text-[10px] text-zinc-700">·</span>
+                      <span className="text-[10px] text-zinc-600">{new Date(evt.created_at).toLocaleTimeString()}</span>
                     </div>
-                    {highlight.summary && (
-                      <p className="text-sm text-zinc-300">{highlight.summary}</p>
-                    )}
+                    <pre className="mt-1 text-[10px] text-zinc-600 whitespace-pre-wrap">{JSON.stringify(evt.content, null, 2)}</pre>
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-8 text-center">
-              <div className="mb-2 text-3xl">😴</div>
-              <p className="text-zinc-400">
-                A quiet day for {soulInfo.name}. No events yet.
-              </p>
-              <p className="mt-1 text-sm text-zinc-500">
-                The day is still young - check back later!
-              </p>
-            </div>
           )}
-        </div>
-
-        {/* AGD Earned */}
-        {report?.agd_earned !== undefined && report.agd_earned > 0 && (
-          <div className="mb-6 rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm text-zinc-400">AGD Earned Today</div>
-                <div className="mt-1 text-2xl font-bold text-amber-400">
-                  {report.agd_earned} AGD
-                </div>
-              </div>
-              <div className="text-3xl">💰</div>
-            </div>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => router.push(`/chat?soul=${soulId}`)}
-            className="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium hover:bg-indigo-500"
-          >
-            💬 Chat with {soulInfo.name}
-          </button>
-          <button
-            onClick={() => router.push(`/profile/${soulId}`)}
-            className="rounded-lg border border-zinc-700 px-6 py-2.5 text-sm hover:bg-zinc-800"
-          >
-            View Profile
-          </button>
-          <button
-            onClick={() => router.push("/town")}
-            className="rounded-lg border border-zinc-700 px-6 py-2.5 text-sm hover:bg-zinc-800"
-          >
-            🌆 Back to Town
-          </button>
         </div>
       </div>
     </div>

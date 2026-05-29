@@ -839,6 +839,121 @@ All endpoints return standard error format on failure:
 
 ---
 
+## Town System
+
+### POST /town/chat
+Send a message to a soul in the town chat panel.
+```json
+// Request
+{
+  "soul_id": "uuid",
+  "message": "Hello! How are you today?",
+  "history": [
+    { "role": "user", "content": "Hi" },
+    { "role": "assistant", "content": "Hello there!" }
+  ]
+}
+
+// SSE Response
+Content-Type: text/event-stream
+data: {"type": "token", "content": "I am"}
+data: {"type": "token", "content": " doing well!"}
+data: {"type": "emotion", "emotion": "happy", "confidence": 0.9}
+data: {"type": "complete", "full_response": "I am doing well!", "emotion": "happy"}
+data: {"type": "close"}
+```
+
+### GET /town/chat/welcome
+Get initial greeting and town context for a soul chat session.
+```
+Query: ?soul_id=uuid
+```
+```json
+{
+  "greeting": "Good evening! The plaza is lively tonight...",
+  "town_context": {
+    "region": "plaza",
+    "mood_emoji": "😊",
+    "nearby_names": ["Alice", "Bob"],
+    "time_of_day": "evening"
+  }
+}
+```
+
+### GET /town/encounter
+Get recent/pending encounters in the town.
+```
+Query: ?qry=recent&limit=10
+```
+```json
+{
+  "encounters": [
+    {
+      "id": "uuid",
+      "soul1_id": "uuid",
+      "soul2_id": "uuid",
+      "space": "plaza",
+      "is_live": true,
+      "created_at": "2026-05-28T18:00:00Z"
+    }
+  ]
+}
+```
+
+### POST /town/encounter
+Trigger an encounter between two souls and generate a conversation.
+```json
+// Request
+{
+  "soul1Id": "uuid",
+  "soul2Id": "uuid",
+  "space": "plaza"
+}
+
+// Response
+{
+  "event": { "id": "uuid", "event_type": "encounter", "space": "plaza", "summary": "..." },
+  "conversation": [
+    { "speaker": "Alice", "text": "Hello! Nice to meet you here." },
+    { "speaker": "Bob", "text": "Alice! Great to see you." }
+  ]
+}
+```
+
+### POST /town/encounter/join
+Join an ongoing encounter as a guardian (takes over one soul's side).
+```json
+{
+  "encounter_id": "uuid",
+  "soul_id": "uuid",
+  "message": "Hello there!"
+}
+```
+
+### GET /town/states
+Get current town states including time information.
+```
+Query: ?include_time=true
+```
+```json
+{
+  "souls": [...],
+  "current_time": {
+    "epoch_day": 1,
+    "year": 1,
+    "season": "Spring",
+    "hour": 14,
+    "minute": 30,
+    "clock": "14:30",
+    "period": "未时",
+    "state": "studying"
+  },
+  "frozen": false
+}
+```
+
+---
+
 ## Rate Limits
 
 | Endpoint | Limit |
@@ -1152,3 +1267,158 @@ The self-distillation wizard maps user input to the 7 soul dimensions:
 - Pre-fills name from auth metadata
 - Real-time data collection via WebSocket/SSE
 - Completion screen with navigation to chat/calibrate
+---
+
+## Soul Town — Chat & Encounter APIs
+
+### POST /api/town/chat
+Send a message to a soul in the town context. Returns streaming response (SSE).
+
+```json
+{
+  "soul_id": "uuid",
+  "message": "Hello friend",
+  "history": [
+    {"role": "user", "content": "Previous message"}
+  ]
+}
+```
+
+**Response (SSE stream):**
+- Event: `token` — streamed tokens
+- Event: `done` — final response JSON
+- Event: `error` — error message
+
+**LLM Fallback Chain:** DeepSeek (primary) → OpenRouter (fallback 1) → Anthropic (fallback 2)
+
+**Auth:** Supabase JWT (Authorization: Bearer <token>)
+
+---
+
+### GET /api/town/chat/welcome?soul_id=uuid
+Get a personalized greeting + town context for a soul.
+
+**Response:**
+```json
+{
+  "greeting": "Hey guardian, been waiting for you...",
+  "town_context": {
+    "region": "plaza",
+    "region_name": "Town Plaza",
+    "mood": "calm",
+    "mood_emoji": "😌",
+    "energy": 75,
+    "social_need": 40,
+    "nearby_count": 2,
+    "nearby_names": ["Su Shi", "Li Bai"],
+    "recent_events_count": 3
+  },
+  "soul": {
+    "id": "uuid",
+    "name": "Su Shi",
+    "name_native": "苏轼",
+    "language": "Chinese",
+    "avatar": "🌸",
+    "color": "#ddd"
+  }
+}
+```
+
+---
+
+### GET /api/town/encounter?status=live|recent
+List encounters. Status: `live` (within 1 hour) or `recent` (up to 20 from today).
+
+**Response:**
+```json
+{
+  "encounters": [
+    {
+      "id": "uuid",
+      "space": "plaza",
+      "space_name": "Town Plaza",
+      "participants": ["uuid1", "uuid2"],
+      "conversation_count": 4,
+      "summary": "Su Shi and Li Bai met at the plaza",
+      "created_at": "2026-05-28T10:00:00Z",
+      "is_live": true
+    }
+  ]
+}
+```
+
+---
+
+### POST /api/town/encounter/join
+Guardian joins an ongoing soul encounter and sends a message. Souls respond in character.
+
+```json
+{
+  "event_id": "uuid",
+  "message": "Hey guys, good to see you two!"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "responses": [
+    {"speaker": "Su Shi", "text": "Guardian! Great to hear from you!"},
+    {"speaker": "Li Bai", "text": "Ah, you're back! We were just talking about..."}
+  ],
+  "conversation_so_far": [...],
+  "encounter": {
+    "id": "uuid",
+    "space_name": "Town Plaza",
+    "participants": ["uuid1", "uuid2"]
+  }
+}
+```
+
+This also records a `town_guardian_visits` entry with action: `joined_conversation`.
+
+---
+
+### Soul Town Regions / Spaces
+
+| ID | Name | Purpose |
+|----|------|---------|
+| plaza | Town Plaza | Central gathering place |
+| library | Library | Studying, quiet contemplation |
+| workshop | Workshop | Building, creating works |
+| bar | The Raven Bar | Socializing, sharing stories |
+| garden | Zen Garden | Meditation, peace |
+| studio | Creative Studio | Art, visual creation |
+| temple | Temple | Spiritual reflection |
+| teahouse | Teahouse | Intimate conversations |
+| theater | Theater | Dramatic performances |
+| house | Home | Personal sanctuary, rest |
+
+---
+
+### Soul Town Time Epoch System
+
+Town time is independent of device time. Epoch 0 starts at town foundation date.
+
+**Season Cycle:** 4 seasons × 7 days = 28-day year
+- Spring (🌸): Renewal, creativity, new encounters
+- Summer (☀️): Energy surge, bright mood
+- Autumn (🍂): Reflection, memory events
+- Winter (❄️): Meditation, deep conversations
+
+**Daily Schedule (12 时辰, 2-hour periods):**
+- 子-丑时 (0-4 🌙): Resting, meditating
+- 寅-卯时 (4-7 🌅): Waking, morning routine
+- 辰-巳时 (7-11 ☀️): Working, creative peak
+- 午时 (11-13 🌤): Lunch rest
+- 未时 (13-15 ☀️): Studying, learning
+- 申时 (15-17 ☀️): Working, production
+- 酉时 (17-19 🌇): Socializing, gathering
+- 戌时 (19-22 🌆): Socializing, evening encounters
+- 亥时 (22-24 🌙): Resting, bedtime
+
+**API interaction with time:**
+- Souls are more social during 酉-戌时 (17-22)
+- Souls retreat home during 亥-子时 (22-0)
+- Souls show most energy and creativity during 辰-巳时 (7-11)

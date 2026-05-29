@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "description": "Soul Town Living Chronicle — system design spec for town history tracking",
+    "created": "2026-05-28"
+  },
+  "epoch": {
+    "era_name": "Dawn Era",
+    "era_number": 1,
+    "start_date": "2026-05-28",
+    "timezone": "UTC",
+    "season": {
+      "current": "spring",
+      "day_of_season": 1,
+      "season_length_days": 7,
+      "seasons": [
+        {"name": "spring", "symbol": "🌸", "duration_days": 7},
+        {"name": "summer", "symbol": "☀️", "duration_days": 7},
+        {"name": "autumn", "symbol": "🍂", "duration_days": 7},
+        {"name": "winter", "symbol": "❄️", "duration_days": 7}
+      ]
+    },
+    "year": {
+      "number": 1,
+      "day": 1,
+      "hour": 0
+    },
+    "current_time_string": "Dawn Year 1 · Spring · Day 1 · Hour 5:30"
+  },
+  "notable_events": [
+    {
+      "id": "evt_001",
+      "epoch_date": "Dawn Year 1 · Spring · Day 1",
+      "type": "era_beginning",
+      "title": "Soul Town Founded",
+      "description": "The first soul arrives, the clock begins. The town breathes its first breath.",
+      "souls_involved": [],
+      "region": "town_plaza",
+      "timestamp": "2026-05-28T05:30:00Z"
+    }
+  ],
+  "soul_lifecycle_records": {
+    "description": "Track each soul's journey through the town",
+    "schema": {
+      "soul_id": "string",
+      "arrival_epoch_date": "Dawn Year N · Season · Day",
+      "transformations": [
+        {
+          "epoch_date": "Dawn Year 1 · Spring · Day 3",
+          "type": "first_creation",
+          "description": "First painting completed",
+          "work_title": "View from the Temple",
+          "art_type": "painting"
+        }
+      ],
+      "friendships_formed": [
+        {
+          "soul_a": "soul_id_1",
+          "soul_b": "soul_id_2",
+          "epoch_date": "Dawn Year 1 · Spring · Day 5",
+          "bond": "friends"
+        }
+      ],
+      "guardian_visits": [
+        {
+          "guardian_id": "user_123",
+          "epoch_date": "Dawn Year 1 · Spring · Day 2",
+          "type": "conversation",
+          "memory_id": "mem_001"
+        }
+      ],
+      "status_changes": [
+        {
+          "epoch_date": "Dawn Year 1 · Summer · Day 1",
+          "from_status": "active",
+          "to_status": "resting",
+          "trigger": "energy_depleted"
+        }
+      ]
+    }
+  },
+  "changelog": [
+    {
+      "id": "cl_001",
+      "epoch_date": "Dawn Year 1 · Spring · Day 1",
+      "type": "system",
+      "changes": "Town time system initialized",
+      "by": "system"
+    }
+  ]
+}

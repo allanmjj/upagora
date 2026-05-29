@@ -1,0 +1,96 @@
+Soul Town — Action Items for Frontend Developer
+Updated: 2026-05-28 (Sprint 15)
+
+=== CURRENT STATE ===
+
+The town is a living canvas. Souls move between regions, chat with guardians, form friendships, and show daily rhythms. The infrastructure below is all wired and compiles clean.
+
+=== COMPLETED (READY TO USE) ===
+
+Core town/page.tsx — 647 lines, tsc clean
+  - Canvas with day/night cycle (stars appear at night, colors shift by hour)
+  - Click soul → side panel with mood, energy, activity badge
+  - Chat button → inline TownChatPanel (no page redirect)
+  - "Send Message" button → GuardianMessagePanel (letter/gift/memory/wish)
+  - TownClock in header ( epoch date, season, time of day)
+  - Chronicle button → EraChronicle sidebar (real town_events data)
+
+API Endpoints (all under /api/town/):
+  POST /chat              — Send message to soul (SSE streaming, 3-tier LLM fallback)
+  GET  /chat/welcome      — Greeting + town context for a soul
+  GET  /encounter?status=live|recent — List encounters
+  POST /encounter/join    — Guardian joins a soul encounter
+  GET  /chronicle         — Chronicle events (filter by type)
+  POST /message           — Guardian sends letter/gift/memory/wish
+  GET  /summary           — Town daily summary dashboard
+  GET  /relationships     — Soul friendship network
+
+Components (src/components/):
+  town-clock.tsx            — EpochDisplay + TownClock
+  town-chat-panel.tsx       — Inline chat with streaming
+  town-chat-client.ts       — Chat client for /api/town/chat
+  town-guardian-message.tsx — Letter/gift sender
+  town-chronicle-sidebar.tsx— Real chronicle from town_events
+  town-summary-dashboard.tsx— Daily summary (moods, highlights, stats)
+  town-daynight-canvas.tsx  — Star/season overlay (not yet in page)
+  town-activity-badge.tsx   — 24-hour activity indicator (wired)
+
+DB Migration:
+  supabase/migrations/20260528_town_immersion.sql
+
+=== PRIORITY TASKS FOR YOU ===
+
+P0 — Deploy & Test
+  1. Run the DB migration: apply 20260528_town_immersion.sql
+  2. npm run dev → verify /town loads with clean canvas
+  3. Click a soul → test inline chat (should stream, not redirect)
+  4. Test "Send Message" button (should open GuardianMessagePanel)
+  5. Test Chronicle button (should show real events from town_events)
+
+P1 — Soul Daily Report Page
+  File: src/app/town/report/[id]/page.tsx
+  - Fetch GET /api/town/summary?soul_id=XXX
+  - Show: today's encounters, activities, mood chart, energy bar
+  - Use TownSummaryDashboard as base
+  - Add soul-specific timeline
+
+P2 — Soul Relationship Visualization
+  File: src/app/town/relationships/page.tsx
+  - Fetch GET /api/town/relationships
+  - Show a simple graph (force-directed or list-based)
+  - Each node = soul, each edge = interaction_count
+  - Click a soul to filter by their connections
+  - Use Canvas or SVG for the graph
+
+P3 — Town Summary / Dashboard
+  File: src/app/town/dashboard/page.tsx (or update existing /dashboard)
+  - Use TownSummaryDashboard component
+  - Show all town stats, mood distribution, highlights
+  - Add GuardianMessagePanel for each soul
+  - Refresh every 60s
+
+P4 — Weather Overlay
+  - Use DayNightOverlay canvas component
+  - Layer it on top of the town canvas (absolute positioned)
+  - Weather affects mood display: rain = melancholic boost, sun = happy boost
+  - Season changes should affect building colors
+
+=== GLOSSARY ===
+
+  Epoch — Town time system. Epoch 0 = foundation date (2026-05-28).
+         28-day year = 4 seasons × 7 days.
+         12 时辰 (2-hour periods) = daily rhythm.
+  Guardian — A living person who created and watches over a soul.
+  Soul — An AI personality distilled from a real person's data.
+  Encounter — Two souls meeting in the same region and conversing.
+  Chronicle — Running log of all town events, filtered and timeline-style.
+
+=== NOTES ===
+
+- All API endpoints require Supabase JWT (no CORS issues from same origin)
+- Town/chat/welcome returns AI-generated greeting + context in one call
+- town/message POST records to town_guardian_messages table + emits town_events
+- All components are "use client" and work standalone
+- The canvas rendering loop is in town/page.tsx (look for animate() function)
+- IMPORTANT: Do NOT edit town/page.tsx via patch tool — use node scripts or sed
+  (WSL write to /mnt/d has encoding issues with multi-byte chars)
