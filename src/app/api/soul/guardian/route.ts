@@ -9,9 +9,9 @@ const supabase = createClient(
 
 const REPUTATION_BADGES = {
   novice: { threshold: 0, label: "Novice Guardian", color: "text-zinc-400", icon: "🌱" },
-  dedicated: { threshold: 10, label: "Dedicated Guardian", color: text-blue"400, icon: "⭐" },
-  master: { threshold: 50, label: "Master Guardian", color: text-amber-400, icon: "🔥" },
-  legend: { threshold: 100, label: "Legendary Guardian", color: "text-purple-400, icon: "👑" },
+  dedicated: { threshold: 10, label: "Dedicated Guardian", color: "text-blue-400", icon: "⭐" },
+  master: { threshold: 50, label: "Master Guardian", color: "text-amber-400", icon: "🔥" },
+  legend: { threshold: 100, label: "Legendary Guardian", color: "text-purple-400", icon: "👑" },
 } as const;
 
 function getBadge(rating: number) {
@@ -21,6 +21,7 @@ function getBadge(rating: number) {
   return REPUTATION_BADGES.novice;
 }
 
+// POST /api/soul/guardian - Create or update guardian relationship
 export async function POST(request: Request) {
   const rateLimited = await rateLimiter(request);
   if (rateLimited) return rateLimited;
@@ -38,137 +39,127 @@ export async function POST(request: Request) {
 
     const userId = authRes.data.user.id;
     const body = await request.json();
-    const { soulId, guardianEmail, guardianId } = body;
+    const { soulId, guardianEmail } = body;
 
     if (!soulId) {
       return NextResponse.json({ error: "soulId is required" }, { status: 400 });
     }
 
+    // If inviting via email, send auth invite
     if (guardianEmail) {
-      // Send invite via Supabase auth (sends email)
       const { data, error } = await supabase.auth.admin.inviteUserByEmail(guardianEmail, {
         data: { invite_soul_id: soulId },
       });
 
       if (error) {
-        console.error("Invite error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      // Store invite record
-      const { data: inviteRecord, error: inviteError } = await supabase
-        .from("soul_guardian_invites")
-        .upsert({
-          soul_id: soulId,
-          inviter_id: userId,
-          invitee_email: guardianEmail,
-          status: "pending",
-          created_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+      return NextResponse.json(
+        { message: "Invite sent", user: data.user },
+        { status: 200 },
+      );
+    }
 
-      if (inviteError) {
-        console.error("Invite record error:", inviteError);
-      }
+    // Create/update guardian relationship
+    const { data: existing } = await supabase
+      .from("soul_guardian_relationships")
+      .select("*")
+      .eq("guardian_id", userId)
+      .eq("subject_id", soulId)
+      .single();
 
+    if (existing) {
       return NextResponse.json({
-        success: true,
-        invite_record: inviteRecord,
-        message: "Invitation sent successfully",
-      });
-    } else if (guardianId) {
-      // Direct add (if guardian is already a user)
-      const { data: guardianRecord, error: guardianError } = await supabase
-        .from("soul_guardians")
-        .upsert({
-          soul_id: soulId,
-          user_id: guardianId,
-          role: "guardian",
-          accepted_at: new Date().toISOString(),
-          invited_by: userId,
-          reputation_score: 0,
-          created_at: new Date().toISOString(),
-        }, {
-          onConflict: "soul_id,user_id",
-          ignoreDuplicates: true,
-        })
-        .select()
-        .single();
-
-      if (guardianError) {
-        console.error("Guardian add error:", guardianError);
-        return NextResponse.json({ error: guardianError.message }, { status: 500 });
-      }
-
-      return NextResponse.json({
-        success: true,
-        guardian_record: guardianRecord,
-        message: "Guardian linked successfully",
+        ...existing,
+        badge: getBadge(existing.reputation_score ?? 0),
       });
     }
 
-    return NextResponse.json({ error: "Provide guardianEmail or guardianId" }, { status: 400 });
+    const { data: newRel, error } = await supabase
+      .from("soul_guardian_relationships")
+      .insert({
+        guardian_id: userId,
+        subject_id: soulId,
+        reputation_score: 0,
+        visits: 1,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(
+      { ...newRel, badge: getBadge(newRel.reputation_score ?? 0) },
+      { status: 201 },
+    );
   } catch (err: any) {
-    console.error("Guardian invite error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("Guardian POST error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
+// GET /api/soul/guardian - Get guardian relationships
 export async function GET(request: Request) {
   try {
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader) {
+      return NextResponse.json({ error: "Missing auth" }, { status: 401 });
+    }
+
+    const authRes = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (authRes.error) {
+      return NextResponse.json({ error: authRes.error.message }, { status: 401 });
+    }
+
+    const userId = authRes.data.user.id;
     const { searchParams } = new URL(request.url);
-    const soulId = searchParams.get("soul_id");
-    const userId = searchParams.get("user_id");
+    const subjectId = searchParams.get("subject_id");
 
-    if (soulId) {
-      // Get guardians for a soul
-      const { data: guardians } = await supabase
-        .from("soul_guardians")
-        .select("*, soul_name(!)SoulName")
-        .eq("soul_id", soulId)
-        .order("created_at", { ascending: true });
-
-      // Get pending invites
-      const { data: invites } = await supabase
-        .from("soul_guardian_invites")
+    if (subjectId) {
+      const { data: rel, error } = await supabase
+        .from("soul_guardian_relationships")
         .select("*")
-        .eq("soul_id", soulId)
-        .eq("status", "pending");
+        .eq("guardian_id", userId)
+        .eq("subject_id", subjectId)
+        .single();
 
-      return NextResponse.json({
-        guardians: guardians || [],
-        invites: invites || [],
-        count: guardians?.length || 0,
-      });
-    } else if (userId) {
-      // Get souls where user is guardian
-      const { data: guardianRecords } = await supabase
-        .from("soul_guardians")
-        .select("soul_id, reputation_score, accepted_at")
-        .eq("user_id", userId);
-
-      if (guardianRecords && guardianRecords.length > 0) {
-        const soulIds = guardianRecords.map((g) => g.soul_id);
-        const { data: souls } = await supabase
-          .from("soul_extraction_results")
-          .select("id, name, avatar, language")
-          .in("id", soulIds);
-
+      if (error || !rel) {
         return NextResponse.json({
-          souls: souls || [],
-          total: souls?.length || 0,
+          guardian_id: userId,
+          subject_id: subjectId,
+          reputation_score: 0,
+          visits: 0,
+          badge: getBadge(0),
         });
       }
 
-      return NextResponse.json({ souls: [], total: 0 });
+      return NextResponse.json({
+        ...rel,
+        badge: getBadge(rel.reputation_score ?? 0),
+      });
     }
 
-    return NextResponse.json({ error: "Provide soul_id or user_id" }, { status: 400 });
+    const { data: relationships, error } = await supabase
+      .from("soul_guardian_relationships")
+      .select("*")
+      .eq("guardian_id", userId)
+      .order("reputation_score", { ascending: false });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    const result = (relationships || []).map((r: any) => ({
+      ...r,
+      badge: getBadge(r.reputation_score ?? 0),
+    }));
+
+    return NextResponse.json(result);
   } catch (err: any) {
-    console.error("Guardian list error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("Guardian GET error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-
-export { REPUTATION_BADGES, getBadge };
