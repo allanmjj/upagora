@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TownClock } from "@/components/town-clock";
+import SoulProfileCard from "@/components/town/SoulProfileCard";
+
 import { EraChronicle } from "@/components/town-chronicle-sidebar";
 import { TownChatPanel } from "@/components/town-chat-panel";
 import { SoulActivityBadge } from "@/components/town-activity-badge";
@@ -94,6 +96,28 @@ export default function TownPage() {
   const [encounterActive, setEncounterActive] = useState(false);
   const [encounterSouls, setEncounterSouls] = useState<{ soulA: Soul; soulB: Soul; space: string } | null>(null);
   const [encounterCount, setEncounterCount] = useState(0);
+  const [calibrationCount, setCalibrationCount] = useState(0);
+
+  // Fetch soul constraints from API
+  const [soulConstraints, setSoulConstraints] = useState(null);
+  
+  useEffect(() => {
+    async function loadConstraints() {
+      if (!selectedSoul) return;
+      try {
+        const res = await fetch(`/api/soul/constraints?soul_id=${selectedSoul.id}`);
+        if (res.ok) {
+          const json = await res.json();
+          setSoulConstraints(json.constraints);
+        }
+      } catch (e) {
+        console.debug("Constraints fetch failed:", e);
+      }
+    }
+    loadConstraints();
+  }, [selectedSoul]);
+
+
   const [timeFrozen, setTimeFrozen] = useState(false);
 
   // Build building lookup map
@@ -445,6 +469,17 @@ export default function TownPage() {
       const dy = y - soul.y;
       if (dx * dx + dy * dy < 400) {
         setSelectedSoul(soul);
+        // Fetch calibration count for selected soul
+        (async () => {
+          try {
+            const res = await fetch(`/api/soul/calibrate?soul_id=${soul.id}`);
+            if (res.ok) {
+              const json = await res.json();
+              setCalibrationCount(json.data?.length || 0);
+            }
+          } catch (e) {}
+        })();
+
         return;
       }
     }
@@ -542,6 +577,27 @@ export default function TownPage() {
                 <div className="text-sm text-zinc-400">Today&apos;s Events</div>
                 <div className="font-medium">{selectedSoul.today_events_count} events</div>
               </div>
+
+
+            {/* Soul Profile Card with 7-dimension constraints */}
+            <div className="mt-4">
+              <SoulProfileCard
+                name={selectedSoul.name}
+                era={selectedSoul.category || "Unknown"}
+                profession={selectedSoul.name}
+                language={selectedSoul.language || "en"}
+                knowledgeFloor={[]}
+                knowledgeCeiling={[]}
+                skills={{}}
+                personalityTraits={[]}
+                beliefs={[]}
+                lifeEvents={[]}
+                relationships={{}}
+                calibrationCount={calibrationCount}
+                onCalibrate={() => { setMessageOpen(true); setChatSoul(selectedSoul); }}
+                onChat={() => { setChatOpen(true); setChatSoul(selectedSoul); }}
+              />
+            </div>
 
               <div className="flex flex-col gap-2 pt-2">
                 <button
