@@ -2,6 +2,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
+import { MA_JUNJIE_CONSTRAINTS } from "./soul-constraints";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -171,6 +172,10 @@ export async function simulatorTick(): Promise<any[]> {
     current_region: s.current_region,
     language: s.town_souls.language,
     personality: s.town_souls.personality_dims || {},
+    // Founder soul gets real constraints
+    ...(s.town_souls.name === "Ma Junjie" && {
+      personality: MA_JUNJIE_CONSTRAINTS.personality_traits || MA_JUNJIE_CONSTRAINTS.skills,
+    }),
     today_events_count: s.today_events_count,
     avatar: s.town_souls.avatar,
     color: s.town_souls.color,
