@@ -10,10 +10,24 @@
  * This is the centralized entry point for all soul constraint loading.
  */
 
-import { MA_JUNJIE_CONSTRAINTS, buildConstraintPromptLang } from '@/lib/soul-constraints';
+import { 
+  SoulConstraints,
+  SU_SHI_CONSTRAINTS, 
+  CONFUCIUS_CONSTRAINTS, 
+  LI_BAI_CONSTRAINTS, 
+  MARIE_CURIE_CONSTRAINTS, 
+  LEONARDO_CONSTRAINTS,
+  MA_JUNJIE_CONSTRAINTS, 
+  buildConstraintPromptLang 
+} from '@/lib/soul-constraints';
 
 // Hardcoded constraints for known souls (fallback)
-export const KNOWN_CONSTRAINTS_MAP: Record<string, any> = {
+export const KNOWN_CONSTRAINTS_MAP: Record<string, SoulConstraints> = {
+  'd557cffa-6d90-436a-9918-eb28c797e5a1': SU_SHI_CONSTRAINTS,
+  '2b3a70a0-239e-4dfc-8c08-502aca779a72': CONFUCIUS_CONSTRAINTS,
+  'c011bd3a-f6d1-4c26-b378-1c41fb421878': LI_BAI_CONSTRAINTS,
+  'bdd4caa4-ca32-4c14-8186-fbea5584a429': MARIE_CURIE_CONSTRAINTS,
+  'd3d7f08f-6b5a-44f9-9733-5055b48743df': LEONARDO_CONSTRAINTS,
   'a1b2c3d4-e5f6-7890-abcd-ef1234567890': MA_JUNJIE_CONSTRAINTS,
 };
 
