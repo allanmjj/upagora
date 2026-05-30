@@ -99,16 +99,20 @@ export default function TownPage() {
   const [calibrationCount, setCalibrationCount] = useState(0);
 
   // Fetch soul constraints from API
-  const [soulConstraints, setSoulConstraints] = useState(null);
+  const [soulConstraints, setSoulConstraints] = useState<any>(null);
   
   useEffect(() => {
     async function loadConstraints() {
-      if (!selectedSoul) return;
+      if (!selectedSoul) {
+        setSoulConstraints(null);
+        return;
+      }
       try {
         const res = await fetch(`/api/soul/constraints?soul_id=${selectedSoul.id}`);
         if (res.ok) {
           const json = await res.json();
           setSoulConstraints(json.constraints);
+          setCalibrationCount(json.calibration?.count || 0);
         }
       } catch (e) {
         console.debug("Constraints fetch failed:", e);
@@ -581,22 +585,28 @@ export default function TownPage() {
 
             {/* Soul Profile Card with 7-dimension constraints */}
             <div className="mt-4">
-              <SoulProfileCard
-                name={selectedSoul.name}
-                era={selectedSoul.category || "Unknown"}
-                profession={selectedSoul.name}
-                language={selectedSoul.language || "en"}
-                knowledgeFloor={[]}
-                knowledgeCeiling={[]}
-                skills={{}}
-                personalityTraits={[]}
-                beliefs={[]}
-                lifeEvents={[]}
-                relationships={{}}
-                calibrationCount={calibrationCount}
-                onCalibrate={() => { setMessageOpen(true); setChatSoul(selectedSoul); }}
-                onChat={() => { setChatOpen(true); setChatSoul(selectedSoul); }}
-              />
+              {soulConstraints ? (
+                <SoulProfileCard
+                  name={soulConstraints.soul_name || selectedSoul.name}
+                  era={soulConstraints.era_name || selectedSoul.category || "Unknown"}
+                  profession={soulConstraints.profession || selectedSoul.name}
+                  language={soulConstraints.language || "auto"}
+                  knowledgeFloor={soulConstraints.knowledge_floor || []}
+                  knowledgeCeiling={soulConstraints.knowledge_ceiling || []}
+                  skills={soulConstraints.skills || {}}
+                  personalityTraits={soulConstraints.personality_traits || []}
+                  beliefs={soulConstraints.beliefs || soulConstraints.communication_style || []}
+                  lifeEvents={soulConstraints.life_events || []}
+                  relationships={soulConstraints.relationships || {}}
+                  calibrationCount={calibrationCount}
+                  onCalibrate={() => { setMessageOpen(true); setChatSoul(selectedSoul); }}
+                  onChat={() => { setChatOpen(true); setChatSoul(selectedSoul); }}
+                />
+              ) : (
+                <div className="rounded bg-zinc-800/50 p-4 text-center text-sm text-zinc-400">
+                  Loading soul profile…
+                </div>
+              )}
             </div>
 
               <div className="flex flex-col gap-2 pt-2">
