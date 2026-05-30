@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { rateLimiter, type RateLimitedResponse } from "@/lib/rate-limiter";
+import { rateLimiter } from "@/lib/rate-limiter";
+type RateLimitedResponse = NextResponse;
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

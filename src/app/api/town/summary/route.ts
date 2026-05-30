@@ -72,10 +72,10 @@ export async function GET(req: Request) {
         summary: e.summary,
         space: SPACE_NAMES[e.space] || e.space,
         time: new Date(e.created_at).getHours(),
-        icon: {
+        icon: ({
           encounter: "🤝", creation: "🎨", "guardian_message": "💌",
           "gift_received": "🎁", "guardian-visit": "👤", routine: "📋",
-        }[e.event_type] || "📌",
+        } as any)[e.event_type] || "📌",
       }));
 
     // Build response

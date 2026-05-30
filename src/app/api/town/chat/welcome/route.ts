@@ -10,6 +10,7 @@ const supabase = createClient(
 const deepseek = new OpenAI({
   baseURL: "https://api.deepseek.com/v1",
   apiKey: process.env.DEEPSEEK_API_KEY || "",
+  // @ts-expect-error — DeepSeek-specific option
   fallbackToFirstAppropriateKey: true,
 });
 
@@ -18,18 +19,18 @@ const fallbackProviders = [
     name: "openrouter",
     client: new OpenAI({
       baseURL: "https://openrouter.ai/api/v1",
-      apiKey: process.env.OPENROUTER_API_KEY || "",
+      apiKey: process.env.OPENROUTER_API_KEY || "sk-placeholder",
     }),
     model: "deepseek/deepseek-chat",
   },
-  {
+  ...(process.env.ANTHROPIC_API_KEY ? [{
     name: "anthropic",
     client: new OpenAI({
       baseURL: "https://api.anthropic.com/v1",
-      apiKey: process.env.ANTHROPIC_API_KEY || "",
+      apiKey: process.env.ANTHROPIC_API_KEY,
     }),
     model: "claude-3-5-sonnet-20241022",
-  },
+  }] : []),
 ];
 
 const SPACE_NAMES: Record<string, string> = {

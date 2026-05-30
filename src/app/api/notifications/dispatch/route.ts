@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create notifications for each guardian
-    const notifications = targetGuardians.map(userId => ({
+    const notifications = targetGuardians.map((userId: string) => ({
       user_id: userId,
       type,
       title,

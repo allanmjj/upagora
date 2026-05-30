@@ -170,7 +170,7 @@ export async function POST(request: Request) {
 
       // Daily social simulation
       const soulIds = souls.map((s) => s.profile.id);
-      await simulateDay({}, soulIds);
+      await simulateDay({} as any, soulIds);
     }
 
     // Update town time

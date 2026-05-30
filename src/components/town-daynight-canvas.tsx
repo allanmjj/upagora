@@ -69,7 +69,7 @@ function getSunMoonPosition(hour: number, width: number): { x: number; y: number
   return { x, y };
 }
 
-function getStarPositions(seeded: number): Array<{ x: number; y: number; size: number; opacity: number }> {
+function getStarPositions(seeded: number, seed: number): Array<{ x: number; y: number; size: number; opacity: number }> {
   const rand = (s: number) => ((Math.sin(s * 127.1 + seed) * 43758.5453) % 1 + 1) % 1;
   const stars: Array<{ x: number; y: number; size: number; opacity: number }> = [];
   for (let i = 0; i < 80; i++) {
@@ -83,7 +83,7 @@ function getStarPositions(seeded: number): Array<{ x: number; y: number; size: n
   return stars;
 }
 
-function getFireflyPositions(seeded: number): Array<{ x: number; y: number; delay: number }> {
+function getFireflyPositions(seeded: number, seed: number): Array<{ x: number; y: number; delay: number }> {
   const rand = (s: number) => ((Math.sin(s * 31.7 + seed) * 21139.5) % 1 + 1) % 1;
   const fireflies: Array<{ x: number; y: number; delay: number }> = [];
   for (let i = 0; i < 15; i++) {
@@ -115,7 +115,7 @@ export function DayNightOverlay({ hour, seasonIndex, width = 900, height = 600 }
 
     // Stars (night only)
     if (isNight) {
-      const stars = getStarPositions(seed);
+      const stars = getStarPositions(0, seed || 42);
       stars.forEach((s) => {
         const twinkle = Math.sin(Date.now() / 1000 + s.x * 10) * 0.3;
         ctx.globalAlpha = s.opacity + twinkle;
@@ -172,7 +172,7 @@ export function DayNightOverlay({ hour, seasonIndex, width = 900, height = 600 }
 
     // Fireflies (night)
     if (isNight) {
-      const ff = getFireflyPositions(seed);
+      const ff = getFireflyPositions(0, seed || 42);
       const now = Date.now() / 1000;
       ff.forEach((f) => {
         const pulse = Math.sin(now + f.delay) * 0.4 + 0.5;

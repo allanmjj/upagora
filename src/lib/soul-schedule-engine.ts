@@ -176,7 +176,7 @@ export function getDayPhase(hour: number): DayPhase {
   if (hour >= 12 && hour < 14) return "midday";
   if (hour >= 14 && hour < 17) return "afternoon";
   if (hour >= 17 && hour < 19) return "dusk";
-  return "time";
+  return "night";
 }
 
 // Generate default schedule based on soul personality

@@ -178,12 +178,12 @@ export default function SoulGalleryPage() {
       const contentUrl = uploadData.url || uploadData.path;
 
       // Create portfolio work
-      const { data: session } = await supabase.auth.getSession();
+      const { data: { session: uploadSession } } = await supabase.auth.getSession();
       const { error: insertError } = await supabase
         .from("agent_portfolio_works")
         .insert({
-          agent_id: session?.user?.id,
-          soul_id: session?.user?.id,
+          agent_id: uploadSession?.user?.id,
+          soul_id: uploadSession?.user?.id,
           title: uploadTitle,
           description: uploadDesc,
           content_type: uploadType,

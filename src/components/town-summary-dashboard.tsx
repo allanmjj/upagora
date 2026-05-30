@@ -26,11 +26,11 @@ export function TownSummaryDashboard({ className = "" }: { className?: string })
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSoul, setSelectedSoul] = useState<string | null>(null);
-  const refreshInterval = useRef<ReturnType<typeof setInterval>>();
+  const refreshInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchData = async () => {
     try {
-      const res = await fetch("/api/town/summary");
+      const res = await fetch("/api/town/summary" + (selectedSoul ? `?soul_id=${selectedSoul}` : ""));
       const json = await res.json();
       setData(json);
     } catch (e) {
@@ -43,7 +43,7 @@ export function TownSummaryDashboard({ className = "" }: { className?: string })
   useEffect(() => {
     fetchData();
     refreshInterval.current = setInterval(fetchData, 60000);
-    return () => clearInterval(refreshInterval.current);
+    return () => clearInterval(refreshInterval.current as any);
   }, []);
 
   if (loading) {

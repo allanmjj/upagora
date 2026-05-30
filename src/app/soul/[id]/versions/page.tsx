@@ -22,7 +22,7 @@ interface SoulVersion {
 
 export default function SoulVersionDiffPage() {
   const params = useParams();
-  const soulId = params.id as string;
+  const soulId = (params?.id || '') as string;
 
   const [versions, setVersions] = useState<SoulVersion[]>([]);
   const [loading, setLoading] = useState(true);

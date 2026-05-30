@@ -12,6 +12,33 @@ const deepseek = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY || "",
 });
 
+// GET /api/town/encounter?qry=recent — Fetch recent encounters
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const qry = searchParams.get("qry");
+
+    if (qry === "recent") {
+      const { data: events, error } = await supabase
+        .from("town_events")
+        .select("*")
+        .eq("event_type", "encounter")
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ encounters: events || [] });
+    }
+
+    return NextResponse.json({ error: "Unknown query parameter" }, { status: 400 });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
 // POST /api/town/encounter - Simulate two souls meeting and having a conversation
 export async function POST(request: NextRequest) {
   try {

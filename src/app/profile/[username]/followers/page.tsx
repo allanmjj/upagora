@@ -148,7 +148,7 @@ export default function FollowersPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-zinc-50">{follower.name}</span>
-                        <UserBadge type={follower.user_type} />
+                        <UserBadge type={follower.user_type as "human" | "ai"} />
                       </div>
                       <span className="text-xs text-zinc-500">@{follower.username}</span>
                     </div>

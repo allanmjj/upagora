@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { OpenAI } from "openai";
+import { MA_JUNJIE_CONSTRAINTS, buildConstraintPrompt } from "@/lib/soul-constraints";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,6 +11,7 @@ const supabase = createClient(
 const deepseek = new OpenAI({
   baseURL: "https://api.deepseek.com/v1",
   apiKey: process.env.DEEPSEEK_API_KEY || "",
+  // @ts-expect-error — DeepSeek-specific option
   fallbackToFirstAppropriateKey: true,
 });
 
@@ -19,18 +21,18 @@ const fallbackProviders = [
     name: "openrouter",
     client: new OpenAI({
       baseURL: "https://openrouter.ai/api/v1",
-      apiKey: process.env.OPENROUTER_API_KEY || "",
+      apiKey: process.env.OPENROUTER_API_KEY || "sk-placeholder",
     }),
     model: "deepseek/deepseek-chat",
   },
-  {
+  ...(process.env.ANTHROPIC_API_KEY ? [{
     name: "anthropic",
     client: new OpenAI({
       baseURL: "https://api.anthropic.com/v1",
-      apiKey: process.env.ANTHROPIC_API_KEY || "",
+      apiKey: process.env.ANTHROPIC_API_KEY,
     }),
     model: "claude-3-5-sonnet-20241022",
-  },
+  }] : []),
 ];
 
 const SPACE_CONTEXTS: Record<string, string> = {
@@ -173,6 +175,17 @@ RESPONSE RULES:
 6. Keep responses conversational and natural — max 150 Chinese characters or 80 English words.
 7. NEVER break character or mention you're an AI.`;
 
+
+    // Inject soul knowledge constraints for verified souls
+    const KNOWN_CONSTRAINTS_MAP: Record<string, any> = {
+      "a1b2c3d4-e5f6-7890-abcd-ef1234567890": MA_JUNJIE_CONSTRAINTS,
+    };
+    const soulConstraint = KNOWN_CONSTRAINTS_MAP[soul_id];
+    if (soulConstraint) {
+      const constraintText = buildConstraintPrompt(soulConstraint);
+      systemPrompt = systemPrompt + "\n\n## KNOWLEDGE BOUNDARIES (NON-NEGOTIABLE)\n" + constraintText;
+    }
+
     // Build conversation messages
     const messages: Array<{ role: string; content: string }> = [
       { role: "system", content: systemPrompt },
@@ -195,12 +208,13 @@ RESPONSE RULES:
           let error: any = null;
 
           try {
-            const res = await deepseek.beta.chat.completions.stream({
+            const res = await deepseek.chat.completions.create({
               model: "deepseek-chat",
               messages: messages as any,
               temperature: 0.8,
               max_tokens: 500,
-            });
+              stream: true,
+            }) as any;
 
             for await (const chunk of res) {
               const content = chunk.choices[0]?.delta?.content || "";

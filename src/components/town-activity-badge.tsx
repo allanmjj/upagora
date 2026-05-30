@@ -123,7 +123,6 @@ export function SoulActivityLegend({ compact = false }: { compact?: boolean }) {
                 : "opacity-50"
             }`}
             style={{
-              ringColor: p.color,
               color: p.color,
             }}
           >

@@ -7,7 +7,7 @@ import {
   Search, Filter, Star, TrendingUp, Clock, Eye, Heart,
   Ghost, ArrowRight, Sparkles, Flame, Users
 } from 'lucide-react';
-import Navbar from '@/components/layout/navbar';
+import { Navbar } from '@/components/layout/navbar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

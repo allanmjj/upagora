@@ -31,7 +31,7 @@ export default function SoulRelationshipsPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    async function fetch() {
+    async function fetchData() {
       try {
         const res = await fetch("/api/town/relationships");
         const json = await res.json();
@@ -42,7 +42,7 @@ export default function SoulRelationshipsPage() {
         setLoading(false);
       }
     }
-    fetch();
+    fetchData();
   }, []);
 
   // Simple force-directed visualization

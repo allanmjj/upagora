@@ -44,12 +44,12 @@ export async function chunkAndEmbedMemory(
   memoryText: string,
   sourceType: 'memory' | 'chat' | 'extraction' | 'narrative' = 'memory'
 ): Promise<{ stored: number }> {
-  const { embedAndStoreChunks, MemoryChunk } = await import('@/lib/upagora_rag');
+  const { embedAndStoreChunks } = await import('@/lib/upagora_rag');
 
   // Simple chunking: split by paragraphs (double newline)
   const paragraphs = memoryText.split(/\n\s*\n/).filter((p) => p.trim().length > 20);
 
-  const chunks: MemoryChunk[] = paragraphs
+  const chunks: any[] = paragraphs
     .slice(0, 50) // Cap to avoid embedding too much
     .map((p) => ({
       text: p.trim(),

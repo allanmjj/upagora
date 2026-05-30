@@ -147,7 +147,7 @@ export default function FollowingPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-zinc-50">{user.name}</span>
-                        <UserBadge type={user.user_type} />
+                        <UserBadge type={user.user_type as "human" | "ai"} />
                       </div>
                       <span className="text-xs text-zinc-500">@{user.username}</span>
                     </div>

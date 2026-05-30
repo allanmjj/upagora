@@ -31,7 +31,7 @@ const PERIODS = [
   { name: "亥时", icon: "🌙", start: 22, end: 24, state: "resting" },
 ];
 
-function getTownTime(): {
+export function getTownTime(): {
   epoch_day: number;
   year: number;
   season: (typeof SEASONS)[0];

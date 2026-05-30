@@ -102,7 +102,7 @@ export async function GET(req: Request) {
           relationship_type: rel_type,
           interaction_count: count,
           closeness,
-          shared_spaces,
+          sharedSpaces,
           last_interaction: lastInteraction,
         };
       })

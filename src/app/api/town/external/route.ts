@@ -155,3 +155,12 @@ export async function POST_respond(req: NextRequest) {
 
   return NextResponse.json({ success: true });
 }
+
+// Router dispatch for Next.js App Router
+export async function POST(req: NextRequest) {
+  const url = req.nextUrl.pathname;
+  if (url.endsWith("/register")) return POST_register(req);
+  if (url.endsWith("/heartbeat")) return POST_heartbeat(req);
+  if (url.endsWith("/respond")) return POST_respond(req);
+  return NextResponse.json({ error: "Unknown action" }, { status: 404 });
+}

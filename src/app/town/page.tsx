@@ -161,6 +161,10 @@ export default function TownPage() {
       if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      const nowH = new Date(Date.now() + (new Date().getTimezoneOffset() + 480) * 60000).getHours();
+      const acts = [{l:'😴 Resting'},{'l':'😴 Resting'},{'l':'🧘 Meditating'},{'l':'🧘 Meditating'},{'l':'🧘 Meditating'},{'l':'🌅 Waking'},{'l':'☀️ Morning'},{'l':'✍️ Working'},{'l':'✍️ Working'},{'l':'✍️ Working'},{'l':'✍️ Working'},{'l':'🍱 Lunch'},{'l':'🍱 Lunch'},{'l':'📖 Studying'},{'l':'📖 Studying'},{'l':'🔨 Working'},{'l':'🔨 Working'},{'l':'🍻 Social'},{'l':'🍻 Social'},{'l':'🌆 Gathering'},{'l':'🌆 Gathering'},{'l':'🌙 Winding'},{'l':'🌙 Resting'},{'l':'🌙 Resting'}];
+      const actLabel = acts[nowH] ? acts[nowH].l : '😴 Resting';
+
       // Draw background with time-of-day color
       const bgC = ["#0a0f1a","#0a0f1a","#0d1220","#0d1220","#0d1220","#1a1830","#1a2e1a","#1e3c1e","#1e3c1e","#1e3c1e","#1e3c1e","#1a2a1a","#1a2a1a","#1e3c1e","#1e3c1e","#1e3c1e","#1e3c1e","#2a1a15","#1a1830","#0f1525","#0f1525","#0a0f1a","#0a0f1a","#0a0f1a"];
       ctx.fillStyle = bgC[nowH] || "#1a2e1a";
@@ -325,9 +329,6 @@ export default function TownPage() {
       ctx.fillText("🌆 Soul Town", 18, 30);
       ctx.font = "12px sans-serif";
       ctx.fillStyle = "#aaaaaa";
-      const nowH = new Date(Date.now() + (new Date().getTimezoneOffset() + 480) * 60000).getHours();
-      const acts = [{l:'😴 Resting'},{'l':'😴 Resting'},{'l':'🧘 Meditating'},{'l':'🧘 Meditating'},{'l':'🧘 Meditating'},{'l':'🌅 Waking'},{'l':'☀️ Morning'},{'l':'✍️ Working'},{'l':'✍️ Working'},{'l':'✍️ Working'},{'l':'✍️ Working'},{'l':'🍱 Lunch'},{'l':'🍱 Lunch'},{'l':'📖 Studying'},{'l':'📖 Studying'},{'l':'🔨 Working'},{'l':'🔨 Working'},{'l':'🍻 Social'},{'l':'🍻 Social'},{'l':'🌆 Gathering'},{'l':'🌆 Gathering'},{'l':'🌙 Winding'},{'l':'🌙 Resting'},{'l':'🌙 Resting'}];
-      const actLabel = acts[nowH] ? acts[nowH].l : '😴 Resting';
       ctx.font = "10px sans-serif";
       ctx.fillStyle = "#000000cc";
       ctx.fillText(actLabel, 18, 68);

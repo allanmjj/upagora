@@ -22,7 +22,7 @@ export class WebhookDispatcher {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), ms);
       try {
-        return await fetch(...args, { signal: controller.signal });
+        return await fetch((args as any)[0] as RequestInfo, { ...(args as any)[1] as RequestInit, signal: controller.signal });
       } finally {
         clearTimeout(timeout);
       }

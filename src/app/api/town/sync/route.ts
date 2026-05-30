@@ -161,6 +161,7 @@ export async function POST(req: NextRequest) {
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return NextResponse.json({ error: "Missing auth" }, { status: 401 });
+    }
 
     const authRes = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authRes.error) {
@@ -304,7 +305,7 @@ export async function GET() {
     return NextResponse.json({
       town_souls: soulCount || 0,
       extraction_results: extractionCount || 0,
-      message: soulCount && soulCount > 0
+      message: Array.isArray(soulCount) ? (soulCount.length > 0 ? "Town is populated with real soul data" : "Town is empty...") : soulCount && soulCount > 0
         ? "Town is populated with real soul data"
         : "Town is empty. Run POST /api/town/sync to sync from extraction results.",
     });

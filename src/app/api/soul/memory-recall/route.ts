@@ -88,9 +88,9 @@ export async function POSTReindex(request: NextRequest) {
     const result = await reEmbedSoulMemories(soul_id, provider);
 
     return NextResponse.json({
+      ...result,
       success: true,
       message: `Re-embedded ${result.stored} memories`,
-      ...result,
     });
   } catch (error) {
     console.error('Re-index error:', error);
@@ -98,16 +98,3 @@ export async function POSTReindex(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  const url = request.url;
-
-  if (url.includes('/embed')) {
-    return POSTEmbed(request);
-  }
-  if (url.includes('/reindex')) {
-    return POSTReindex(request);
-  }
-
-  // Default: semantic search
-  return POST(request);
-}

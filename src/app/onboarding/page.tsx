@@ -3,11 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Inline button since no UI library
+function Button(props: React.ButtonHTMLAttributes<HTMLButtonElement> & { size?: string; className?: string }) {
+  const { size, ...rest } = props;
+  return <button {...rest} />;
+}
 import {
   Brain, Heart, MessageCircle, BookOpen, Users, Mic, Sparkles,
   ChevronRight, Check, ArrowRight, Star, Shield, Ghost, Zap
 } from 'lucide-react';
-import Navbar from '@/components/layout/navbar';
+import { Navbar } from '@/components/layout/navbar';
 
 type Step = 'welcome' | 'type' | 'name' | 'memory' | 'narrative' | 'review' | 'distilling' | 'done';
 

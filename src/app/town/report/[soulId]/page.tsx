@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from 'next/navigation';
 import { SoulActivityBadge, SoulActivityLegend, useSoulActivity } from "@/components/town-activity-badge";
 
 const MOOD_EMOJIS: Record<string, string> = {
@@ -21,17 +21,19 @@ interface SoulData {
   };
 }
 
-export default function SoulDailyReportPage({ params }: { params: { soulId: string } }) {
+export default function SoulDailyReportPage() {
   const router = useRouter();
+  const params = useParams();
+  const soulId = params?.soulId as string;
   const [data, setData] = useState<SoulData | null>(null);
   const [loading, setLoading] = useState(true);
-  const { activity, period_name } = useSoulActivity();
-  const refreshRef = useRef<ReturnType<typeof setInterval>>();
+  const { activity } = useSoulActivity();
+  const refreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    async function fetch() {
+    async function loadData() {
       try {
-        const res = await fetch(`/api/town/summary?soul_id=${params.soulId}`);
+        const res = await fetch(`/api/town/summary?soul_id=${soulId}`);
         const json = await res.json();
         setData(json);
       } catch {
@@ -40,10 +42,10 @@ export default function SoulDailyReportPage({ params }: { params: { soulId: stri
         setLoading(false);
       }
     }
-    fetch();
-    refreshRef.current = setInterval(fetch, 30000);
-    return () => clearInterval(refreshRef.current);
-  }, [params.soulId]);
+    loadData();
+    refreshRef.current = setInterval(loadData, 30000) as any;
+    return () => clearInterval(refreshRef.current as any);
+  }, [soulId]);
 
   if (loading) {
     return (
@@ -79,7 +81,7 @@ export default function SoulDailyReportPage({ params }: { params: { soulId: stri
           <SoulActivityBadge />
         </div>
         <div className="text-xs text-zinc-600">
-          {period_name} · Soul ID: {soul.soul_id.slice(0, 8)}
+          {activity?.label} · Soul ID: {soul.soul_id.slice(0, 8)}
         </div>
       </div>
 
@@ -122,7 +124,7 @@ export default function SoulDailyReportPage({ params }: { params: { soulId: stri
             <div className="w-full h-3 rounded-full bg-zinc-800">
               <div
                 className="h-3 rounded-full bg-pink-500 transition-all duration-500"
-                style={{ width: `${soul.social_need || 50}%` }}
+                style={{ width: `${(soul as any).social_need || 50}%` }}
               />
             </div>
           </div>

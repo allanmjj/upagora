@@ -27,7 +27,7 @@ const EVENT_ICONS: Record<string, string> = {
   encounter: "🤝",
   conversation: "🗣️",
   creation: "🎨",
-  guardian-visit: "👤",
+  "guardian-visit": "👤",
   visit: "👤",
   routine: "📋",
   other: "📌",

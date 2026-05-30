@@ -95,7 +95,7 @@ export async function POST(req: Request) {
       .from("town_events")
       .insert({
         event_type: eventType,
-        space: soulState.current_region || "plaza",
+        space: (soulState as any).current_region || "plaza",
         participants: [soul_id],
         content: {
           type,
@@ -113,7 +113,7 @@ export async function POST(req: Request) {
       .from("soul_states")
       .update({
         energy: Math.min(100, (soulState.energy || 50) + moodBoost),
-        social_need: Math.max(0, (soulState.social_need || 50) - moodBoost),
+        social_need: Math.max(0, ((soulState as any).social_need || 50) - moodBoost),
         updated_at: new Date().toISOString(),
       })
       .eq("soul_id", soul_id);
