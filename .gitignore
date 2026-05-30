@@ -39,3 +39,8 @@ yarn-error.log*
 
 # supabase
 supabase/.temp
+
+.env.local.bak
+.env.local.fixed
+.env*.bak
+.env*.fixed

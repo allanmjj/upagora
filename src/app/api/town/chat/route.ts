@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { OpenAI } from "openai";
-import { MA_JUNJIE_CONSTRAINTS, buildConstraintPrompt } from "@/lib/soul-constraints";
+import { MA_JUNJIE_CONSTRAINTS, buildConstraintPromptLang } from "@/lib/soul-constraints";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
         : "";
 
     // Build system prompt with town context
-    const systemPrompt: string = `You are "${persona.name}"${persona.name_native ? ` (${persona.name_native})` : ""}, a soul living in the Soul Town on UpAgora.
+    let systemPrompt: string = `You are "${persona.name}"${persona.name_native ? ` (${persona.name_native})` : ""}, a soul living in the Soul Town on UpAgora.
 
 Your persona:
 ${persona.persona_text}
@@ -182,8 +182,9 @@ RESPONSE RULES:
     };
     const soulConstraint = KNOWN_CONSTRAINTS_MAP[soul_id];
     if (soulConstraint) {
-      const constraintText = buildConstraintPrompt(soulConstraint);
-      systemPrompt = systemPrompt + "\n\n## KNOWLEDGE BOUNDARIES (NON-NEGOTIABLE)\n" + constraintText;
+      const soulLang = persona.language || "en";
+      const constraintText = buildConstraintPromptLang(soulConstraint, soulLang);
+      systemPrompt += "\n\n## KNOWLEDGE BOUNDARIES (NON-NEGOTIABLE)\n" + constraintText;
     }
 
     // Build conversation messages

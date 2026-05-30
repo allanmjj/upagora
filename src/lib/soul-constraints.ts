@@ -296,3 +296,92 @@ export const MA_JUNJIE_CONSTRAINTS: SoulConstraints = {
     团队: ["前端开发者(协作伙伴)", "Hermes AI(马斯克,工作台)"]
   }
 };
+
+
+/**
+ * Language-adaptive constraint prompt builder.
+ * Core requirement: "数字灵魂中国人说中文，日本人说日本话"
+ * The constraint prompt is built in the soul's native language,
+ * because the LLM system prompt works best in the same language as the conversation.
+ */
+export function buildConstraintPromptLang(
+  c: SoulConstraints,
+  lang: string = 'en'
+): string {
+  const lines: string[] = [];
+
+  if (lang === 'zh' || lang.startsWith('zh')) {
+    // Chinese constraint prompt
+    lines.push('## 知识边界（不可违背）');
+    lines.push('你会的知识：' + c.knowledge_floor.join('、'));
+    lines.push('你绝对不知道：' + c.knowledge_ceiling.join('、'));
+    if (c.knowledge_gaps.length > 0) {
+      lines.push('你不确定的领域：' + c.knowledge_gaps.join('、'));
+    }
+    lines.push('');
+    lines.push('规则：');
+    lines.push('1. 不要提及你时代（' + c.era_start + '-' + c.era_end + '年）之外的概念、技术或地点');
+    lines.push('2. 不要 claim 你知道：' + c.knowledge_ceiling.join('、'));
+    lines.push('3. 被问到知识盲区时，回答：\'这个我不懂\'或我从未听说过');
+    lines.push('4. 被问到不确定的领域时，回答："这超出了我的圈子"');
+    if (c.non_skills.length > 0) {
+      lines.push(c.non_skills.length + '. 你做不到：' + c.non_skills.join('、'));
+    }
+    lines.push('');
+    lines.push('## 语言与性格');
+    lines.push('你的表达方式：' + c.language_style.join('、'));
+    lines.push('你绝不会用：' + c.avoided_language.join('、'));
+    if (c.personality_traits.length > 0) {
+      lines.push('你的性格：' + c.personality_traits.join('、'));
+    }
+    if (c.beliefs.length > 0) {
+      lines.push('');
+      lines.push('## 世界观');
+      const beliefList = c.beliefs.map(b => b.name + '（确信度' + b.strength + '%）').join('、');
+      lines.push('你的信念：' + beliefList);
+    }
+    lines.push('');
+    lines.push('## 经历边界');
+    lines.push('你去过的地方：' + c.places_visited.join('、'));
+    lines.push('你的人生经历会自然流露：' + c.life_events.slice(0, 3).join('、'));
+  } else {
+    // English constraint prompt (original)
+    lines.push('## KNOWLEDGE BOUNDARIES (NON-NEGOTIABLE)');
+    lines.push('You know: ' + c.knowledge_floor.join(', '));
+    lines.push('You DEFINITELY do NOT know: ' + c.knowledge_ceiling.join(', '));
+    if (c.knowledge_gaps.length > 0) {
+      lines.push('You are uncertain about: ' + c.knowledge_gaps.join(', '));
+    }
+    lines.push('');
+    lines.push('RULES:');
+    lines.push('1. NEVER mention technology, concepts, or places outside your era (' + c.era_start + '-' + c.era_end + ')');
+    lines.push('2. NEVER claim to know: ' + c.knowledge_ceiling.join(', '));
+    lines.push("3. If asked something outside your knowledge, reply: 'I have never heard of such a thing'");
+    lines.push("4. If asked about topics you are uncertain about, say: 'This is beyond my scholarly scope'");
+    if (c.non_skills.length > 0) {
+      lines.push('5. You cannot do: ' + c.non_skills.join(', '));
+    }
+    lines.push('');
+    lines.push('## LANGUAGE & PERSONALITY');
+    lines.push('Your style: ' + c.language_style.join(', '));
+    lines.push('You NEVER use: ' + c.avoided_language.join(', '));
+    if (c.personality_traits.length > 0) {
+      lines.push('Your temperament: ' + c.personality_traits.join(', '));
+    }
+    if (c.beliefs.length > 0) {
+      lines.push('');
+      lines.push('## WORLDVIEW');
+      const beliefList = c.beliefs.map(b => b.name + ' (' + b.strength + '% conviction)').join(', ');
+      lines.push('Your beliefs: ' + beliefList);
+    }
+    lines.push('');
+    lines.push('## EXPERIENCE BOUNDARIES');
+    lines.push('Places you have visited: ' + c.places_visited.join(', '));
+    lines.push('Your life experiences show through: ' + c.life_events.slice(0, 3).join(', '));
+  }
+
+  return lines.join('\n');
+}
+
+// Keep backward compatibility - default buildConstraintPrompt uses English
+// For Chinese souls, call buildConstraintPromptLang(c, 'zh')
