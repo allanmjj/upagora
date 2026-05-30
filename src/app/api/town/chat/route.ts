@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { OpenAI } from "openai";
 import { MA_JUNJIE_CONSTRAINTS, buildConstraintPromptLang } from "@/lib/soul-constraints";
+import { refinePersonaFromFeedback } from "@/lib/persona-refiner";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -185,6 +186,36 @@ RESPONSE RULES:
       const soulLang = persona.language || "en";
       const constraintText = buildConstraintPromptLang(soulConstraint, soulLang);
       systemPrompt += "\n\n## KNOWLEDGE BOUNDARIES (NON-NEGOTIABLE)\n" + constraintText;
+    }
+
+    // Guardian calibration: load feedback and refine persona dynamically
+    let calibrationRefinement = '';
+    try {
+      const { data: feedbackHistory } = await supabase
+        .from('soul_calibration_feedback')
+        .select('*')
+        .eq('soul_id', soul_id)
+        .order('created_at', { ascending: true })
+        .limit(100);
+      
+      if (feedbackHistory && feedbackHistory.length > 0) {
+        const feedbackArray = feedbackHistory.map(fb => ({
+          id: 'fb-' + fb.id,
+          soul_id,
+          response: null,
+          feedback_type: fb.feedback_type,
+          comment: fb.comment,
+          suggested_correction: fb.suggested_correction,
+          timestamp: fb.created_at,
+        }));
+        const refinement = refinePersonaFromFeedback(feedbackArray as any);
+        calibrationRefinement = refinement.promptAddition;
+      }
+    } catch {
+      // Calibration table may not exist yet
+    }
+    if (calibrationRefinement) {
+      systemPrompt += calibrationRefinement;
     }
 
     // Build conversation messages
