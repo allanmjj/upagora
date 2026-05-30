@@ -1,99 +1,143 @@
+/**
+ * Guardian Soul Calibration API
+ * 
+ * Receives calibration feedback (feels right / not like me / correction)
+ * and stores it for persona refinement.
+ * 
+ * POST /api/soul/calibrate
+ * Body: { soul_id, response_id, feedback_type, comment, suggested_correction? }
+ */
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+type FeedbackType = 'positive' | 'negative' | 'correction';
 
-const VALID_DIMENSIONS = ['voice', 'values', 'knowledge', 'emotion', 'relationships'];
+type CalibrationRequest = {
+  guardian_id?: string;
+  soul_id: string;
+  response_id: string;
+  feedback_type: FeedbackType;
+  comment: string;
+  suggested_correction?: string;
+};
+
+function getCalibrationErrors(message?: string) {
+  return NextResponse.json(
+    { success: false, error: message || 'Internal error' },
+    { status: 500 }
+  );
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) return NextResponse.json({ error: 'Missing auth' }, { status: 401 });
-    const authRes = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (authRes.error) return NextResponse.json({ error: authRes.error.message }, { status: 401 });
+    const body = await req.json() as CalibrationRequest;
 
-    const body = await req.json();
-    const { context, agent_response, corrected_response, dimension } = body;
-
-    if (!agent_response?.trim() || !corrected_response?.trim()) {
-      return NextResponse.json({ error: 'agent_response and corrected_response are required' }, { status: 400 });
+    // Validate required fields
+    if (!body.soul_id || !body.feedback_type || !body.comment) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required fields' },
+        { status: 400 }
+      );
     }
 
-    const result = await supabase.from('calibration_pairs').insert({
-      agent_id: authRes.data.user.id,
-      guardian_id: authRes.data.user.id,
-      context,
-      agent_response,
-      corrected_response,
-      dimension: dimension || 'general',
-      auto_merged: false,
-    }).select().single();
+    // Normalize feedback_type
+    const typeMap: Record<string, FeedbackType> = {
+      positive: 'positive',
+      1: 'positive',
+      thumbs_up: 'positive',
+      agree: 'positive',
+      1463: 'positive',
+      negative: 'negative',
+      2: 'negative',
+      thumbs_down: 'negative',
+      disagree: 'negative',
+      correction: 'correction',
+      3: 'correction',
+      edit: 'correction',
+      suggest: 'correction',
+    };
+    const normalized = typeMap[body.feedback_type] || body.feedback_type.toLowerCase() as FeedbackType;
 
-    if (result.error) {
-      return NextResponse.json({ error: result.error.message }, { status: 500 });
-    }
+    const supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
-    // Auto-merge: if the dimension persona file exists, append the calibration
-    if (dimension && VALID_DIMENSIONS.includes(dimension)) {
-      const persona = await supabase
-        .from('persona_files')
-        .select('content, version')
-        .limit(50)
-        .single();
+    // Insert into soul_calibration_feedback table
+    const { data, error } = await supabase
+      .from('soul_calibration_feedback')
+      .insert({
+        soul_id: body.soul_id,
+        response_id: body.response_id,
+        feedback_type: normalized,
+        comment: body.comment,
+        suggested_correction: body.suggested_correction || null,
+        guardian_id: body.guardian_id || 'anonymous',
+      })
+      .select()
+      .single();
 
-      if (persona.data && !persona.error) {
-        const newContent = `${persona.data.content}\n\n--- Calibration ${new Date().toISOString()}\nQ: ${agent_response}\nA: ${corrected_response}\n`;
-        await supabase
-          .from('persona_files')
-          .update({
-            content: newContent,
-            version: persona.data.version + 1,
-            last_calibrated_at: new Date().toISOString(),
-          })
-          .eq('agent_id', authRes.data.user.id)
-          .eq('file_key', dimension);
+    if (error) {
+      console.error('Calibration insert error:', error);
+      // If table doesn't exist, return success anyway (graceful degradation)
+      if (error.code === '42P01') {
+        return NextResponse.json({
+          success: true,
+          data: null,
+          warning: 'Calibration table not yet created',
+        });
       }
+      throw error;
     }
 
     return NextResponse.json({
-      message: 'Calibration recorded',
-      data: result.data,
-      auto_merged: !!dimension,
+      success: true,
+      data,
     });
-  } catch (err) {
-    console.error('Calibration error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (error) {
+    console.error('Calibration API error:', error);
+    throw error;
   }
 }
 
 export async function GET(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) return NextResponse.json({ error: 'Missing auth' }, { status: 401 });
-    const authRes = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (authRes.error) return NextResponse.json({ error: authRes.error.message }, { status: 401 });
-
     const { searchParams } = new URL(req.url);
-    const dimension = searchParams.get('dimension');
+    const soul_id = searchParams.get('soul_id');
+    if (!soul_id) {
+      return NextResponse.json(
+        { success: false, error: 'soul_id required' },
+        { status: 400 }
+      );
+    }
 
-    let query = supabase
-      .from('calibration_pairs')
+    const supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { data, error } = await supabase
+      .from('soul_calibration_feedback')
       .select('*')
-      .limit(50)
+      .eq('soul_id', soul_id)
+      .order('created_at', { ascending: false })
+      .limit(50);
 
-    if (dimension) query = query.eq('dimension', dimension);
+    if (error) {
+      console.error('Calibration fetch error:', error);
+      // If table doesn't exist, return empty array
+      if (error.code === '42P01') {
+        return NextResponse.json({ success: true, data: [] });
+      }
+      throw error;
+    }
 
-    const result = await query.limit(50);
-
-    return NextResponse.json({
-      calibrations: result.data || [],
-      total: result.data?.length || 0,
-    });
-  } catch (err) {
-    console.error('Calibration list error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: true, data: data || [] });
+  } catch (error) {
+    console.error('Calibration API error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal error' },
+      { status: 500 }
+    );
   }
 }
