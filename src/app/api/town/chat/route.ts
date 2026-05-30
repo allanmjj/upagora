@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { OpenAI } from "openai";
-import { MA_JUNJIE_CONSTRAINTS, buildConstraintPromptLang } from "@/lib/soul-constraints";
+import { KNOWN_CONSTRAINTS_MAP } from "@/lib/soul-constraint-loader";
+import { buildConstraintPromptLang } from "@/lib/soul-constraints";
 import { refinePersonaFromFeedback } from "@/lib/persona-refiner";
 
 const supabase = createClient(
@@ -177,10 +178,7 @@ RESPONSE RULES:
 7. NEVER break character or mention you're an AI.`;
 
 
-    // Inject soul knowledge constraints for verified souls
-    const KNOWN_CONSTRAINTS_MAP: Record<string, any> = {
-      "a1b2c3d4-e5f6-7890-abcd-ef1234567890": MA_JUNJIE_CONSTRAINTS,
-    };
+    // Inject soul knowledge constraints for ALL verified souls in KNOWN_CONSTRAINTS_MAP
     const soulConstraint = KNOWN_CONSTRAINTS_MAP[soul_id];
     if (soulConstraint) {
       const soulLang = persona.language || "en";
