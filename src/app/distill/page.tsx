@@ -99,6 +99,45 @@ export default function SoulDistillWizard() {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [selectedFeed, setSelectedFeed] = useState<string | null>(null);
 
+  // Form data for soul creation
+  const [soulName, setSoulName] = useState("");
+  const [soulLanguage, setSoulLanguage] = useState("zh");
+  const [soulCategory, setSoulCategory] = useState("historical");
+  const [isDistilling, setIsDistilling] = useState(false);
+  const [distillError, setDistillError] = useState<string | null>(null);
+
+  async function startDistillation() {
+    if (!soulName.trim() || !selectedMethod || !selectedFeed) return;
+    setIsDistilling(true);
+    setDistillError(null);
+    try {
+      const resp = await fetch("/api/soul/extract", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${localStorage.getItem("supabase-auth-token") || ""}`,
+        },
+        body: JSON.stringify({
+          subject_name: soulName.trim(),
+          method: selectedMethod,
+          feed_level: selectedFeed,
+          language: soulLanguage,
+          category: soulCategory,
+          // For auto method, no text needed; for upload/guide, text would be provided
+          raw_text: "Starting extraction via " + selectedMethod + " method. Default persona initialization.",
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || "Extraction failed");
+      // Navigate to calibrate after successful extraction
+      window.location.href = `/calibrate?subject=${encodeURIComponent(soulName)}`;
+    } catch (e: any) {
+      setDistillError(e.message || "Extraction failed");
+    } finally {
+      setIsDistilling(false);
+    }
+  }
+
   const nextStep = () => setCurrentStep(s => Math.min(s + 1, STEPS.length - 1));
   const prevStep = () => setCurrentStep(s => Math.max(s - 1, 0));
   const goToStep = (n: number) => setCurrentStep(n);
@@ -196,6 +235,8 @@ export default function SoulDistillWizard() {
                 <label className="block text-sm text-zinc-400 mb-2">Full Name</label>
                 <input
                   type="text"
+                  value={soulName}
+                  onChange={(e) => setSoulName(e.target.value)}
                   placeholder="e.g. Sū Shì / Abraham Lincoln / Your loved one"
                   className="w-full rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-600"
                 />
@@ -203,7 +244,7 @@ export default function SoulDistillWizard() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-zinc-400 mb-2">Native Language</label>
-                  <select className="w-full rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-600">
+                  <select value={soulLanguage} onChange={(e) => setSoulLanguage(e.target.value)} className="w-full rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-600">
                     <option value="zh">Chinese</option>
                     <option value="en">English</option>
                     <option value="ja">Japanese</option>
@@ -213,7 +254,7 @@ export default function SoulDistillWizard() {
                 </div>
                 <div>
                   <label className="block text-sm text-zinc-400 mb-2">Category</label>
-                  <select className="w-full rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-600">
+                  <select value={soulCategory} onChange={(e) => setSoulCategory(e.target.value)} className="w-full rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-600">
                     <option value="historical">Historical Figure</option>
                     <option value="living">Living Person</option>
                     <option value="self">Myself</option>
@@ -339,12 +380,25 @@ export default function SoulDistillWizard() {
               </ul>
             </div>
 
+            {distillError && (
+              <div className="rounded-lg border border-red-800 bg-red-900/20 p-4 mb-4">
+                <p className="text-red-300 text-sm">{distillError}</p>
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={startDistillation}
+                disabled={isDistilling || !soulName.trim()}
+                className="px-8 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 font-medium hover:from-violet-500 hover:to-purple-500 transition-all text-lg disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isDistilling ? "🌀 Distilling..." : `🧬 Distill "${soulName || "Unknown"}" →`}
+              </button>
               <a
                 href="/calibrate"
-                className="px-8 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 font-medium hover:from-violet-500 hover:to-purple-500 transition-all text-lg"
+                className="px-6 py-3 rounded-xl border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition-all text-center"
               >
-                Enter Guardian Calibration →
+                Skip to Calibration →
               </a>
             </div>
 
