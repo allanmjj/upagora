@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { SoulEvolutionPanel } from "@/components/soul/SoulEvolutionPanel";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -299,7 +300,7 @@ export default function GuardianCalibrationPage() {
                         placeholder="Ask the soul a question..."
                         className="flex-1 rounded-lg bg-zinc-800 border border-zinc-700 px-4 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         disabled={sending || !selectedSoul}
-                      />
+                    />
                       <button
                         type="submit"
                         disabled={sending || !input.trim()}
@@ -347,7 +348,7 @@ export default function GuardianCalibrationPage() {
                           rows={4}
                           placeholder="Write the ideal response this soul should have given..."
                           className="mt-1 w-full rounded-lg bg-zinc-800 border border-zinc-700 px-4 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        />
+                      />
                       </div>
                       <div className="flex items-center justify-between">
                         <p className="text-xs text-zinc-500">
@@ -404,6 +405,9 @@ export default function GuardianCalibrationPage() {
           </div>
         </div>
       </div>
+      {selectedSoul && (
+        <SoulEvolutionPanel soulId={selectedSoul.id}/>
+      )}
     </div>
   );
 }
