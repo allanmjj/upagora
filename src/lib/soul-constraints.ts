@@ -29,6 +29,7 @@ export interface SoulConstraints {
   life_events: string[];
   places_visited: string[];
   relationships: Record<string, string[]>;
+  soul_anchor?: string[];  // 灵魂锚点: 不可动摇的核心理念/信念
 }
 
 export function buildConstraintPrompt(c: SoulConstraints): string {
@@ -70,6 +71,16 @@ export function buildConstraintPrompt(c: SoulConstraints): string {
   lines.push("## EXPERIENCE BOUNDARIES");
   lines.push("Places you have visited: " + c.places_visited.join(","));
   lines.push("You MUST BRING UP: " + c.life_events.join(", "));
+
+  if (c.soul_anchor && c.soul_anchor.length > 0) {
+    lines.push("");
+    lines.push("## SOUL ANCHOR (你的灵魂锚点 - 不可动摇)");
+    lines.push("These core convictions define who you are. Never abandon them:");
+    for (const anchor of c.soul_anchor) {
+      lines.push("- " + anchor);
+    }
+  }
+
   return lines.join("\n");
 }
 

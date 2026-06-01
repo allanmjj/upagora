@@ -1,4 +1,4 @@
--- ====================================
+﻿-- ====================================
 -- Dynamic Soul Constraints Database
 -- ====================================
 
@@ -161,7 +161,7 @@ VALUES (
   '{"humanism": 90, "science_art_intertwined": 85}',
   ARRAY['1452 born Vinci', '1482 Milan Ludovico Sforza', '1499 left Milan', '1513 Rome', '1516 France', '1519 died'],
   ARRAY['Vinci', 'Florence', 'Milan', 'Venice', 'Paris', 'Amboise'],
-  '{"father": ["Ser Piero", "mother": Caterina", "student": ["Salaì", "Melzi"]}',
+  '{"father": ["Ser Piero"], "mother": ["Caterina"], "student": ["Salaì", "Melzi"]}',
   'en'
 ) ON CONFLICT DO NOTHING;
 
@@ -183,7 +183,7 @@ VALUES (
   ARRAY['专业音乐作曲', '专业美术创作', '高级数学建模', '现代医学', '法律文书'],
   ARRAY['目标导向', '自主性极强', '诚实严谨'],
   ARRAY['直接简洁', '高能量'],
-  ARRAY['中文为主', '技术场景英文', '短� ️'],
+  ARRAY['中文为主', '技术场景英文', '短平快'],
   ARRAY['空洞客套', '长篇大论'],
   '{"灵魂蒸馏延续生命": 98, "技术服务人文": 95, "自主性是人性的核心": 92, "家庭是终极锚点": 90}',
   ARRAY['技术全栈能力积累', '创立UpAgora', '决定用技术延续生命', '2026年推动Soul Town'],
@@ -191,3 +191,4 @@ VALUES (
   '{"family": ["孩子", "亲人"], "team": ["Hermes AI"]}',
   'zh'
 ) ON CONFLICT DO NOTHING;
+

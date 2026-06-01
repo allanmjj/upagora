@@ -1,449 +1,360 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
-
-interface WizardStepData {
-  name: string;
-  background: string;
-  values: string;
-  knowledge: string;
-  story: string;
-}
+import { useState } from "react";
 
 const STEPS = [
   {
-    id: 0,
-    title: "Welcome",
-    subtitle: "Begin your self-distillation journey",
-    icon: "✨",
+    key: "intro",
+    title: "Start Your Soul Distillation",
+    description: "The most important relationships deserve to continue beyond time.",
   },
   {
-    id: 1,
-    title: "Who Are You",
-    subtitle: "Name, background, and identity",
-    icon: "👤",
+    key: "who",
+    title: "Who Are You Distilling?",
+    description: "A person, a historical figure, or even yourself.",
   },
   {
-    id: 2,
-    title: "Core Values",
-    subtitle: "What guides your decisions",
-    icon: "⚖️",
+    key: "method",
+    title: "Choose Your Method",
+    description: "Different approaches for different depths.",
   },
   {
-    id: 3,
-    title: "Knowledge & Expertise",
-    subtitle: "What you know and how you think",
-    icon: "📚",
+    key: "feed",
+    title: "Feed the Soul",
+    description: "The more you share, the closer it becomes.",
   },
   {
-    id: 4,
-    title: "Life Story",
-    subtitle: "Key moments that shaped you",
-    icon: "📖",
-  },
-  {
-    id: 5,
-    title: "Review & Create",
-    subtitle: "Finalize your soul profile",
-    icon: "🎯",
+    key: "calibrate",
+    title: "Calibrate & Refine",
+    description: "The guardian's sacred duty.",
   },
 ];
 
-export default function SelfDistillationWizard() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+type StepKey = "intro" | "who" | "method" | "feed" | "calibrate";
+
+const DISTILL_METHODS = [
+  {
+    id: "auto",
+    icon: "🔍",
+    title: "Quick Extract",
+    description: "We'll search public records to build an initial profile.",
+    best_for: "Historical figures, public personalities",
+    time: "~5 min",
+  },
+  {
+    id: "upload",
+    icon: "📝",
+    title: "Upload Materials",
+    description: "Share writings, letters, transcripts, and conversation records.",
+    best_for: "Anyone you have materials about",
+    time: "~10 min",
+  },
+  {
+    id: "guide",
+    icon: "🎙️",
+    title: "Guided Interview",
+    description: "Answer structured questions that reveal personality depths.",
+    best_for: "Living people, yourself",
+    time: "~30 min",
+  },
+];
+
+const FEED_LEVELS = [
+  {
+    level: "L1",
+    name: "Passive Collection",
+    icon: "📡",
+    description: "Chat logs, emails, social media exports — anything you already have.",
+    quality: "Foundation",
+    color: "from-slate-500 to-zinc-500",
+  },
+  {
+    level: "L2",
+    name: "Active Extraction",
+    icon: "🎯",
+    description: "Answer structured questions designed to capture specific personality dimensions.",
+    quality: "Improving",
+    color: "from-violet-500 to-purple-500",
+  },
+  {
+    level: "L3",
+    name: "Biographical Depth",
+    icon: "🗺️",
+    description: "Full life map — pivotal moments, relationships, triumphs, and regrets.",
+    quality: "Deep",
+    color: "from-amber-500 to-orange-500",
+  },
+  {
+    level: "L4",
+    name: "Live Calibration",
+    icon: "💫",
+    description: "Real-time guardian feedback loop — the soul learns and evolves with every interaction.",
+    quality: "Living",
+    color: "from-emerald-500 to-green-500",
+  },
+];
+
+export default function SoulDistillWizard() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [distilling, setDistilling] = useState(false);
-  const [completed, setCompleted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<WizardStepData>({
-    name: "",
-    background: "",
-    values: "",
-    knowledge: "",
-    story: "",
-  });
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const [selectedFeed, setSelectedFeed] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function init() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        // Pre-fill name if available
-        setData((prev) => ({
-          ...prev,
-          name: user.user_metadata?.full_name || user.email?.split("@")[0] || "",
-        }));
-      }
-      setLoading(false);
-    }
-    init();
-  }, []);
-
-  const updateField = (field: keyof WizardStepData, value: string) => {
-    setData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const canProceed = () => {
-    switch (currentStep) {
-      case 0: return true;
-      case 1: return data.name.trim().length > 0;
-      case 2: return data.values.trim().length > 20;
-      case 3: return data.knowledge.trim().length > 20;
-      case 4: return data.story.trim().length > 20;
-      case 5: return true;
-      default: return false;
-    }
-  };
-
-  const nextStep = () => {
-    if (currentStep < STEPS.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const prevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleSubmit = async () => {
-    setDistilling(true);
-    setError(null);
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setError("Not authenticated");
-        return;
-      }
-
-      // Call the soul extract API with self-distillation data
-      const res = await fetch("/api/soul/quick-extract", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          name: data.name,
-          background: data.background,
-          values: data.values,
-          knowledge: data.knowledge,
-          life_story: data.story,
-          mode: "self-distillation",
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        setError(err.error || "Extraction failed");
-        return;
-      }
-
-      const result = await res.json();
-      setCompleted(true);
-    } catch (err) {
-      setError("Failed to create soul profile. Please try again.");
-    } finally {
-      setDistilling(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <div className="text-slate-400 animate-pulse">Loading Self-Distillation Wizard...</div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">✨</div>
-          <h2 className="text-2xl text-white mb-2">Self-Distillation</h2>
-          <p className="text-slate-400">Please log in to start distilling your soul</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (completed) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
-        <div className="max-w-lg w-full bg-slate-900/50 rounded-2xl border border-slate-800/50 p-8 text-center">
-          <div className="text-6xl mb-4 animate-bounce">🎉</div>
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
-            Soul Created!
-          </h2>
-          <p className="text-slate-300 mb-6">
-            Welcome to UpAgora! Your soul has been distilled and is ready.
-            You can now chat with your soul, calibrate it over time, or invite guardians.
-          </p>
-          <div className="flex gap-3 justify-center">
-            <a href="/chat" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 px-6 py-3 rounded-full font-medium transition-all">
-              Chat with your soul
-            </a>
-            <a href="/calibrate" className="bg-slate-800 hover:bg-slate-700 px-6 py-3 rounded-full font-medium transition-all">
-              Calibrate
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const nextStep = () => setCurrentStep(s => Math.min(s + 1, STEPS.length - 1));
+  const prevStep = () => setCurrentStep(s => Math.max(s - 1, 0));
+  const goToStep = (n: number) => setCurrentStep(n);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
-      {/* Header */}
-      <header className="border-b border-slate-800/50 p-6">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">✨</span>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Self-Distillation Wizard
-              </h1>
-              <p className="text-slate-400 text-sm">
-                Create your soul profile in 5 simple steps
-              </p>
-            </div>
+    <div className="min-h-screen bg-zinc-950 text-white">
+      {/* Hero */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-violet-950/30 via-transparent to-transparent" />
+        <div className="relative container mx-auto px-4 pt-16 pb-12 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-violet-700/50 bg-violet-900/20 px-4 py-1.5 text-sm text-violet-300 mb-6">
+            <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+            Soul Distillation Pipeline
           </div>
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-violet-300 via-purple-300 to-amber-300 bg-clip-text text-transparent">
+            Distill a Soul
+          </h1>
+          <p className="mt-4 text-lg text-zinc-400 max-w-2xl mx-auto">
+            Create a digital replica that captures not just what someone knew,
+            but <em className="text-zinc-300">who they were</em>.
+            Through 7 dimensions of personality, backed by memory and refined by guardianship.
+          </p>
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-3xl mx-auto p-6">
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between mb-2">
-            {STEPS.map((step) => (
-              <div
-                key={step.id}
-                className={`flex flex-col items-center ${
-                  step.id <= currentStep ? "opacity-100" : "opacity-40"
-                }`}
-              >
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${
-                    step.id < currentStep
-                      ? "bg-green-500/20 text-green-400"
-                      : step.id === currentStep
-                      ? "bg-purple-500/20 text-purple-400"
-                      : "bg-slate-800/50 text-slate-500"
-                  }`}
-                >
-                  {step.id < currentStep ? "✓" : step.icon}
-                </div>
-                <span className="text-xs text-slate-400 hidden md:block">
-                  {step.title}
-                </span>
+      {/* Progress Bar */}
+      <div className="container mx-auto px-4 mb-8">
+        <div className="flex items-center gap-1 overflow-x-auto pb-2">
+          {STEPS.map((step, i) => (
+            <button
+              key={step.key}
+              onClick={() => goToStep(i)}
+              className={`flex items-center gap-2 shrink-0 px-3 py-2 rounded-lg text-sm transition-all ${
+                i === currentStep
+                  ? "bg-violet-600 text-white"
+                  : i < currentStep
+                  ? "bg-violet-900/50 text-violet-300"
+                  : "bg-zinc-900 text-zinc-600 hover:text-zinc-400"
+              }`}
+            >
+              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                i < currentStep
+                  ? "bg-emerald-600 text-white"
+                  : i === currentStep
+                  ? "bg-white/20"
+                  : "bg-zinc-800"
+              }`}>
+                {i < currentStep ? "✓" : i + 1}
+              </span>
+              <span className="hidden sm:inline">{step.title}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Step Content */}
+      <div className="container mx-auto px-4 pb-16">
+        {currentStep === 0 && (
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="text-6xl mb-6">🧬</div>
+            <h2 className="text-2xl font-bold mb-4">{STEPS[0].title}</h2>
+            <p className="text-zinc-400 mb-8">{STEPS[0].description}</p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-left">
+                <div className="text-lg font-medium mb-1">7 Dimensions</div>
+                <div className="text-sm text-zinc-500">Cognition, Values, Expression, Knowledge, Emotion, Relationships, Narrative</div>
               </div>
-            ))}
-          </div>
-          <div className="w-full bg-slate-800 rounded-full h-1">
-            <div
-              className="bg-gradient-to-r from-purple-500 to-pink-500 h-1 rounded-full transition-all duration-500"
-              style={{
-                width: `${(currentStep / (STEPS.length - 1)) * 100}%`,
-              }}
-            />
-          </div>
-        </div>
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-left">
+                <div className="text-lg font-medium mb-1">9D Constraints</div>
+                <div className="text-sm text-zinc-500">Knowledge boundaries ensure authenticity — what they CAN'T know matters as much as what they can</div>
+              </div>
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-left">
+                <div className="text-lg font-medium mb-1">Living Memory</div>
+                <div className="text-sm text-zinc-500">Semantic memory with RAG retrieval, continuously calibrated by guardians</div>
+              </div>
+            </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
-            <p className="text-red-400">{error}</p>
+            <button
+              onClick={nextStep}
+              className="px-8 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 font-medium hover:from-violet-500 hover:to-purple-500 transition-all text-lg"
+            >
+              Begin →
+            </button>
           </div>
         )}
 
-        {/* Step Content */}
-        <div className="bg-slate-900/50 rounded-2xl border border-slate-800/50 p-8">
-          <div className="text-center mb-6">
-            <div className="text-4xl mb-2">{STEPS[currentStep].icon}</div>
-            <h2 className="text-2xl font-semibold text-white">
-              {STEPS[currentStep].title}
-            </h2>
-            <p className="text-slate-400">{STEPS[currentStep].subtitle}</p>
-          </div>
+        {currentStep === 1 && (
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold mb-2">{STEPS[1].title}</h2>
+            <p className="text-zinc-400 mb-8">{STEPS[1].description}</p>
 
-          {currentStep === 0 && (
-            <div className="text-center space-y-4">
-              <p className="text-slate-300 text-lg">
-                Self-distillation is the process of capturing your unique essence
-                into an AI agent. By answering a few questions, we'll create a soul
-                profile that reflects who you are.
-              </p>
-              <div className="grid grid-cols-2 gap-4 text-sm text-slate-400">
-                <div className="bg-slate-800/30 rounded-xl p-4">
-                  <div className="text-purple-400 mb-1">🎯</div>
-                  <div>Captures your essence</div>
-                </div>
-                <div className="bg-slate-800/30 rounded-xl p-4">
-                  <div className="text-blue-400 mb-1">⚡</div>
-                  <div>Takes only 5 minutes</div>
-                </div>
-                <div className="bg-slate-800/30 rounded-xl p-4">
-                  <div className="text-green-400 mb-1">🔄</div>
-                  <div>Update anytime</div>
-                </div>
-                <div className="bg-slate-800/30 rounded-xl p-4">
-                  <div className="text-pink-400 mb-1">👥</div>
-                  <div>Share with guardians</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {currentStep === 1 && (
-            <div className="space-y-4">
+            <div className="space-y-4 mb-8">
               <div>
-                <label className="block text-sm text-slate-400 mb-1">
-                  Your Name *
-                </label>
+                <label className="block text-sm text-zinc-400 mb-2">Full Name</label>
                 <input
                   type="text"
-                  value={data.name}
-                  onChange={(e) => updateField("name", e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500"
-                  placeholder="Enter your name..."
+                  placeholder="e.g. Sū Shì / Abraham Lincoln / Your loved one"
+                  className="w-full rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-600"
                 />
               </div>
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">
-                  Background
-                </label>
-                <textarea
-                  value={data.background}
-                  onChange={(e) => updateField("background", e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500"
-                  rows={4}
-                  placeholder="Tell us about yourself - your profession, interests, cultural background, etc..."
-                />
-              </div>
-            </div>
-          )}
-
-          {currentStep === 2 && (
-            <div className="space-y-4">
-              <p className="text-slate-300 text-sm mb-4">
-                What are your core values and beliefs? What principles guide your
-                life and decisions? (Minimum 20 characters)
-              </p>
-              <textarea
-                value={data.values}
-                onChange={(e) => updateField("values", e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500"
-                rows={6}
-                placeholder="Describe your core values, what matters most to you, how you approach life..."
-              />
-              <div className="text-xs text-slate-500">
-                {data.values.length}/20 minimum characters
-              </div>
-            </div>
-          )}
-
-          {currentStep === 3 && (
-            <div className="space-y-4">
-              <p className="text-slate-300 text-sm mb-4">
-                What do you know? What are your areas of expertise and interests?
-                How do you typically approach problems? (Minimum 20 characters)
-              </p>
-              <textarea
-                value={data.knowledge}
-                onChange={(e) => updateField("knowledge", e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500"
-                rows={6}
-                placeholder="Describe your knowledge, skills, expertise areas, and how you think about problems..."
-              />
-              <div className="text-xs text-slate-500">
-                {data.knowledge.length}/20 minimum characters
-              </div>
-            </div>
-          )}
-
-          {currentStep === 4 && (
-            <div className="space-y-4">
-              <p className="text-slate-300 text-sm mb-4">
-                What key moments shaped who you are? What experiences had the
-                biggest impact on your life? (Minimum 20 characters)
-              </p>
-              <textarea
-                value={data.story}
-                onChange={(e) => updateField("story", e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500"
-                rows={6}
-                placeholder="Share key life moments, milestones, challenges you've overcome, turning points..."
-              />
-              <div className="text-xs text-slate-500">
-                {data.story.length}/20 minimum characters
-              </div>
-            </div>
-          )}
-
-          {currentStep === 5 && (
-            <div className="space-y-4">
-              <p className="text-slate-300 text-sm mb-4">
-                Review your soul profile below. When ready, click "Create Soul"
-                to distill your essence into an AI agent.
-              </p>
-              <div className="bg-slate-800/30 rounded-xl p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm text-slate-400">Name</div>
-                  <div className="text-white">{data.name || "Not provided"}</div>
+                  <label className="block text-sm text-zinc-400 mb-2">Native Language</label>
+                  <select className="w-full rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-600">
+                    <option value="zh">Chinese</option>
+                    <option value="en">English</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="fr">French</option>
+                  </select>
                 </div>
                 <div>
-                  <div className="text-sm text-slate-400">Background</div>
-                  <div className="text-white">{data.background || "Not provided"}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-slate-400">Values</div>
-                  <div className="text-white">{data.values || "Not provided"}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-slate-400">Knowledge</div>
-                  <div className="text-white">{data.knowledge || "Not provided"}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-slate-400">Life Story</div>
-                  <div className="text-white">{data.story || "Not provided"}</div>
+                  <label className="block text-sm text-zinc-400 mb-2">Category</label>
+                  <select className="w-full rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-600">
+                    <option value="historical">Historical Figure</option>
+                    <option value="living">Living Person</option>
+                    <option value="self">Myself</option>
+                    <option value="fictional">Fictional</option>
+                  </select>
                 </div>
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between mt-6">
-          <button
-            onClick={prevStep}
-            disabled={currentStep === 0}
-            className="bg-slate-800 hover:bg-slate-700 px-6 py-3 rounded-full font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            ← Back
-          </button>
-          <button
-            onClick={currentStep === STEPS.length - 1 ? handleSubmit : nextStep}
-            disabled={!canProceed() || distilling}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 px-6 py-3 rounded-full font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {distilling
-              ? "Distilling..."
-              : currentStep === STEPS.length - 1
-              ? "Create Soul ✨"
-              : "Next →"}
-          </button>
-        </div>
-      </main>
+            <div className="flex justify-between">
+              <button onClick={prevStep} className="px-6 py-3 rounded-xl border border-zinc-700 text-zinc-400 hover:text-white transition-colors">
+                ← Back
+              </button>
+              <button onClick={nextStep} className="px-6 py-3 rounded-xl bg-violet-600 font-medium hover:bg-violet-500 transition-colors">
+                Next: Choose Method →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 2 && (
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-2xl font-bold mb-2">{STEPS[2].title}</h2>
+            <p className="text-zinc-400 mb-8">{STEPS[2].description}</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              {DISTILL_METHODS.map((method) => (
+                <button
+                  key={method.id}
+                  onClick={() => setSelectedMethod(method.id)}
+                  className={`rounded-2xl border p-6 text-left transition-all ${
+                    selectedMethod === method.id
+                      ? "border-violet-500 bg-violet-900/20 ring-2 ring-violet-500/30"
+                      : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"
+                  }`}
+                >
+                  <div className="text-3xl mb-3">{method.icon}</div>
+                  <div className="font-bold mb-1">{method.title}</div>
+                  <div className="text-sm text-zinc-400 mb-2">{method.description}</div>
+                  <div className="text-xs text-violet-400">Best for: {method.best_for}</div>
+                  <div className="text-xs text-zinc-600 mt-1">Est. {method.time}</div>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex justify-between">
+              <button onClick={prevStep} className="px-6 py-3 rounded-xl border border-zinc-700 text-zinc-400 hover:text-white transition-colors">
+                ← Back
+              </button>
+              <button
+                onClick={nextStep}
+                disabled={!selectedMethod}
+                className="px-6 py-3 rounded-xl bg-violet-600 font-medium hover:bg-violet-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next: Feed the Soul →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 3 && (
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-2xl font-bold mb-2">{STEPS[3].title}</h2>
+            <p className="text-zinc-400 mb-8">{STEPS[3].description}</p>
+
+            <div className="space-y-4 mb-8">
+              {FEED_LEVELS.map((lvl) => (
+                <button
+                  key={lvl.level}
+                  onClick={() => setSelectedFeed(lvl.level)}
+                  className={`w-full rounded-2xl border p-5 text-left transition-all flex gap-4 items-start ${
+                    selectedFeed === lvl.level
+                      ? "border-violet-500 bg-violet-900/20"
+                      : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"
+                  }`}
+                >
+                  <div className={`text-3xl shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${lvl.color} flex items-center justify-center`}>
+                    {lvl.icon}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-bold">{lvl.name}</span>
+                      <span className="text-xs text-zinc-500">({lvl.quality})</span>
+                    </div>
+                    <div className="text-sm text-zinc-400">{lvl.description}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex justify-between">
+              <button onClick={prevStep} className="px-6 py-3 rounded-xl border border-zinc-700 text-zinc-400 hover:text-white transition-colors">
+                ← Back
+              </button>
+              <button
+                onClick={nextStep}
+                disabled={!selectedFeed}
+                className="px-6 py-3 rounded-xl bg-violet-600 font-medium hover:bg-violet-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next: Calibrate →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 4 && (
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="text-6xl mb-6">🎯</div>
+            <h2 className="text-2xl font-bold mb-4">{STEPS[4].title}</h2>
+            <p className="text-zinc-400 mb-8">
+              The distillation pipeline is ready. You'll now enter the Guardian Calibration
+              mode where you chat with the soul, observe its responses, and refine it
+              through calibrated feedback.
+            </p>
+
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 mb-8 text-left">
+              <h3 className="font-bold mb-3">What calibration does:</h3>
+              <ul className="space-y-2 text-sm text-zinc-400">
+                <li className="flex gap-2"><span className="text-emerald-400">✓</span> 6-question onboarding questionnaire per session</li>
+                <li className="flex gap-2"><span className="text-emerald-400">✓</span> Conversation-based calibration across 5 dimensions</li>
+                <li className="flex gap-2"><span className="text-emerald-400">✓</span> Persona auto-updates from accumulated feedback</li>
+                <li className="flex gap-2"><span className="text-emerald-400">✓</span> AI assistant suggests focused questions</li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="/calibrate"
+                className="px-8 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 font-medium hover:from-violet-500 hover:to-purple-500 transition-all text-lg"
+              >
+                Enter Guardian Calibration →
+              </a>
+            </div>
+
+            <p className="mt-6 text-xs text-zinc-600">
+              Each calibration improves the soul. After ~30 feedback points, the system
+              will suggest an AI-powered persona regeneration.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
