@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { generateDefaultSchedule, getDayPhase, type SoulProfile, type ScheduleSlot } from "@/lib/soul-schedule-engine";
+import { KNOWN_CONSTRAINTS_MAP } from "@/lib/soul-constraint-loader";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,119 +9,127 @@ const supabase = createClient(
 );
 
 /**
- * Soul Calendar API
+ * Enhanced Soul Calendar API
  *
- * Analyzes conversation patterns and generates a personalized calendar
- * showing the \"best times\" to interact with each soul based on historical data.
+ * Combines:
+ * 1. Soul's default daily schedule (from schedule engine + 8D constraints)
+ * 2. Conversation pattern analysis (best interaction times)
+ * 3. Historical activity data
+ * 4. Mood/energy forecast
  */
 export async function GET(req: NextRequest) {
   try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
-      return jsonResp(401, { error: "Missing auth" });
-    }
-
-    const { data: { user } } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (!user) {
-      return jsonResp(401, { error: "Not authenticated" });
-    }
-    const userId = user.id;
-
     const { searchParams } = new URL(req.url);
     const soulId = searchParams.get("soul_id");
+    const view = searchParams.get("view") || "month"; // day | week | month
+
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
 
     if (soulId) {
-      // Return calendar for a specific soul
-      const calendar = await generateSoulCalendar(soulId, userId);
-      return jsonResp(200, { calendar });
-    } else {
-      // Return calendar overview for all souls
-      const { data: souls } = await supabase
-        .from("town_souls")
-        .select("id, name, name_native, guardian_id, category")
-        .or(`guardian_id.eq.${userId},status.eq.active`)
-        .limit(50);
+      // Fetch soul constraints for personality-driven schedule
+      const constraints = KNOWN_CONSTRAINTS_MAP[soulId] || null;
 
-      if (!souls?.length) {
-        return jsonResp(200, { souls: [] });
-      }
+      // Build a SoulProfile from constraints
+      const profile: SoulProfile = {
+        id: soulId,
+        name: constraints?.soul_name || "Soul",
+        name_native: constraints?.soul_name || "Soul",
+        mood: "calm",
+        energy: 70,
+        era: constraints?.era_name,
+        education: constraints?.education,
+        skills: constraints?.knowledge_floor || [],
+        personality: {
+          openness: 0.5,
+          agreeableness: 0.5,
+          conscientiousness: 0.5,
+          neuroticism: 0.5,
+        },
+      };
 
-      const calendars = await Promise.all(
-        souls.map((soul) => generateSoulCalendar(soul.id, userId))
-      );
+      // Generate personality-based schedule
+      const schedule = generateDefaultSchedule(profile);
+
+      // Get conversation history for pattern analysis
+      const { data: conversations } = await supabase
+        .from("conversation_messages")
+        .select("created_at, role, content")
+        .eq("soul_id", soulId)
+        .gte("created_at", new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString())
+        .limit(500);
+
+      const pattern = analyzeConversationPattern(conversations || []);
+
+      // Get soul calendar events from DB (if soul_schedule table exists)
+      const { data: scheduleEvents } = await supabase
+        .from("soul_schedule")
+        .select("*")
+        .eq("soul_id", soulId)
+        .gte("scheduled_at", new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .limit(100)
+        .order("scheduled_at", { ascending: false });
+
+      // Generate calendar events combining schedule + interaction windows
+      const calendarEvents = generateCalendarEvents(schedule, pattern, scheduleEvents || [], now, view);
 
       return jsonResp(200, {
-        souls: souls.map((soul, index) => ({
-          ...soul,
-          calendar: calendars[index],
-        })),
+        soul_id: soulId,
+        soul_name: constraints?.soul_name || "Unknown Soul",
+        schedule,
+        pattern,
+        historical_events: (scheduleEvents || []).slice(0, 20),
+        events: calendarEvents,
+        view,
       });
     }
+
+    // Overview: list all souls with brief schedule summary
+    const { data: souls } = await supabase
+      .from("town_souls")
+      .select("id, name, name_native, category")
+      .limit(50);
+
+    if (!souls?.length) {
+      return jsonResp(200, { souls: [] });
+    }
+
+    const soulCalendars = await Promise.all(
+      souls.map(async (soul) => {
+        const constraints = KNOWN_CONSTRAINTS_MAP[soul.id] || null;
+        const profile: SoulProfile = {
+          id: soul.id,
+          name: soul.name,
+          name_native: soul.name_native || soul.name,
+          mood: "calm",
+          energy: 70,
+          era: constraints?.era_name,
+          skills: constraints?.knowledge_floor || [],
+        };
+        const schedule = generateDefaultSchedule(profile);
+        return { soul, schedule };
+      })
+    );
+
+    return jsonResp(200, { souls: soulCalendars });
   } catch (err) {
     console.error("[soul-calendar] Error:", err);
     return jsonResp(500, { error: "Internal server error" });
   }
 }
 
-async function generateSoulCalendar(soulId: string, userId: string) {
-  const now = new Date();
-  const today = now.toISOString().split("T")[0];
-
-  // Get conversation history (last 90 days)
-  const { data: conversations } = await supabase
-    .from("conversation_messages")
-    .select("created_at, role, content")
-    .eq("soul_id", soulId)
-    .gte("created_at", new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString())
-    .limit(500);
-
-  // Analyze conversation patterns
-  const pattern = analyzeConversationPattern(conversations || []);
-
-  // Generate calendar events for next 30 days
-  const events: any[] = [];
-  for (let i = 0; i < 30; i++) {
-    const date = new Date(now);
-    date.setDate(date.getDate() + i);
-    const dateStr = date.toISOString().split("T")[0];
-    const dayOfWeek = date.getDay();
-
-    // Create daily interaction window based on patterns
-    const window = createInteractionWindow(pattern, dayOfWeek, i === 0);
-
-    if (window.shouldInteract) {
-      events.push({
-        date: dateStr,
-        type: window.type,
-        priority: window.priority,
-        bestTime: window.bestTime,
-        suggestedTopics: window.suggestedTopics,
-        reason: window.reason,
-      });
-    }
-  }
-
-  return {
-    soul_id: soulId,
-    pattern,
-    events: events.slice(0, 10), // Return top 10 recommended events
-    nextBestWindow: events.length > 0 ? events[0] : null,
-  };
-}
-
 function analyzeConversationPattern(conversations: any[]) {
   if (!conversations.length) {
     return {
       avgConversationsPerDay: 0,
-      preferredHourOfDay: 14, // 2 PM default
-      preferredDayOfWeek: 3, // Wednesday default
+      preferredHourOfDay: 14,
+      preferredDayOfWeek: 3,
       avgMessageLength: 50,
       emotionalTrend: "neutral",
       topicsFrequency: {},
     };
   }
 
-  // Analyze time patterns
   const hours: number[] = [];
   const daysOfWeek: number[] = [];
   let totalWords = 0;
@@ -137,108 +147,90 @@ function analyzeConversationPattern(conversations: any[]) {
     }
   });
 
-  // Find preferred hour (mode of hours)
   const hourCounts: Record<number, number> = {};
-  hours.forEach((h) => {
-    hourCounts[h] = (hourCounts[h] || 0) + 1;
-  });
-  const preferredHour = Object.entries(hourCounts)
-    .sort(([, a], [, b]) => b - a)[0]?.[0] || 14;
+  hours.forEach((h) => { hourCounts[h] = (hourCounts[h] || 0) + 1; });
+  const preferredHour = Object.entries(hourCounts).sort(([, a], [, b]) => b - a)[0]?.[0] || 14;
 
-  // Find preferred day of week
   const dayCounts: Record<number, number> = {};
-  daysOfWeek.forEach((d) => {
-    daysOfWeek[d] = (daysOfWeek[d] || 0) + 1;
-  });
-  const preferredDay = Object.entries(dayCounts)
-    .sort(([, a], [, b]) => b - a)[0]?.[0] || 3;
+  daysOfWeek.forEach((d) => { dayCounts[d] = (dayCounts[d] || 0) + 1; });
+  const preferredDay = Object.entries(dayCounts).sort(([, a], [, b]) => b - a)[0]?.[0] || 3;
 
   return {
     avgConversationsPerDay: Object.values(dateBucket).reduce((a, b) => a + b, 0) / 90 || 1,
     preferredHourOfDay: parseInt(String(preferredHour)),
     preferredDayOfWeek: parseInt(String(preferredDay)),
     avgMessageLength: Math.round(totalWords / (conversations.filter((c) => c.role === "user").length || 1)),
-    emotionalTrend: "neutral", // This would need NLP analysis
-    topicsFrequency: {}, // Would need topic extraction
+    emotionalTrend: "neutral",
+    topicsFrequency: {},
   };
 }
 
-function createInteractionWindow(
-  pattern: ReturnType<typeof analyzeConversationPattern>,
-  dayOfWeek: number,
-  isToday: boolean
-) {
-  // Calculate interaction score based on patterns
-  let score = 0.5;
+function generateCalendarEvents(
+  schedule: ScheduleSlot[],
+  pattern: any,
+  historicalEvents: any[],
+  now: Date,
+  view: string
+): any[] {
+  const events: any[] = [];
+  const daysToShow = view === "day" ? 1 : view === "week" ? 7 : 30;
 
-  // Bonus for preferred day
-  if (dayOfWeek === pattern.preferredDayOfWeek) {
-    score += 0.2;
+  for (let i = 0; i < daysToShow; i++) {
+    const date = new Date(now);
+    date.setDate(date.getDate() + i);
+    const dateStr = date.toISOString().split("T")[0];
+    const dayOfWeek = date.getDay();
+
+    // Calculate interaction score
+    let score = 0.5;
+    if (dayOfWeek === pattern.preferredDayOfWeek) score += 0.2;
+    const weekendMult = (dayOfWeek === 0 || dayOfWeek === 6) ? 0.7 : 1;
+    score *= weekendMult;
+
+    let type: string;
+    let priority: "low" | "medium" | "high";
+    let reason: string;
+
+    if (score > 0.8) {
+      type = "deep_conversation";
+      priority = "high";
+      reason = "High interaction probability — optimal for deep conversation";
+    } else if (score > 0.6) {
+      type = "check_in";
+      priority = "medium";
+      reason = "Medium probability — good for a casual check-in";
+    } else {
+      type = "quiet_reflection";
+      priority = "low";
+      reason = "Low probability — suitable for quiet reflection";
+    }
+
+    events.push({
+      date: dateStr,
+      dayOfWeek: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dayOfWeek],
+      interaction: {
+        type,
+        priority,
+        score,
+        bestTime: `${String(pattern.preferredHourOfDay).padStart(2, "0")}:00`,
+        reason,
+      },
+      // Add the soul's daily schedule for this day
+      daily_schedule: schedule.map(s => ({
+        ...s,
+        phase_label: {
+          dawn: "🌅 Dawn",
+          morning: "☀️ Morning",
+          midday: "🌞 Midday",
+          afternoon: "🌤️ Afternoon",
+          dusk: "🌇 Dusk",
+          night: "🌙 Night",
+        }[s.phase],
+      })),
+    });
   }
 
-  // Bonus for daily rhythm variation
-  const dayOfWeekMultiplier = (dayOfWeek === 0 || dayOfWeek === 6) ? 0.7 : 1;
-  score *= dayOfWeekMultiplier;
-
-  // Interaction type based on timing
-  let type: string;
-  let priority: "low" | "medium" | "high";
-  let reason: string;
-
-  if (score > 0.8) {
-    type = "deep_conversation";
-    priority = "high";
-    reason = "高互动概率 — 现在是深度对话的好时机";
-  } else if (score > 0.6) {
-    type = "check_in";
-    priority = "medium";
-    reason = "中等互动概率 — 适合日常问候";
-  } else {
-    type = "quiet_reflection";
-    priority = "low";
-    reason = "低互动概率 — 适合安静反思";
-  }
-
-  // Generate suggested topics based on pattern
-  const suggestedTopics = generateSuggestedTopics(type, pattern);
-
-  return {
-    shouldInteract: score > 0.4,
-    score,
-    type,
-    priority,
-    bestTime: `${String(pattern.preferredHourOfDay).padStart(2, "0")}:00`,
-    suggestedTopics,
-    reason,
-  };
-}
-
-function generateSuggestedTopics(type: string, pattern: any) {
-  switch (type) {
-    case "deep_conversation":
-      return [
-        "深入探讨最近思考的人生课题",
-        "分享新学到的知识或感悟",
-        "讨论价值观选择",
-        "回顾过去的里程碑",
-      ];
-    case "check_in":
-      return [
-        "简单问候，了解近况",
-        "分享日常生活片段",
-        "轻松话题，聊聊兴趣",
-        "感谢上次的回应",
-      ];
-    case "quiet_reflection":
-      return [
-        "记录今天的感悟",
-        "写下未来一周的计划",
-        "表达对灵魂的感谢",
-        "简单地存在就好",
-      ];
-    default:
-      return ["简单的互动就好"];
-  }
+  return events;
 }
 
 function jsonResp(status: number, data: any) {

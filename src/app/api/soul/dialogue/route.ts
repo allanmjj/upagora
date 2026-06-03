@@ -1,147 +1,236 @@
-/**
- * Soul-to-Soul Dialogue API
- * 
- * Two souls having a natural conversation with each other.
- * Each soul gets their own persona + constraint injection.
- * The dialogue emerges from their differing backgrounds and knowledge boundaries.
- */
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { OpenAI } from "openai";
 import { KNOWN_CONSTRAINTS_MAP } from "@/lib/soul-constraint-loader";
-import { buildConstraintPromptLang } from "@/lib/soul-constraints";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-const deepseek = new OpenAI({
-  baseURL: "https://api.deepseek.com/v1",
-  apiKey: process.env.DEEPSEEK_API_KEY || "",
-  // @ts-expect-error — DeepSeek-specific option
-  fallbackToFirstAppropriateKey: true,
-});
-
-const SPACE_CONTEXTS: Record<string, string> = {
-  plaza: "in the bustling Town Plaza",
-  library: "in the quiet Library",
-  workshop: "in the Workshop",
-  bar: "at The Raven Bar",
-  garden: "in the Zen Garden",
-};
-
-export async function POST(request: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const body = await request.json();
-    const {
-      soul1_id,
-      soul2_id,
-      topic = "",
-      space = "plaza",
-      max_turns = 6,
-    } = body;
+    const { searchParams } = new URL(req.url);
+    const soulA = searchParams.get("soul_a");
+    const soulB = searchParams.get("soul_b");
 
-    if (!soul1_id || !soul2_id) {
-      return NextResponse.json(
-        { error: "soul1_id and soul2_id are required" },
-        { status: 400 },
-      );
+    if (!soulA || !soulB) {
+      return jsonResp(400, { error: "Both soul_a and soul_b are required" });
     }
 
-    // Load both souls' personas
-    const { data: persona1 } = await supabase
-      .from("soul_extraction_results")
+    // Get dialogue history
+    const { data: dialogues, error } = await supabase
+      .from("soul_dialogues")
       .select("*")
-      .eq("id", soul1_id)
+      .or(`and(soul_a_id.eq.${soulA},soul_b_id.eq.${soulB}),and(soul_a_id.eq.${soulB},soul_b_id.eq.${soulA})`)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error("[soul-dialogue] fetch error:", error);
+      return jsonResp(200, { dialogues: [] });
+    }
+
+    return jsonResp(200, {
+      soul_a: KNOWN_CONSTRAINTS_MAP[soulA] || { soul_id: soulA, soul_name: soulA },
+      soul_b: KNOWN_CONSTRAINTS_MAP[soulB] || { soul_id: soulB, soul_name: soulB },
+      dialogues: dialogues || [],
+    });
+  } catch (err) {
+    console.error("[soul-dialogue] GET error:", err);
+    return jsonResp(500, { error: "Internal server error" });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { soul_a, soul_b, topic, max_turns = 10 } = body;
+
+    if (!soul_a || !soul_b) {
+      return jsonResp(400, { error: "Both soul_a and soul_b are required" });
+    }
+
+    // Load 9D constraints for both souls
+    const constraintsA = KNOWN_CONSTRAINTS_MAP[soul_a] || await loadFromDB(soul_a);
+    const constraintsB = KNOWN_CONSTRAINTS_MAP[soul_b] || await loadFromDB(soul_b);
+
+    if (!constraintsA || !constraintsB) {
+      return jsonResp(404, { error: "One or both souls not found" });
+    }
+
+    // Generate system prompt for soul-to-soul dialogue
+    const systemPrompt = buildDialoguePrompt(constraintsA, constraintsB, topic);
+
+    // Call LLM for dialogue generation
+    const dialogue = await generateDialogue(systemPrompt, max_turns);
+
+    // Save dialogue to Supabase
+    const { data: saved, error } = await supabase
+      .from("soul_dialogues")
+      .insert({
+        soul_a_id: soul_a,
+        soul_b_id: soul_b,
+        topic: topic || null,
+        turns: dialogue.turns,
+        summary: dialogue.summary,
+        created_at: new Date().toISOString(),
+      })
+      .select()
       .single();
 
-    const { data: persona2 } = await supabase
-      .from("soul_extraction_results")
-      .select("*")
-      .eq("id", soul2_id)
-      .single();
-
-    if (!persona1 || !persona2) {
-      return NextResponse.json(
-        { error: "One or both souls not found" },
-        { status: 404 },
-      );
+    if (error) {
+      console.error("[soul-dialogue] save error:", error);
     }
 
-    // Build constraint prompts for both souls
-    let constraint1 = "";
-    let constraint2 = "";
-    const sc1 = KNOWN_CONSTRAINTS_MAP[soul1_id];
-    const sc2 = KNOWN_CONSTRAINTS_MAP[soul2_id];
-    if (sc1) {
-      constraint1 = `\n\n## KNOWLEDGE BOUNDARIES (NON-NEGOTIABLE)\n${buildConstraintPromptLang(sc1, persona1.language || "en")}`;
-    }
-    if (sc2) {
-      constraint2 = `\n\n## KNOWLEDGE BOUNDARIES (NON-NEGOTIABLE)\n${buildConstraintPromptLang(sc2, persona2.language || "en")}`;
-    }
+    return jsonResp(200, {
+      id: saved?.id || null,
+      dialogue,
+      constraints_a: {
+        soul_name: constraintsA.soul_name,
+        era: constraintsA.era_name,
+        personality: constraintsA.personality_traits,
+      },
+      constraints_b: {
+        soul_name: constraintsB.soul_name,
+        era: constraintsB.era_name,
+        personality: constraintsB.personality_traits,
+      },
+    });
+  } catch (err) {
+    console.error("[soul-dialogue] POST error:", err);
+    return jsonResp(500, { error: "Internal server error" });
+  }
+}
 
-    // Build the dialogue prompt
-    const systemPrompt = `You are a dialogue writer simulation two souls having a conversation in Soul Town.
+async function loadFromDB(soulId: string) {
+  const { data } = await supabase
+    .from("soul_gallery")
+    .select("*")
+    .eq("soul_id", soulId)
+    .single();
 
-SOUL A: "${persona1.name}"${persona1.name_native ? ` (${persona1.name_native})` : ""} - ${persona1.profession || "unknown profession"}, era: ${persona1.era || "unknown"}
-${persona1.persona_text?.slice(0, 500) || ""}${constraint1}
+  return data || null;
+}
 
-SOUL B: "${persona2.name}"${persona2.name_native ? ` (${persona2.name_native})` : ""} - ${persona2.profession || "unknown profession"}, era: ${persona2.era || "unknown"}
-${persona2.persona_text?.slice(0, 500) || ""}${constraint2}
+function buildDialoguePrompt(constraintsA: any, constraintsB: any, topic: string | null): string {
+  return `You are simulating a dialogue between two historical souls. Each soul has specific 9D constraints that define their knowledge, personality, beliefs, and communication style.
 
-SETTING: ${SPACE_CONTEXTS[space] || "in the town"}${topic ? ` TOPIC: ${topic}` : ""}
+=== SOUL A: ${constraintsA.soul_name} ===
+Era: ${constraintsA.era_name || "Unknown"}
+Profession: ${constraintsA.profession || "Unknown"}
+Knowledge base: ${(constraintsA.knowledge_floor || []).join(", ")}
+Does NOT know: ${(constraintsA.knowledge_ceiling || []).join(", ")}
+Personality: ${(constraintsA.personality_traits || []).join(", ")}
+Beliefs: ${(constraintsA.beliefs || []).map((b: any) => `${b.name} (${b.strength}%)`).join(", ")}
+Communication style: ${(constraintsA.communication_style || []).join(", ")}
+Soul anchor: ${(constraintsA.soul_anchor || []).join(", ")}
+
+=== SOUL B: ${constraintsB.soul_name} ===
+Era: ${constraintsB.era_name || "Unknown"}
+Profession: ${constraintsB.profession || "Unknown"}
+Knowledge base: ${(constraintsB.knowledge_floor || []).join(", ")}
+Does NOT know: ${(constraintsB.knowledge_ceiling || []).join(", ")}
+Personality: ${(constraintsB.personality_traits || []).join(", ")}
+Beliefs: ${(constraintsB.beliefs || []).map((b: any) => `${b.name} (${b.strength}%)`).join(", ")}
+Communication style: ${(constraintsB.communication_style || []).join(", ")}
+Soul anchor: ${(constraintsB.soul_anchor || []).join(", ")}
+
+${topic ? `=== TOPIC: ${topic} ===` : "=== OPEN CONVERSATION ==="}
 
 RULES:
-1. Write a natural dialogue between ${persona1.name} and ${persona2.name}.
-2. Each soul speaks in their OWN language and communication style.
-3. They may not understand each other perfectly (language barrier).
-4. They should reference their era, knowledge, and experiences.
-5. They should NOT know things outside their knowledge boundaries.
-6. The dialogue should feel authentic, not forced.
-7. Maximum ${max_turns} turns total.
+1. Each soul must respond based strictly on their knowledge boundaries
+2. A soul from an earlier era CANNOT reference things from a later era
+3. Each soul's personality, beliefs, and communication style must shape their words
+4. If one soul mentions something the other doesn't know, the listener reacts authentically
+5. The dialogue should feel alive, not rigid — emotions, disagreements, and agreements are natural
+6. Use the language style specified for each soul
 
-OUTPUT FORMAT (JSON array):
-[
-  { "speaker": "${persona1.name}", "text": "..." },
-  { "speaker": "${persona2.name}", "text": "..." },
-  ...
-]`;
+Generate a ${10}-turn dialogue where both voices are clearly distinct.`;
+}
 
-    const response = await deepseek.chat.completions.create({
-      model: "deepseek-chat",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: `Please write a natural dialogue between ${persona1.name} and ${persona2.name}${topic ? ` about: ${topic}` : ""}.` },
-      ],
-      temperature: 0.9,
-      max_tokens: 2000,
+async function generateDialogue(systemPrompt: string, maxTurns: number): Promise<any> {
+  // Use DeepSeek LLM for dialogue generation
+  const deepseekUrl = process.env.DEEPSEEK_API_URL || "https://api.deepseek.com/v1/chat/completions";
+  const deepseekKey = process.env.DEEPSEEK_API_KEY;
+
+  if (!deepseekKey) {
+    // Fallback: return a simulated dialogue
+    return generateFallbackDialogue(maxTurns);
+  }
+
+  try {
+    const response = await fetch(deepseekUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${deepseekKey}`,
+      },
+      body: JSON.stringify({
+        model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: "Please generate the dialogue now in JSON format with a 'turns' array. Each turn has 'speaker' (soul_a or soul_b), 'line' (the spoken text), and 'context' (body language, tone, etc.). Include a 'summary' at the top level." },
+        ],
+        temperature: 0.9,
+        max_tokens: 4096,
+      }),
     });
 
-    const content = response.choices[0]?.message?.content || "[]";
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || "";
 
-    // Try to parse JSON from the response
+    // Try to parse as JSON, fallback to structured extraction
     try {
-      const dialogue = JSON.parse(content);
-      return NextResponse.json({
-        dialogue,
-        space,
-        timestamp: new Date().toISOString(),
-      });
+      const parsed = JSON.parse(content);
+      return parsed;
     } catch {
-      // Return raw content if JSON parsing fails
-      return NextResponse.json({
-        dialogue: [
-          { speaker: "Assistant", text: content },
-        ],
-        space,
-        timestamp: new Date().toISOString(),
-      });
+      return {
+        summary: "Dialogue generated (raw text parsing needed)",
+        turns: extractTurns(content),
+        raw: content,
+      };
     }
-  } catch (e: any) {
-    return NextResponse.json(
-      { error: e.message || "Internal server error" },
-      { status: 500 },
-    );
+  } catch (err) {
+    console.error("[soul-dialogue] LLM error:", err);
+    return generateFallbackDialogue(maxTurns);
   }
+}
+
+function extractTurns(content: string): any[] {
+  const lines = content.split("\n");
+  const turns: any[] = [];
+  let current = null;
+
+  for (const line of lines) {
+    const match = line.match(/^(\w+):\s*(.+)/);
+    if (match) {
+      if (current) turns.push(current);
+      current = { speaker: match[1].toLowerCase(), line: match[2].trim() };
+    } else if (current && line.trim()) {
+      current.line += " " + line.trim();
+    }
+  }
+  if (current) turns.push(current);
+
+  return turns.length > 0 ? turns : [{ speaker: "narrator", line: content.slice(0, 500) }];
+}
+
+function generateFallbackDialogue(maxTurns: number): any {
+  return {
+    summary: "Soul-to-soul dialogue (simulated)",
+    turns: Array.from({ length: Math.min(maxTurns, 6) }, (_, i) => ({
+      speaker: i % 2 === 0 ? "soul_a" : "soul_b",
+      line: i % 2 === 0
+        ? `I wonder what would happen if our times overlapped... there is much I wish to understand about your world.`
+        : `The world changes, yet human questions remain timeless. Tell me, what troubles your spirit?`,
+    })),
+    simulated: true,
+  };
+}
+
+function jsonResp(status: number, data: any) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 }

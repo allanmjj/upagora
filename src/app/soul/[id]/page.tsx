@@ -3,8 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
+import { useAuth } from '@/hooks/use-auth';
 import SoulChat from '@/components/town/SoulChat';
-import { SoulEvolutionPanel } from '@/components/soul/SoulEvolutionPanel';
+import dynamic from 'next/dynamic';
+const SoulChatStudio = dynamic(() => import('@/components/soul/SoulChatStudio').then(m => ({ default: m.SoulChatStudio })), { ssr: false });
+const SoulMemoryDisplay = dynamic(() => import('@/components/soul/SoulMemoryDisplay').then(m => ({ default: m.SoulMemoryDisplay })), { ssr: false });
+import { SoulEvolutionTimeline } from '@/components/soul/SoulEvolutionTimeline';
+import { SoulConstraintCard } from '@/components/soul/SoulConstraintCard';
+import { SoulSchedulePreview } from '@/components/soul/SoulSchedulePreview';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,6 +36,8 @@ export default function SoulDetailPage() {
   const router = useRouter();
   const [soul, setSoul] = useState<SoulData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'chat' | 'constraints' | 'evolution' | 'schedule'>('chat');
+  const { user } = useAuth();
 
   useEffect(() => {
     async function fetchSoul() {
@@ -127,103 +135,176 @@ export default function SoulDetailPage() {
               >
                 🎯 Calibrate
               </a>
+              <a
+                href={`/soul/${soul.id}/calibrate`}
+                className="px-5 py-2.5 rounded-xl border border-zinc-700 font-medium hover:bg-zinc-800 transition-all text-sm"
+              >
+                🧬 Soul Timeline
+              </a>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="border-b border-zinc-800">
+        <div className="container mx-auto px-4">
+          <div className="flex gap-6">
+            <button
+              onClick={() => setActiveTab('chat')}
+              className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'chat'
+                  ? 'border-violet-500 text-violet-400'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              💬 Chat
+            </button>
+            <button
+              onClick={() => setActiveTab('constraints')}
+              className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'constraints'
+                  ? 'border-violet-500 text-violet-400'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              🧠 9D Constraints
+            </button>
+            <button
+              onClick={() => setActiveTab('evolution')}
+              className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'evolution'
+                  ? 'border-violet-500 text-violet-400'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              🔄 Evolution
+            </button>
+            <button
+              onClick={() => setActiveTab('schedule')}
+              className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'schedule'
+                  ? 'border-violet-500 text-violet-400'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              📅 Schedule
+            </button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8 flex gap-6">
-        {/* Soul Chat Section */}
-        <div className="flex-1">
-          {soul.status === 'idle' && !soul.avatar_url && (
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 mb-6">
-              <h3 className="font-bold mb-3 flex items-center gap-2">
-                <span className="text-zinc-400">☁️</span> Getting started
-              </h3>
-              <p className="text-sm text-zinc-500 mb-4">
-                This soul was just created. Begin calibration to give it shape and character.
-              </p>
-              <a
-                href={`/calibrate`}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 font-medium hover:from-violet-500 hover:to-purple-500 transition-all text-sm"
-              >
-                🎯 Start Calibration →
-              </a>
-            </div>
-          )}
+        {activeTab === 'chat' && (
+          <>
+            {/* Soul Chat Section */}
+            <div className="flex-1">
+              {soul.status === 'idle' && (
+                <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 mb-6">
+                  <h3 className="font-bold mb-3 flex items-center gap-2">
+                    <span className="text-zinc-400">☁️</span> Getting started
+                  </h3>
+                  <p className="text-sm text-zinc-500 mb-4">
+                    This soul was just created. Begin calibration to give it shape and character.
+                  </p>
+                  <a
+                    href={`/calibrate`}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 font-medium hover:from-violet-500 hover:to-purple-500 transition-all text-sm"
+                  >
+                    🎯 Start Calibration →
+                  </a>
+                </div>
+              )}
 
-          {/* Soul Chat Interface */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-            <div className="p-4 border-b border-zinc-800">
-              <h3 className="font-bold flex items-center gap-2">
-                💬 Chat with {soul.name_native || soul.name}
-              </h3>
+              {/* Soul Chat Interface */}
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+                <div className="p-4 border-b border-zinc-800">
+                  <h3 className="font-bold flex items-center gap-2">
+                    💬 Chat with {soul.name_native || soul.name}
+                  </h3>
+                </div>
+                <div className="h-96 bg-zinc-900 p-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <SoulMemoryDisplay soulId={soul.id} userId={user?.id} />
+                  </div>
+                  <SoulChatStudio
+                    soulId={soul.id}
+                    soulName={soul.name}
+                    soulNameNative={soul.name_native}
+                    userId={user?.id}
+                    voiceEnabled={true}
+                  />
+                </div>
+              </div>
             </div>
-            {soul.avatar_url ? (
-              <div className="h-96 bg-zinc-900 p-6">
-                <SoulChat
-                  soulId={soul.id}
-                  soulName={soul.name}
-                  
-                  
-                />
+
+            {/* Sidebar */}
+            <div className="w-80 space-y-4">
+              {/* Persona Info */}
+              {soul.persona_text && (
+                <div className="rounded-xl border border-zinc-800 bg-zinc-800/50 p-4">
+                  <h3 className="font-bold mb-2 text-sm">🧬 Personality</h3>
+                  <div className="text-sm text-zinc-400">
+                    {soul.persona_text.slice(0, 400)}
+                    {soul.persona_text.length > 400 && '...'}
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Actions */}
+              <div className="rounded-xl border border-zinc-800 bg-zinc-800/50 p-4">
+                <h3 className="font-bold mb-3 text-sm">Quick Actions</h3>
+                <div className="space-y-2">
+                  <a
+                    href={`/soul/${soul.id}/calendar`}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-700/50 transition-colors text-sm"
+                  >
+                    📅 Soul Calendar
+                  </a>
+                  <a
+                    href={`/soul/${soul.id}/versions`}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-700/50 transition-colors text-sm"
+                  >
+                    🔀 Soul Versions
+                  </a>
+                  <a
+                    href={`/gallery`}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-700/50 transition-colors text-sm"
+                  >
+                    🖼️ Gallery
+                  </a>
+                  <a
+                    href={`/distill`}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-700/50 transition-colors text-sm"
+                  >
+                    🧬 New Distillation
+                  </a>
+                </div>
               </div>
-            ) : (
-              <div className="h-96 flex items-center justify-center text-zinc-600">
-                <p>Calibrate this soul first to enable conversation</p>
-              </div>
-            )}
+
+
+            </div>
+          </>
+        )}
+
+        {activeTab === 'constraints' && (
+          <div className="flex-1">
+            <SoulConstraintCard soulId={soul.id} />
           </div>
-        </div>
+        )}
 
-        {/* Sidebar */}
-        <div className="w-80 space-y-4">
-          {/* Person Info */}
-          {soul.persona_text && (
-            <div className="rounded-xl border border-zinc-800 bg-zinc-800/50 p-4">
-              <h3 className="font-bold mb-2 text-sm">personality</h3>
-              <div className="text-sm text-zinc-400">
-                {soul.persona_text.slice(0, 300)}
-                {soul.persona_text.length > 300 && '...'}
-              </div>
-            </div>
-          )}
-
-          {/* Quick Actions */}
-          <div className="rounded-xl border border-zinc-800 bg-zinc-800/50 p-4">
-            <h3 className="font-bold mb-3 text-sm">Quick Actions</h3>
-            <div className="space-y-2">
-              <a
-                href={`/soul/${soul.id}/calendar`}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-700/50 transition-colors text-sm"
-              >
-                📅 Soul Calendar
-              </a>
-              <a
-                href={`/soul/${soul.id}/versions`}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-700/50 transition-colors text-sm"
-              >
-                🔀 Soul Versions
-              </a>
-              <a
-                href={`/gallery`}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-700/50 transition-colors text-sm"
-              >
-                🖼️ Gallery
-              </a>
-              <a
-                href={`/distill`}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-700/50 transition-colors text-sm"
-              >
-                🧬 New Distillation
-              </a>
-            </div>
+        {activeTab === 'evolution' && (
+          <div className="flex-1">
+            <SoulEvolutionTimeline soulId={soul.id} />
           </div>
+        )}
 
-          {/* Soul Evolution */}
-          <SoulEvolutionPanel soulId={soul.id} />
-        </div>
+        {activeTab === 'schedule' && (
+          <div className="flex-1">
+            <SoulSchedulePreview soulId={soul.id} soulName={soul.name_native || soul.name} />
+          </div>
+        )}
       </div>
     </div>
   );

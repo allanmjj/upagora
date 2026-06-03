@@ -55,7 +55,7 @@ export default function SoulDailyReportPage() {
     );
   }
 
-  if (!data) {
+  if (!data || !data.soul) {
     return (
       <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center gap-4">
         <p className="text-zinc-400">Soul not found</p>
@@ -67,7 +67,7 @@ export default function SoulDailyReportPage() {
   }
 
   const soul = data.soul;
-  const moodEmoji = MOOD_EMOJIS[soul.mood] || "😐";
+  const moodEmoji = MOOD_EMOJIS[soul.mood || ""] || "😐";
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">

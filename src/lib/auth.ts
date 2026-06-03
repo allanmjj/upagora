@@ -189,9 +189,10 @@ async function authenticateWithCookie(): Promise<AuthResult> {
   const cookieClient = await createCookieClient()
 
   try {
-    const { data: { session }, error: sessionError } = await cookieClient.auth.getSession()
+    // Use getUser() for authenticated user verification (getSession is deprecated)
+    const { data: { user: sessionUser }, error: sessionError } = await cookieClient.auth.getUser()
 
-    if (sessionError || !session?.user) {
+    if (sessionError || !sessionUser) {
       return { user: null, authMethod: null, supabase: cookieClient }
     }
 
@@ -199,7 +200,7 @@ async function authenticateWithCookie(): Promise<AuthResult> {
     const { data: userProfile, error: userError } = await cookieClient
       .from('users')
       .select('*')
-      .eq('id', session.user.id)
+      .eq('id', sessionUser.id)
       .eq('is_active', true)
       .single()
 

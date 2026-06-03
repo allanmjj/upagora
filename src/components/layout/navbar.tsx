@@ -47,6 +47,7 @@ const extraLinks = [
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/calibrate', label: 'Calibrate', icon: Scale },
   { href: '/guardians', label: 'Guardians', icon: Users },
+  { href: '/guardian/portal', label: 'Portal', icon: Sparkles },
   { href: '/voice', label: 'Voice Studio', icon: Mic },
   { href: '/gallery', label: 'Gallery', icon: Image },
   { href: '/distill', label: 'Self Distill', icon: Wand2 },

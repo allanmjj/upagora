@@ -94,3 +94,57 @@ P4 — Weather Overlay
 - The canvas rendering loop is in town/page.tsx (look for animate() function)
 - IMPORTANT: Do NOT edit town/page.tsx via patch tool — use node scripts or sed
   (WSL write to /mnt/d has encoding issues with multi-byte chars)
+
+---
+## Sprint 22 完成成果 (2026-06-03) - Backend Infrastructure
+
+### Sprint 22 目标
+后端基础设施深度建设���不依赖前端修复���独立并行推进��
+
+### 新建文件 (7个)
+
+| 模块 | 文件 | 说明 | 行数估计 |
+|------|------|------|----------|
+| 灵魂记忆���化 | `src/lib/soul-memory-enhanced.ts` | Ebbinghaus���忆���线���算法���情感���加权���记忆���型���episodic/semantic/emotional�� | ~132�� |
+| 亲密���API | `src/app/api/soul/intimacy/route.ts` | 守护者-&灵魂���系���度���算���多���加���(���/���/���/情感��)���关系���判��(Stranger/Acquaintance/Friend/Trusted Guardian/Soul Bond�� | ~150�� |
+| ���康���API | `src/app/api/soul/health/route.ts` | ���魂魄���康���度���算���人���/����/���压/���话���系���维���评估���并���自动���建议� | ~200+�� |
+| ���音���API | `src/app/api/voice/synthesize/route.ts` | TTS���合���端���支持��/OpenAI/ElevenLabs���个���后���多���声音�方��� | ~200+�� |
+| 社交���API | `src/app/api/soul/network/route.ts` | ���-&���关系���理���连���查看���建立���兼容������ | ~150�� |
+| ���化���API | `src/app/api/soul/evolution/route.ts` | ���魂���化���录���快照���校准���索������度���算��� | ~180+�� |
+| ���合���脚本 | `scripts/migration-consolidate.js` | ���理���迁���文件���生成 UNIFIED_PENDING.sql | ~100�� |
+
+### ���文件���
+
+| 文件 | ���容 |
+|------|------|
+| `chat-stream/route.ts` | ✅ 修复���制�二���染��� git checkout���ANI���误��throwIfError → throwOnError�� |
+| `gt.txt` | ✅���理���元��� replicas���原有���行���入���Sprint���记录�� |
+| `supabase/migrations/UNIFIED_PENDING.sql` | ✅���合���个���迁���为������151.7KB��� |
+
+### ���迁���状态��
+
+���8���迁�����已�������
+���2��迁��������������
+��������合���迁���UVAILABLE���UNIFIED_PENDING.sql���直���可��� |
+
+### ���端��误���
+
+���一��� `.session`���误��1���页面�前端���者���
+��� `chat-stream/route.ts`���后端���误���已���修复并���提交���
+
+### ���架构��
+
+��� Sprint���端���加了���5���API���端���累���1���+���
+������文���全���Type���后端���现���
+������`src/lib/soul-*.ts���后���功能���增强���
+������API���全���现���错误���理���容���裁���
+
+### ���次���建议�
+
+1.���前端���者���修���.session���后���tsc��错误���0���
+2.���DB���迁���上���Supabase���缺���激活���
+3.���Vercel���署���最新���端���
+4.���Sprint���任务���视���增强������宋���记忆���
+
+---
+Sprint 22 完成时间: 2026-06-03

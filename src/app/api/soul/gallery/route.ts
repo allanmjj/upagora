@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { SOUL_PRESETS } from '@/lib/soul-presets';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -53,10 +54,32 @@ export async function GET(req: NextRequest) {
 
     const uniqueCategories = [...new Set((categories || []).map((c: any) => c.category).filter(Boolean))];
 
+    // Fallback to preset souls if DB is empty
+    let finalSouls = galleryItems;
+    let finalCategories = uniqueCategories;
+    if (galleryItems.length === 0) {
+      finalSouls = SOUL_PRESETS.map((p) => ({
+        id: p.id,
+        name: p.name,
+        name_native: p.name_native,
+        avatar: p.avatar || '',
+        language: p.language || 'en',
+        category: p.category || 'general',
+        persona_preview: p.persona ? p.persona.slice(0, 200) + '...' : p.biography?.slice(0, 200) || null,
+        created_at: new Date().toISOString(),
+        is_preset: true,
+        era: p.era,
+        profession: p.profession,
+        personality: p.personality,
+        theme_color: p.color,
+      }));
+      finalCategories = [...new Set(SOUL_PRESETS.map((p) => p.category).filter(Boolean))];
+    }
+
     return NextResponse.json({
-      souls: galleryItems,
-      categories: uniqueCategories,
-      total: galleryItems.length,
+      souls: finalSouls,
+      categories: finalCategories,
+      total: finalSouls.length,
     });
   } catch (err) {
     console.error('[gallery] Error:', err);

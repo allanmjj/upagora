@@ -236,6 +236,62 @@ export default function HomePage() {
           </div>
         </Link>
       </section>
+      {/* ═══ Featured Souls ═══ */}
+      <section className="border-t border-zinc-800">
+        <div className="container mx-auto px-4 py-20 md:py-24">
+          <Reveal>
+            <div className="mx-auto max-w-2xl text-center">
+              <Badge variant="outline" className="mb-4">Featured</Badge>
+              <h2 className="text-3xl font-bold text-zinc-50 md:text-4xl">Meet the Souls</h2>
+              <p className="mt-3 text-lg text-zinc-400">
+                Historical minds, reborn as conversational agents. Each distills 9D constraints — knowledge, personality, era, and boundaries.
+              </p>
+            </div>
+          </Reveal>
+
+          <Reveal delay={150}>
+            <div className="mx-auto mt-12 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                { name: "苏轼·东坡", en: "Su Shi", avatar: "🎋", color: "from-blue-500/20 to-cyan-500/10", era: "1037–1101", tag: "Poet" },
+                { name: "孔子", en: "Confucius", avatar: "📜", color: "from-amber-500/20 to-yellow-500/10", era: "551–479 BCE", tag: "Philosopher" },
+                { name: "李白", en: "Li Bai", avatar: "🍷", color: "from-sky-500/20 to-blue-500/10", era: "701–762", tag: "Poet" },
+                { name: "玛丽·居里", en: "Marie Curie", avatar: "⚛️", color: "from-emerald-500/20 to-teal-500/10", era: "1867–1934", tag: "Scientist" },
+                { name: "达·芬奇", en: "Leonardo", avatar: "🎨", color: "from-orange-500/20 to-rose-500/10", era: "1452–1519", tag: "Artist" },
+                { name: "莎士比亚", en: "Shakespeare", avatar: "✍️", color: "from-violet-500/20 to-purple-500/10", era: "1564–1616", tag: "Playwright" },
+                { name: "林肯", en: "Lincoln", avatar: "🗽", color: "from-indigo-500/20 to-blue-500/10", era: "1809–1865", tag: "Leader" },
+                { name: "苏格拉底", en: "Socrates", avatar: "🏛️", color: "from-teal-500/20 to-cyan-500/10", era: "470–399 BCE", tag: "Philosopher" },
+              ].map((soul) => (
+                <a
+                  key={soul.en}
+                  href="/soul/gallery"
+                  className="group relative overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br {color} p-5 transition-all duration-300 hover:border-zinc-600 hover:shadow-lg hover:scale-[1.02]"
+                >
+                  <div className="text-3xl mb-2">{soul.avatar}</div>
+                  <h3 className="font-semibold text-zinc-100 text-sm">{soul.name}</h3>
+                  <p className="text-xs text-zinc-500">{soul.en} · {soul.era}</p>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">{soul.tag}</span>
+                    <span className="text-xs text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">Chat →</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </Reveal>
+
+          <Reveal delay={300}>
+            <div className="mt-8 text-center">
+              <Link href="/soul/gallery">
+                <Button variant="outline" size="lg" className="gap-2 h-11 px-6">
+                  <Sparkles className="h-4 w-4" />
+                  Browse all souls
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
       {/* ═══ Concept Grid ═══ */}
       <section className="mx-auto w-full max-w-5xl px-4 pb-6 pt-4">
       </section>
