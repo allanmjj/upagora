@@ -189,7 +189,7 @@ BEGIN
     END IF;
 END $$;
 
--- 苏轼约束（通过 name_native 关联��
+-- 苏轼约束（通过 name_native 关联）
 BEGIN;
 INSERT INTO soul_constraints (
     soul_id, knowledge_floor, knowledge_ceiling, beliefs, soul_anchor,

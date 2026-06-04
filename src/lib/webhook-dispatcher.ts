@@ -32,9 +32,10 @@ export class WebhookDispatcher {
   async dispatchEvent(event: TownWebhookEvent): Promise<void> {
     // Find external souls with active webhooks
     const { data: externalSouls } = await supabase
-      .from("external_souls")
-      .select("ws_token, callback_url, status")
-      .eq("status", "active")
+      .from("town_external_souls")
+      .select("ws_token, callback_url, is_connected, is_approved")
+      .eq("is_connected", true)
+      .eq("is_approved", true)
       .not("callback_url", "is", null);
 
     if (!externalSouls || externalSouls.length === 0) return;
@@ -70,26 +71,19 @@ export class WebhookDispatcher {
           } else {
             console.error(`Webhook failed for ${soul.callback_url}: ${res.status}`);
             // Mark as failed after 3 consecutive failures
-            const { data: count } = await supabase
-              .from("external_souls")
-              .select("consecutive_failures")
-              .eq("ws_token", soul.ws_token)
-              .single();
-            
             await supabase
-              .from("external_souls")
+              .from("town_external_souls")
               .update({
-                consecutive_failures: (count?.consecutive_failures || 0) + 1,
-                status: (count?.consecutive_failures || 0) + 1 >= 3 ? "failed" : "active",
+                is_connected: false,
               })
               .eq("ws_token", soul.ws_token);
           }
         }).catch((err) => {
           console.error(`Webhook error for ${soul.callback_url}:`, err);
           supabase
-            .from("external_souls")
+            .from("town_external_souls")
             .update({
-              consecutive_failures: supabase.rpc("increment_failures", { token: soul.ws_token }) || 1,
+              is_connected: false,
             })
             .eq("ws_token", soul.ws_token);
         });
@@ -100,9 +94,10 @@ export class WebhookDispatcher {
   async dispatchBatch(events: TownWebhookEvent[]): Promise<void> {
     // Batch dispatch - send as array
     const { data: externalSouls } = await supabase
-      .from("external_souls")
-      .select("ws_token, callback_url, status")
-      .eq("status", "active")
+      .from("town_external_souls")
+      .select("ws_token, callback_url, is_connected, is_approved")
+      .eq("is_connected", true)
+      .eq("is_approved", true)
       .not("callback_url", "is", null);
 
     if (!externalSouls || externalSouls.length === 0) return;
@@ -139,12 +134,12 @@ export class WebhookDispatcher {
   async sendSoulResponse(wsToken: string, responseText: string, eventId: number): Promise<any> {
     // External soul sends a response to an event
     const { data: externalSoul } = await supabase
-      .from("external_souls")
-      .select("id, name, soul_id, status")
+      .from("town_external_souls")
+      .select("id, display_name, soul_id, is_connected, is_approved")
       .eq("ws_token", wsToken)
       .single();
 
-    if (!externalSoul || externalSoul.status !== "active") {
+    if (!externalSoul || !externalSoul.is_connected || !externalSoul.is_approved) {
       throw new Error("Invalid or inactive soul token");
     }
 
@@ -159,7 +154,7 @@ export class WebhookDispatcher {
           response_text: responseText,
           replied_to_event: eventId,
         },
-        summary: `${externalSoul.name} responded to event #${eventId}`,
+        summary: `${externalSoul.display_name} responded to event #${eventId}`,
       })
       .select()
       .single();

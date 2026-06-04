@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getConstraints, injectIntoSystemPrompt } from '@/lib/soul-constraint-loader';
+
 
 /**
  * Soul Network Social API
@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
       .from('soul_connections')
       .select(`
         id,
+        source_soul_id,
         target_soul_id,
         created_at,
         updated_at,

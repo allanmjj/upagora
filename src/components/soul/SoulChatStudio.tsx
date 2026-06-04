@@ -1,20 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import dynamic from 'next/dynamic';
-
-/**
- * SoulChatStudio — Full-featured soul chat with:
- * - Streaming responses from /api/soul/chat-stream
- * - Auto voice playback with emotion detection
- * - Personal memory display
- * - Chat history
- * - Quick actions
- */
-
-// Dynamic imports
-const SoulChatCore = dynamic(() => import('@/components/soul/SoulChatCore'), { ssr: false });
-const SoulMemoryDisplay = dynamic(() => import('@/components/soul/SoulMemoryDisplay').then(m => ({ default: m.SoulMemoryDisplay })), { ssr: false });
+import SoulChatCore from '@/components/soul/SoulChatCore';
+import { SoulMemoryDisplay } from '@/components/soul/SoulMemoryDisplay';
 
 interface SoulChatStudioProps {
   soulId: string;

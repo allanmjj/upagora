@@ -2970,7 +2970,7 @@ BEGIN
     END IF;
 END $$;
 
--- 苏轼约束（通过 name_native 关联��
+-- 苏轼约束（通过 name_native 关联）
 BEGIN;
 INSERT INTO soul_constraints (
     soul_id, knowledge_floor, knowledge_ceiling, beliefs, soul_anchor,
@@ -3048,22 +3048,22 @@ SELECT '✅ Sprint 20 Demo Data Seeded!' AS status;
 -- https://dfqeafreiwpyrzcdvegm.supabase.co/project/default/sql
 -- ============================================
 
--- 1. ���查实际表结构（取消注释可调试��
+-- 1. 查实际表结构（取消注释可调试
 -- SELECT table_name, column_name, data_type
 -- FROM information_schema.columns
 -- WHERE table_name = 'soul_chat_messages' ORDER BY ordinal_position;
 
 -- ============================================
--- 2. town_souls 表（预设灵魂主表���
+-- 2. town_souls 表（预设灵魂主表）
 -- ============================================
 
--- 确保关键列���在
+-- 确保关键列在
 ALTER TABLE town_souls ADD COLUMN IF NOT EXISTS is_preset BOOLEAN DEFAULT false;
 ALTER TABLE town_souls ADD COLUMN IF NOT EXISTS personality_summary TEXT;
 ALTER TABLE town_souls ADD COLUMN IF NOT EXISTS theme_color TEXT;
 ALTER TABLE town_souls ADD COLUMN IF NOT EXISTS full_biography TEXT;
 
--- 写入��设灵魂���
+-- 写入设灵魂
 INSERT INTO town_souls (id, name, name_native, era, category, profession, biography, full_biography, avatar, theme_color, personality, personality_summary, is_preset, status)
 VALUES
   ('preset-su-shi', 'Su Shi (Su Dongpo)', '苏轼·东坡', '1037–1101', 'poet', 'Poet & Statesman', 'Song Dynasty polymath — poet, calligrapher, statesman exiled for integrity.', 'Song Dynasty polymath — brilliant poet, accomplished calligrapher, bold statesman exiled for his integrity. Created ci poetry masterpieces and placed himself among the foremost literary figures of all time.', '🎋', '#60a5fa', '{"openness":0.95,"agreeableness":0.8,"conscientiousness":0.6,"neuroticism":0.4}', '豁达乐观，诗意幽默', true, 'integrated')
@@ -3105,7 +3105,7 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================
--- 3. Persona 内容文件���
+-- 3. Persona 内容文件
 -- ============================================
 
 INSERT INTO generated_persona_files (soul_id, file_type, content, is_preset)
@@ -3141,10 +3141,10 @@ VALUES ('preset-socrates', 'persona', "You are Socrates, the Athenian philosophe
 ON CONFLICT DO NOTHING;
 
 -- ============================================
--- 4. Soul Constraints（灵魂约束��
+-- 4. Soul Constraints（灵魂约束）
 -- ============================================
 
--- 确保表有正确的列���在
+-- 确保表有正确的列在
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'soul_constraints' AND column_name = 'knowledge_floor') THEN
@@ -3214,13 +3214,13 @@ INSERT INTO soul_constraints (
 ) ON CONFLICT (soul_id) DO NOTHING;
 
 -- ============================================
--- 5. Demo conversations（使用现有灵魂表������
+-- 5. Demo conversations（使用现有灵魂表）
 -- ============================================
 
--- ��询现有 town_souls 状态
+-- 询现有 town_souls 状态
 SELECT count(*) as preset_souls_count, count(*) FILTER (WHERE is_preset) as is_preset_count FROM town_souls;
 
--- ��询约束���态
+-- 询约束态
 SELECT count(*) as constraints_count FROM soul_constraints;
 
 SELECT '✅ Sprint 20 Demo Data Seeded!' as status;
