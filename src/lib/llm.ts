@@ -50,10 +50,87 @@ export function resolveProvider(): LLMConfig | null {
   return null;
 }
 
+// Fallback model chain (cheaper/faster models for degraded mode)
+const FALLBACK_MODELS: Record<ProviderName, string[]> = {
+  deepseek: ["deepseek-chat", "deepseek-reasoner"],
+  openrouter: ["anthropic/claude-sonnet-4-20250514", "anthropic/claude-3.5-haiku-20241022"],
+  anthropic: ["claude-sonnet-4-20250514", "claude-3.5-haiku-20241022"],
+  openai: ["gpt-4o", "gpt-4o-mini"],
+};
+
+// Retryable HTTP status codes
+const RETRYABLE_CODES = new Set([429, 500, 502, 503, 504]);
+
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number = 30000): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function makeLLMCall(
+  config: LLMConfig,
+  model: string,
+  systemPrompt: string,
+  messages: { role: string; content: string }[],
+  maxTokens: number,
+): Promise<{ content: string | null; error?: string }> {
+  try {
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${config.apiKey}`,
+      "Content-Type": "application/json",
+    };
+
+    let body: Record<string, unknown>;
+    if (config.provider === "anthropic") {
+      headers["anthropic-version"] = "2023-06-01";
+      body = { model, system: systemPrompt, messages, max_tokens: maxTokens };
+    } else {
+      const allMessages = [{ role: "system", content: systemPrompt }, ...messages];
+      body = { model, messages: allMessages, max_tokens: maxTokens };
+    }
+
+    const res = await fetchWithTimeout(config.url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    }, 30000);
+
+    if (RETRYABLE_CODES.has(res.status)) {
+      return { content: null, error: `retryable:${res.status}` };
+    }
+
+    const data = await res.json();
+    
+    if (config.provider === "anthropic") {
+      const content = data.content?.[0]?.text || null;
+      if (!content && data.error) {
+        return { content: null, error: data.error.message || "Anthropic API error" };
+      }
+      return { content };
+    } else {
+      const content = data.choices?.[0]?.message?.content || null;
+      if (!content && data.error) {
+        return { content: null, error: data.error.message || "LLM API error" };
+      }
+      return { content };
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("abort") || msg.includes("timeout")) {
+      return { content: null, error: "timeout" };
+    }
+    return { content: null, error: msg };
+  }
+}
+
 export async function callLLM(
   systemPrompt: string,
   messages: { role: string; content: string }[],
-  options: { maxTokens?: number; model?: string } = {},
+  options: { maxTokens?: number; model?: string; retries?: number; timeout?: number } = {},
 ): Promise<{ content: string | null; error?: string }> {
   const config = resolveProvider();
   if (!config) {
@@ -64,60 +141,41 @@ export async function callLLM(
     };
   }
 
-  try {
-    const model = options.model || config.model;
+  const maxRetries = options.retries ?? 2;
+  const model = options.model || config.model;
+  const maxTokens = options.maxTokens || 2000;
+  const fallbackModels = FALLBACK_MODELS[config.provider] || [];
 
-    if (config.provider === "anthropic") {
-      // Anthropic uses a different request format
-      const res = await fetch(config.url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${config.apiKey}`,
-          "Content-Type": "application/json",
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model,
-          system: systemPrompt,
-          messages,
-          max_tokens: options.maxTokens || 2000,
-        }),
-      });
-      const data = await res.json();
-      const content = data.content?.[0]?.text || null;
-      if (!content && data.error) {
-        return { content: null, error: data.error.message || "Anthropic API error" };
-      }
-      return { content };
+  // Try primary model with retries
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const result = await makeLLMCall(config, model, systemPrompt, messages, maxTokens);
+    if (result.content) return result;
+    if (result.error && !result.error.startsWith("retryable:") && result.error !== "timeout") {
+      // Non-retryable error (auth, bad request, etc.) — try fallback immediately
+      break;
     }
-
-    // OpenAI-compatible format (deepseek, openrouter, openai)
-    const allMessages: { role: string; content: string }[] = [
-      { role: "system", content: systemPrompt },
-      ...messages,
-    ];
-
-    const res = await fetch(config.url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: allMessages,
-        max_tokens: options.maxTokens || 2000,
-      }),
-    });
-    const data = await res.json();
-    const content = data.choices?.[0]?.message?.content || null;
-    if (!content && data.error) {
-      return { content: null, error: data.error.message || "LLM API error" };
+    if (attempt < maxRetries) {
+      const delay = Math.pow(2, attempt) * 1000; // 1s, 2s
+      logger.warn(`LLM retry ${attempt + 1}/${maxRetries} after ${delay}ms (${result.error})`);
+      await new Promise(r => setTimeout(r, delay));
     }
-    return { content };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    logger.error(`LLM call failed (${config.provider}):`, msg);
-    return { content: null, error: msg };
   }
+
+  // Fallback: try cheaper/faster models
+  if (fallbackModels.length > 0) {
+    for (const fallbackModel of fallbackModels) {
+      if (fallbackModel === model) continue;
+      logger.info(`Falling back to model: ${fallbackModel}`);
+      const result = await makeLLMCall(config, fallbackModel, systemPrompt, messages, maxTokens);
+      if (result.content) {
+        logger.info(`Fallback succeeded with ${fallbackModel}`);
+        return result;
+      }
+    }
+  }
+
+  // All attempts exhausted
+  const lastError = `LLM call exhausted (${config.provider}/${model})`;
+  logger.error(lastError);
+  return { content: null, error: lastError };
 }
