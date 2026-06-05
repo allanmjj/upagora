@@ -3,6 +3,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
+import { cache } from '@/lib/cache';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -33,10 +34,18 @@ export async function generateEmbedding(
   text: string,
   provider: 'openai' | 'local' = 'openai'
 ): Promise<number[]> {
+  const cacheKey = `embed:${Buffer.from(text).toString('base64').slice(0, 64)}:${provider}`;
+  const cached = cache.get<number[]>(cacheKey);
+  if (cached) return cached;
+
+  let result: number[];
   if (provider === 'openai' && EMBEDDING_CONFIG.openai.key) {
-    return generateOpenAIEmbedding(text);
+    result = await generateOpenAIEmbedding(text);
+  } else {
+    result = generateLocalEmbedding(text);
   }
-  return generateLocalEmbedding(text);
+  cache.set(cacheKey, result, 300);
+  return result;
 }
 
 async function generateOpenAIEmbedding(text: string): Promise<number[]> {
@@ -159,6 +168,11 @@ export async function searchMemories(
   topK: number = 5,
   minSimilarity: number = 0.7
 ): Promise<SearchResult[]> {
+  // Cache check (60s TTL - memory search is expensive)
+  const cacheKey = `rag_search:${soulId}:${query.slice(0, 100)}:${topK}`;
+  const cached = cache.get<SearchResult[]>(cacheKey);
+  if (cached) return cached;
+
   // First, embed the query
   const queryEmbedding = await generateEmbedding(query);
 
@@ -175,7 +189,7 @@ export async function searchMemories(
     return [];
   }
 
-  return (data || []).map((row: any) => ({
+  const results = (data || []).map((row: any) => ({
     id: row.id,
     textChunk: row.text_chunk,
     similarity: parseFloat((row.similarity * 100).toFixed(1)) / 100,
@@ -183,6 +197,8 @@ export async function searchMemories(
     metadata: row.metadata || {},
     createdAt: row.created_at,
   }));
+  cache.set(cacheKey, results, 60);
+  return results;
 }
 
 // ============================================================================
