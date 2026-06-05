@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server"
+import { logger } from "@/lib/logger";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -265,7 +266,7 @@ ${chunk}
       text_chunks: textChunks.length,
     });
   } catch (err) {
-    console.error("Soul extraction error:", err);
+    logger.error("soul.extract", err as Error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -434,7 +435,7 @@ async function extractWithLLM({
 
     return { error: "Unknown provider" };
   } catch (err) {
-    console.error("LLM extraction error:", err);
+    logger.error("soul.extract.llm", err as Error);
     return { error: "LLM call failed" };
   }
 }
@@ -480,7 +481,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ extractions: enriched });
   } catch (err) {
-    console.error("Extraction GET error:", err);
+    logger.error("soul.extract.get", err as Error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

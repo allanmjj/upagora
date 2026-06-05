@@ -4,6 +4,7 @@ import { resolveProvider } from '@/lib/llm';
 import { getMemoryContext } from '@/lib/upagora_rag';
 import { loadSoulConstraints } from '@/lib/soul-constraint-loader';
 import { buildConstraintPrompt } from '@/lib/soul-constraints';
+import { logger } from '@/lib/logger';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
         ragContext = await getExtractionContext(userId);
       }
     } catch (err) {
-      console.error('[chat-stream] RAG fetch failed:', err);
+      logger.error('chat-stream.rag', err as Error);
     }
 
     // 4. Emotion hint
@@ -169,7 +170,7 @@ export async function POST(req: NextRequest) {
 
           controller.close();
         } catch (err) {
-          console.error('[chat-stream] Stream error:', err);
+          logger.error('chat-stream.stream', err as Error);
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ error: 'Stream failed', done: true })}\n\n`)
           );
@@ -186,7 +187,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error('[chat-stream] Error:', err);
+    logger.error('chat-stream', err as Error);
     return jsonResp(500, { error: 'Internal server error' });
   }
 }

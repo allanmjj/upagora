@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { MA_JUNJIE_CONSTRAINTS, buildConstraintPrompt } from "@/lib/soul-constraints";
+import { MA_JUNJIE_CONSTRAINTS, buildConstraintPrompt } from "@/lib/soul-constraints"
+import { logger } from "@/lib/logger";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -135,7 +136,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ response, subject_name: subjectName });
   } catch (err) {
-    console.error("Soul chat error:", err);
+    logger.error("soul.chat", err as Error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -316,7 +317,7 @@ async function callSoulLLM(
       return data.choices?.[0]?.message?.content || null;
     }
   } catch (err) {
-    console.error("Soul LLM call error:", err);
+    logger.error("soul.chat.llm", err as Error);
   }
   return null;
 }
@@ -360,7 +361,7 @@ export async function GET(req: NextRequest) {
       messages: data || [],
     });
   } catch (err) {
-    console.error("Chat history error:", err);
+    logger.error("soul.chat.history", err as Error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

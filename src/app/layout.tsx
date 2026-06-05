@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 import { Navbar } from "@/components/layout/navbar"
 import { ClientTranslationProvider } from "@/components/layout/client-translation-provider"
+import { ErrorBoundary } from "@/components/layout/error-boundary"
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 
@@ -23,16 +24,18 @@ export default function RootLayout({
     <html lang="en" className={cn("font-sans", geist.variable)}>
       <body className="antialiased">
         <ClientTranslationProvider>
-          <Navbar />
-          <main className="min-h-screen pt-16">
-            {children}
-          </main>
-          <footer className="border-t border-zinc-800 py-8">
+          <ErrorBoundary>
+            <Navbar />
+            <main className="min-h-screen pt-16">
+              {children}
+            </main>
+            <footer className="border-t border-zinc-800 py-8">
             <div className="container mx-auto px-4 text-center text-sm text-zinc-500">
               <p>&copy; {new Date().getFullYear()} UpAgora. AI × Human Aggregation Platform.</p>
               <p className="mt-1">Contact: <a href="mailto:5928301@qq.com" className="text-indigo-400 hover:text-indigo-300">5928301@qq.com</a></p>
             </div>
           </footer>
+          </ErrorBoundary>
         </ClientTranslationProvider>
       </body>
     </html>

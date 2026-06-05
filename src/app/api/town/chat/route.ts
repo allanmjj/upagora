@@ -4,6 +4,7 @@ import { OpenAI } from "openai";
 import { KNOWN_CONSTRAINTS_MAP } from "@/lib/soul-constraint-loader";
 import { buildConstraintPromptLang } from "@/lib/soul-constraints";
 import { refinePersonaFromFeedback } from "@/lib/persona-refiner";
+import { logger } from "@/lib/logger"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -256,7 +257,7 @@ RESPONSE RULES:
             }
           } catch (e) {
             error = e;
-            console.warn("DeepSeek failed, trying fallbacks:", e);
+            logger.warn("town.chat.deepseek", { error: (e as Error).message });
           }
 
           // Fallback chain
@@ -277,7 +278,7 @@ RESPONSE RULES:
                 error = null;
                 break;
               } catch (fe) {
-                console.warn(`${provider.name} fallback failed:`, fe);
+                logger.warn("town.chat.fallback", { provider: provider.name, error: (fe as Error).message });
               }
             }
           }
@@ -317,7 +318,7 @@ RESPONSE RULES:
       },
     });
   } catch (err) {
-    console.error("Town chat error:", err);
+    logger.error("town.chat", err as Error);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       {
@@ -461,7 +462,7 @@ export async function GET(req: NextRequest) {
       { headers: { "Content-Type": "application/json" } },
     );
   } catch (err) {
-    console.error("Town chat welcome error:", err);
+    logger.error("town.chat.welcome", err as Error);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       {
@@ -493,6 +494,6 @@ async function saveTownChat(
       created_at: new Date().toISOString(),
     });
   } catch (e) {
-    console.warn("Failed to save town chat:", e);
+    logger.warn("town.chat.save", { error: (e as Error).message });
   }
 }
