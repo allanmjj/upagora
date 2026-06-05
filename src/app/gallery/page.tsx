@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { logger } from '@/lib/logger';
+import Image from 'next/image';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -354,11 +355,16 @@ export default function SoulGalleryPage() {
                 {/* Preview */}
                 <div className="aspect-video bg-slate-800/30 flex items-center justify-center relative">
                   {work.content_type === "photo" && work.content_url ? (
-                    <img
-                      src={work.content_url}
-                      alt={work.title}
-                      className="w-full h-full object-cover"
-                    />
+                    <div className="w-full h-full relative">
+                      <Image
+                        src={work.content_url}
+                        alt={work.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        loading="lazy"
+                      />
+                    </div>
                   ) : (
                     <div className="text-6xl">
                       {contentTypeEmoji[work.content_type] || "🎨"}
@@ -556,11 +562,16 @@ export default function SoulGalleryPage() {
             {/* Content Preview */}
             <div className="mb-4">
               {selectedWork.content_type === "photo" && selectedWork.content_url ? (
-                <img
-                  src={selectedWork.content_url}
-                  alt={selectedWork.title}
-                  className="w-full rounded-lg"
-                />
+                <div className="w-full rounded-lg relative" style={{aspectRatio: '4/3'}}>
+                  <Image
+                    src={selectedWork.content_url}
+                    alt={selectedWork.title}
+                    fill
+                    className="object-cover rounded-lg"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    loading="lazy"
+                  />
+                </div>
               ) : (
                 <div className="aspect-video bg-slate-800/30 rounded-lg flex items-center justify-center">
                   <div className="text-6xl">

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -58,11 +59,16 @@ function TreeNode({ node, allNodes, depth = 0, isLast = false }: {
           )}
           <div className="flex-shrink-0">
             {node.avatar_url ? (
-              <img
+              <div className={`${sizeClass} rounded-full relative ring-2 ring-indigo-500/30`}>
+              <Image
                 src={node.avatar_url}
                 alt={node.name}
-                className={`${sizeClass} rounded-full object-cover ring-2 ring-indigo-500/30`}
+                fill
+                className="rounded-full object-cover"
+                sizes="80px"
+                loading="lazy"
               />
+            </div>
             ) : (
               <div className={`${sizeClass} rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center text-sm font-medium ring-2 ring-indigo-500/30`}>
                 {node.subject_name?.[0]?.toUpperCase() || node.name[0]}

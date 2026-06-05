@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { logger } from '@/lib/logger';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
@@ -100,7 +101,14 @@ export default function SoulDetailPage() {
           <div className="flex items-start gap-6">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center text-3xl shrink-0">
               {soul.avatar_url
-                ? <img src={soul.avatar_url} alt={soul.name} className="w-full h-full rounded-2xl object-cover" />
+                ? <Image
+                src={soul.avatar_url}
+                alt={soul.name}
+                fill
+                className="rounded-2xl object-cover"
+                sizes="200px"
+                loading="lazy"
+              />
                 : '🧬'}
             </div>
             <div className="flex-1">
