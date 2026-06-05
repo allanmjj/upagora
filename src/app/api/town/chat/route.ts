@@ -87,12 +87,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Load soul persona
-    const { data: persona } = await supabase
-      .from("soul_extraction_results")
-      .select("id, name, name_native, language, persona_text, avatar")
-      .eq("id", soul_id)
-      .single();
+    // Parallel: load persona, town state, and recent events simultaneously
+    const [personaRes, townStateRes, recentEventsRes] = await Promise.all([
+      supabase
+        .from("soul_extraction_results")
+        .select("id, name, name_native, language, persona_text, avatar")
+        .eq("id", soul_id)
+        .single(),
+      supabase
+        .from("soul_states")
+        .select("mood, energy, social_need, current_region, yesterday_last_mood")
+        .eq("soul_id", soul_id)
+        .single(),
+      supabase
+        .from("town_events")
+        .select("event_type, summary, content")
+        .eq("soul_id", soul_id)
+        .order("created_at", { ascending: false })
+        .limit(5),
+    ]);
+
+    const persona = personaRes.data;
+    const townState = townStateRes.data;
+    const recentEvents = recentEventsRes.data;
 
     if (!persona) {
       return new Response(JSON.stringify({ error: "Soul not found" }), {
@@ -100,13 +117,6 @@ export async function POST(req: NextRequest) {
         headers: { "Content-Type": "application/json" },
       });
     }
-
-    // Load town state
-    const { data: townState } = await supabase
-      .from("soul_states")
-      .select("mood, energy, social_need, current_region, yesterday_last_mood")
-      .eq("soul_id", soul_id)
-      .single();
 
     // Load nearby souls in same region
     let nearbySouls: any[] = [];
@@ -127,14 +137,6 @@ export async function POST(req: NextRequest) {
         nearbySouls = nearbyPersonas || [];
       }
     }
-
-    // Load recent town events for this soul
-    const { data: recentEvents } = await supabase
-      .from("town_events")
-      .select("event_type, summary, content")
-      .eq("soul_id", soul_id)
-      .order("created_at", { ascending: false })
-      .limit(5);
 
     // Build town context injection
     const regionDesc =

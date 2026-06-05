@@ -326,26 +326,21 @@ export async function GET(req: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Load wallet
-    const { data: wallet } = await supabase
-      .from('soul_wallets')
-      .select('*')
-      .eq('session_id', session_id)
-      .single();
+    // Parallel: load wallet, properties, transactions
+    const [walletRes, propertiesRes, transactionsRes] = await Promise.all([
+      supabase.from('soul_wallets').select('*').eq('session_id', session_id).single(),
+      supabase.from('soul_households').select('*').eq('session_id', session_id),
+      supabase
+        .from('soul_transactions')
+        .select('*')
+        .or(`receiver_session_id.eq.${session_id},sender_session_id.eq.${session_id}`)
+        .order('created_at', { ascending: false })
+        .limit(20),
+    ]);
 
-    // Load properties
-    const { data: properties } = await supabase
-      .from('soul_households')
-      .select('*')
-      .eq('session_id', session_id);
-
-    // Load recent transactions
-    const { data: transactions } = await supabase
-      .from('soul_transactions')
-      .select('*')
-      .or(`receiver_session_id.eq.${session_id},sender_session_id.eq.${session_id}`)
-      .order('created_at', { ascending: false })
-      .limit(20);
+    const wallet = walletRes.data;
+    const properties = propertiesRes.data || [];
+    const transactions = transactionsRes.data || [];
 
     return NextResponse.json({
       success: true,
