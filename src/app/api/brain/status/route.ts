@@ -1,11 +1,6 @@
 import { NextRequest } from 'next/server';
 import { logger } from '@/lib/logger';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
+import { supabase } from '@/lib/supabase-client';
 
 /**
  * GET /api/brain/status

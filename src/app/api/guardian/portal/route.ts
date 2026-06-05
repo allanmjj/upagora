@@ -5,12 +5,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from '@/lib/logger';
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPASE_SERVICE_ROLE_KEY!,
-);
+import { supabase } from '@/lib/supabase-client';
 
 export interface PortalSoul {
   id: string;
