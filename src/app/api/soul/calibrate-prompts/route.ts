@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
       total_past_calibrations: (pastCalibrations || []).length,
     });
   } catch (err) {
-    console.error("[calibrate-prompts] Error:", err);
+    logger.error("[calibrate-prompts] Error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { logger } from '@/lib/logger';
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
@@ -91,7 +92,7 @@ export default function SoulDiscoveryPage() {
         setSouls(soulsWithState);
         setFeaturedSouls(soulsWithState.slice(0, 5));
       } catch (e) {
-        console.error("Failed to load souls:", e);
+        logger.error("Failed to load souls:", e);
       } finally {
         setLoading(false);
       }

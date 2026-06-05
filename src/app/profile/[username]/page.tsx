@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -104,7 +105,7 @@ export default function UserProfilePage() {
         }
       }
     } catch (error) {
-      console.error('Failed to fetch profile:', error)
+      logger.error('Failed to fetch profile:', error)
     } finally {
       setLoading(false)
     }

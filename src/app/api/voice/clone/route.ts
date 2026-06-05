@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
       });
 
     if (uploadError) {
-      console.error('Voice upload error:', uploadError);
+      logger.error('Voice upload error:', uploadError);
       return Response.json({ error: 'Upload failed' }, { status: 500 });
     }
 
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
       samples_needed: Math.max(0, 10 - ((sample?.id || 0) === 'UNKNOWN' ? 0 : 1)),
     });
   } catch (err) {
-    console.error('Voice clone error:', err);
+    logger.error('Voice clone error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -143,7 +144,7 @@ export async function GET(req: NextRequest) {
       samples_list: samples || [],
     });
   } catch (err) {
-    console.error('Voice status error:', err);
+    logger.error('Voice status error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

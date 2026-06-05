@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
@@ -73,7 +74,7 @@ export async function GET(req: NextRequest) {
     const { data: listings, error } = await query.limit(50)
 
     if (error) {
-      console.error('Marketplace GET error:', error)
+      logger.error('Marketplace GET error:', error)
       // Return empty - client will use demo data
       return NextResponse.json({ listings: [], purchased_ids: purchasedIds })
     }
@@ -83,7 +84,7 @@ export async function GET(req: NextRequest) {
       purchased_ids: purchasedIds,
     })
   } catch (err) {
-    console.error('Marketplace error:', err)
+    logger.error('Marketplace error:', err)
     return NextResponse.json({ listings: [], purchased_ids: [] })
   }
 }

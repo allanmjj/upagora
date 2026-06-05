@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { type SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies as nextCookies } from 'next/headers'
@@ -174,7 +175,7 @@ async function authenticateWithApiKey(token: string): Promise<AuthResult> {
 
     return { user: authUser, authMethod: 'api_key', supabase: adminClient }
   } catch (error) {
-    console.error('API key authentication error:', error)
+    logger.error('API key authentication error:', error)
     return { user: null, authMethod: null, supabase: adminClient }
   }
 }
@@ -223,7 +224,7 @@ async function authenticateWithCookie(): Promise<AuthResult> {
 
     return { user: authUser, authMethod: 'cookie', supabase: cookieClient }
   } catch (error) {
-    console.error('Cookie authentication error:', error)
+    logger.error('Cookie authentication error:', error)
     return { user: null, authMethod: null, supabase: cookieClient }
   }
 }

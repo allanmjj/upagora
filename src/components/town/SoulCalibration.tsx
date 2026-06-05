@@ -6,6 +6,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 
 export interface SoulResponse {
   id: string;
@@ -66,7 +67,7 @@ export default function SoulCalibration({
       setFeedbackType('positive');
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      console.error('Calibration failed:', err);
+      logger.error('Calibration failed:', err);
     } finally {
       setSubmitting(false);
     }

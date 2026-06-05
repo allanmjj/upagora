@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -233,7 +234,7 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (soulError) {
-        console.error(`Failed to upsert soul ${subjectName}:`, soulError.message);
+        logger.error(`Failed to upsert soul ${subjectName}:`, soulError.message);
         skipped.push({ name: subjectName, error: soulError.message });
         continue;
       }
@@ -267,7 +268,7 @@ export async function POST(req: NextRequest) {
         );
 
       if (stateError) {
-        console.error(`Failed to upsert state for ${subjectName}:`, stateError.message);
+        logger.error(`Failed to upsert state for ${subjectName}:`, stateError.message);
         skipped.push({ name: subjectName, error: stateError.message });
       } else {
         synced++;
@@ -282,7 +283,7 @@ export async function POST(req: NextRequest) {
       total_subjects: soulsBySubject.size,
     });
   } catch (err: any) {
-    console.error("Town sync error:", err);
+    logger.error("Town sync error:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -310,7 +311,7 @@ export async function GET() {
         : "Town is empty. Run POST /api/town/sync to sync from extraction results.",
     });
   } catch (err: any) {
-    console.error("Town status error:", err);
+    logger.error("Town status error:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

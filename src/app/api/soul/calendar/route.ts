@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 import { generateDefaultSchedule, getDayPhase, type SoulProfile, type ScheduleSlot } from "@/lib/soul-schedule-engine";
 import { KNOWN_CONSTRAINTS_MAP } from "@/lib/soul-constraint-loader";
@@ -113,7 +114,7 @@ export async function GET(req: NextRequest) {
 
     return jsonResp(200, { souls: soulCalendars });
   } catch (err) {
-    console.error("[soul-calendar] Error:", err);
+    logger.error("[soul-calendar] Error:", err);
     return jsonResp(500, { error: "Internal server error" });
   }
 }

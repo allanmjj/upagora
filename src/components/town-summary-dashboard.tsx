@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { logger } from '@/lib/logger';
 
 const MOOD_EMOJIS: Record<string, string> = {
   happy: "😊", calm: "😌", melancholic: "😔", anxious: "😟", inspired: "✨", peace: "😇",
@@ -34,7 +35,7 @@ export function TownSummaryDashboard({ className = "" }: { className?: string })
       const json = await res.json();
       setData(json);
     } catch (e) {
-      console.error("Summary fetch error:", e);
+      logger.error("Summary fetch error:", e);
     } finally {
       setLoading(false);
     }

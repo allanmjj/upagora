@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -129,7 +130,7 @@ export async function GET(req: Request) {
       relationships: filtered,
     });
   } catch (e: any) {
-    console.error("Relationships API error:", e);
+    logger.error("Relationships API error:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }

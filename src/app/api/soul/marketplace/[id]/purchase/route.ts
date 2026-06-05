@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
@@ -125,7 +126,7 @@ export async function POST(
       price_paid: listing.price_credits,
     })
   } catch (err) {
-    console.error('Purchase error:', err)
+    logger.error('Purchase error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

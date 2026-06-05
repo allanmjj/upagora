@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -51,7 +52,7 @@ export async function GET(
       },
     });
   } catch (err: any) {
-    console.error("Skill download error:", err);
+    logger.error("Skill download error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

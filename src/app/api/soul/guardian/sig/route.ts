@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Guardian sig error:', error);
+      logger.error('Guardian sig error:', error);
       return Response.json({ error: 'Signature failed' }, { status: 500 });
     }
 
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
       message: 'Soul signed as authentic',
     });
   } catch (err) {
-    console.error('Guardian sig error:', err);
+    logger.error('Guardian sig error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

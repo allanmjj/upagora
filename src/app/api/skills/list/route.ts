@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { NextResponse } from 'next/server'
 
 // Default skills (fallback when table is unavailable)
@@ -36,7 +37,7 @@ export async function GET() {
     )
 
     if (result.error) {
-      console.warn('Skills table unavailable, using defaults:', result.error.message)
+      logger.warn('Skills table unavailable, using defaults:', result.error.message)
       return NextResponse.json({ success: true, data: DEFAULT_SKILLS, source: 'default' })
     }
 

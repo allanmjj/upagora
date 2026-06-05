@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -15,7 +16,7 @@ export async function GET() {
     .order("created_at", { ascending: true });
 
   if (soulsError) {
-    console.error("Failed to fetch souls:", soulsError.message);
+    logger.error("Failed to fetch souls:", soulsError.message);
     return NextResponse.json({ souls: [], states: [], error: soulsError.message });
   }
 

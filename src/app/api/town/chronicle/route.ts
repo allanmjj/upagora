@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -104,7 +105,7 @@ export async function GET(req: Request) {
       },
     });
   } catch (e: any) {
-    console.error("Chronicle API error:", e);
+    logger.error("Chronicle API error:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }

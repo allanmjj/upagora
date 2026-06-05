@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Verify heart error:', error);
+      logger.error('Verify heart error:', error);
       return Response.json({ error: 'Verification failed' }, { status: 500 });
     }
 
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
       message: 'Heart verification recorded',
     });
   } catch (err) {
-    console.error('Guardian verify-heart error:', err);
+    logger.error('Guardian verify-heart error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

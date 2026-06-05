@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       last_calibrated: calibrations ? "recent" : "never",
     });
   } catch (err) {
-    console.error("[soul-status] Error:", err);
+    logger.error("[soul-status] Error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

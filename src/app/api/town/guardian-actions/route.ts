@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 import { rateLimiter } from "@/lib/rate-limiter";
 type RateLimitedResponse = NextResponse;
@@ -78,7 +79,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       .single();
 
     if (eventErr) {
-      console.error("Failed to record guardian action:", eventErr.message);
+      logger.error("Failed to record guardian action:", eventErr.message);
       return NextResponse.json(
         { error: "Failed to record action", detail: eventErr.message },
         { status: 500 },
@@ -99,7 +100,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       message: "Action recorded",
     });
   } catch (err: any) {
-    console.error("Guardian actions error:", err);
+    logger.error("Guardian actions error:", err);
     return NextResponse.json(
       { error: "Internal server error", detail: err.message },
       { status: 500 },
@@ -143,7 +144,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(actions);
   } catch (err: any) {
-    console.error("Guardian actions GET error:", err);
+    logger.error("Guardian actions GET error:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

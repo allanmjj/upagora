@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -126,7 +127,7 @@ export async function GET(req: Request) {
       all_events: events?.slice(0, 20) || [],
     });
   } catch (e: any) {
-    console.error("Town summary error:", e);
+    logger.error("Town summary error:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }

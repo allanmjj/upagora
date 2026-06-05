@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 import { OpenAI } from "openai";
 
@@ -289,7 +290,7 @@ Return ONLY a JSON array: [{ speaker, text }]. The speaker should be one of the 
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
   } catch (error) {
-    console.error("Encounter join error:", error);
+    logger.error("Encounter join error:", error);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { "Content-Type": "application/json" } },

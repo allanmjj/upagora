@@ -12,6 +12,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { logger } from '@/lib/logger';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -53,7 +54,7 @@ export async function saveConversationMemory({
 
     return true;
   } catch (err) {
-    console.warn('[soul-memory] Failed to save conversation memory:', err);
+    logger.warn('[soul-memory] Failed to save conversation memory:', err);
     return false;
   }
 }
@@ -88,7 +89,7 @@ export async function getPersonalMemories({
     const { data, error } = await queryBuilder;
 
     if (error || !data) {
-      console.warn('[soul-memory] Failed to retrieve memories:', error);
+      logger.warn('[soul-memory] Failed to retrieve memories:', error);
       return [];
     }
 
@@ -98,7 +99,7 @@ export async function getPersonalMemories({
       created_at: row.created_at || '',
     }));
   } catch (err) {
-    console.warn('[soul-memory] Error retrieving personal memories:', err);
+    logger.warn('[soul-memory] Error retrieving personal memories:', err);
     return [];
   }
 }
@@ -153,7 +154,7 @@ export async function getConversationCount({
       .eq('category', 'conversation_memory');
 
     if (error) {
-      console.warn('[soul-memory] Failed to count conversations:', error);
+      logger.warn('[soul-memory] Failed to count conversations:', error);
       return 0;
     }
 
@@ -188,7 +189,7 @@ export async function saveInteractionEvent({
     });
     return true;
   } catch (err) {
-    console.warn('[soul-memory] Failed to save interaction event:', err);
+    logger.warn('[soul-memory] Failed to save interaction event:', err);
     return false;
   }
 }

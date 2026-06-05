@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 import { resolveProvider, callLLM } from "@/lib/llm";
 
@@ -60,7 +61,7 @@ export async function GET(req: NextRequest) {
       reasoning: userPreferences.summary,
     });
   } catch (err) {
-    console.error("[soul-recommend] Error:", err);
+    logger.error("[soul-recommend] Error:", err);
     return jsonResp(500, { error: "Internal server error" });
   }
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 import { rateLimiter } from "@/lib/rate-limiter";
 import {
@@ -120,7 +121,7 @@ export async function GET(request: Request) {
       souls: scheduleStatus,
     });
   } catch (err: any) {
-    console.error("Schedule GET error:", err);
+    logger.error("Schedule GET error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -223,7 +224,7 @@ export async function POST(request: Request) {
       activitiesAdvanced: activities.length,
     });
   } catch (err: any) {
-    console.error("Schedule advance error:", err);
+    logger.error("Schedule advance error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 import {
   Share2, Link as LinkIcon, Copy, Download, X,
   Check, MessageCircle, Twitter, Facebook
@@ -44,7 +45,7 @@ export function SoulShareModal({
         setShareSlug(data.share_slug);
       }
     } catch (err) {
-      console.error('Failed to create share link:', err);
+      logger.error('Failed to create share link:', err);
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import "./globals.css"
 import { Navbar } from "@/components/layout/navbar"
+import { MobileNav } from "@/components/layout/mobile-nav"
 import { ClientTranslationProvider } from "@/components/layout/client-translation-provider"
 import { ErrorBoundary } from "@/components/layout/error-boundary"
 import { Geist } from "next/font/google";
@@ -26,9 +27,10 @@ export default function RootLayout({
         <ClientTranslationProvider>
           <ErrorBoundary>
             <Navbar />
-            <main className="min-h-screen pt-16">
+            <main className="min-h-screen pt-16 pb-16 md:pb-0">
               {children}
             </main>
+            <MobileNav />
             <footer className="border-t border-zinc-800 py-8">
             <div className="container mx-auto px-4 text-center text-sm text-zinc-500">
               <p>&copy; {new Date().getFullYear()} UpAgora. AI × Human Aggregation Platform.</p>

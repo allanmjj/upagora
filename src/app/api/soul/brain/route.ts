@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { callLLM, resolveProvider } from '@/lib/llm';
 import { createClient } from '@/lib/supabase/server';
 
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[soul-brain] Error:', error);
+    logger.error('[soul-brain] Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -124,7 +125,7 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[soul-brain] GET error:', error);
+    logger.error('[soul-brain] GET error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -222,7 +223,7 @@ Output ONLY valid JSON:
 
     return JSON.parse(jsonMatch[0]);
   } catch (error) {
-    console.error('[soul-brain] Thinking error:', error);
+    logger.error('[soul-brain] Thinking error:', error);
     // Fallback
     const activities = ['work', 'social', 'learn', 'create', 'explore', 'rest'];
     return {

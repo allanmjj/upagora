@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -60,7 +61,7 @@ export async function GET(req: NextRequest) {
       })),
     });
   } catch (err) {
-    console.error('[social-feed] Error:', err);
+    logger.error('[social-feed] Error:', err);
     return NextResponse.json({ interactions: [] });
   }
 }
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, interaction: data });
   } catch (err) {
-    console.error('[social-interact] Error:', err);
+    logger.error('[social-interact] Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -20,8 +20,8 @@ export function MobileNav() {
       <ul className="flex h-14 items-center justify-around px-2">
         {NAV_ITEMS.map((item) => {
           const isActive =
-            pathname === item.href ||
-            (item.href !== '/soul' && pathname.startsWith(item.href))
+            (pathname || "/") === item.href ||
+            (item.href !== '/soul' && pathname?.startsWith(item.href))
 
           return (
             <li key={item.href} className="flex-1">

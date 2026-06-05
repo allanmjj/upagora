@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -48,13 +49,13 @@ export async function GET(req: NextRequest) {
       .limit(limit);
 
     if (error) {
-      console.error('Transactions GET error:', error);
+      logger.error('Transactions GET error:', error);
       return Response.json({ error: 'Failed to fetch transactions' }, { status: 500 });
     }
 
     return Response.json({ transactions: transactions || [] });
   } catch (err) {
-    console.error('Wallet transactions error:', err);
+    logger.error('Wallet transactions error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

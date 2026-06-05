@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
       .limit(limit * 3); // fetch more to rank properly
 
     if (error) {
-      console.error('Reputation ranking error:', error);
+      logger.error('Reputation ranking error:', error);
       return Response.json({ error: 'Failed to fetch ranking' }, { status: 500 });
     }
 
@@ -112,7 +113,7 @@ export async function GET(req: NextRequest) {
       updated_at: new Date().toISOString(),
     });
   } catch (err) {
-    console.error('Reputation ranking error:', err);
+    logger.error('Reputation ranking error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

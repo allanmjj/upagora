@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { logger } from '@/lib/logger';
 import { useRouter } from "next/navigation";
 import { TownClock } from "@/components/town-clock";
 import SoulProfileCard from "@/components/town/SoulProfileCard";
@@ -170,7 +171,7 @@ export default function TownPage() {
           setSoulStates(souls);
         }
       } catch (e) {
-        console.error("Failed to load souls from DB:", e);
+        logger.error("Failed to load souls from DB:", e);
       } finally {
         setLoading(false);
       }
@@ -453,7 +454,7 @@ export default function TownPage() {
           setSoulStates(data.states);
         }
       } catch (e) {
-        console.error("Failed to parse SSE event:", e);
+        logger.error("Failed to parse SSE event:", e);
       }
     };
 

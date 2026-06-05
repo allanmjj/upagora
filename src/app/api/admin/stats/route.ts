@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 import { getAuthUser } from '@/lib/auth';
 
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
       checked_at: new Date().toISOString(),
     });
   } catch (err) {
-    console.error('Admin stats error:', err);
+    logger.error('Admin stats error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

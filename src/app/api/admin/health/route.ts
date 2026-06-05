@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -54,7 +55,7 @@ export async function GET(req: NextRequest) {
       uptime: '99.9%',
     });
   } catch (err) {
-    console.error('Health check error:', err);
+    logger.error('Health check error:', err);
     return Response.json({
       status: 'error',
       error: String(err),

@@ -4,6 +4,7 @@
  * This is single unified view of the guardian's soul ecosystem.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -236,7 +237,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Internal server error";
-    console.error("[guardian/portal] error:", msg);
+    logger.error("[guardian/portal] error:", msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

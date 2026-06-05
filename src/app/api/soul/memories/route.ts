@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
       .limit(limit);
 
     if (error) {
-      console.warn('[soul/memories] Fetch error:', error.message);
+      logger.warn('[soul/memories] Fetch error:', error.message);
       // Return empty — don't fail the UI
       return NextResponse.json({ memories: [], total: 0 });
     }
@@ -72,7 +73,7 @@ export async function GET(req: NextRequest) {
       total: count || enriched.length,
     });
   } catch (err) {
-    console.error('[soul/memories] Unexpected error:', err);
+    logger.error('[soul/memories] Unexpected error:', err);
     return NextResponse.json({ memories: [], total: 0 });
   }
 }
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
         .eq('id', memoryId);
 
       if (error) {
-        console.warn('[soul/memories] Delete error:', error.message);
+        logger.warn('[soul/memories] Delete error:', error.message);
         return NextResponse.json({ success: false, error: error.message });
       }
 
@@ -132,7 +133,7 @@ export async function POST(req: NextRequest) {
         .eq('id', memoryId);
 
       if (error) {
-        console.warn('[soul/memories] Reinforce error:', error.message);
+        logger.warn('[soul/memories] Reinforce error:', error.message);
         return NextResponse.json({ success: false, error: error.message });
       }
 
@@ -141,7 +142,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (err) {
-    console.error('[soul/memories] POST error:', err);
+    logger.error('[soul/memories] POST error:', err);
     return NextResponse.json({ success: false, error: 'Internal error' }, { status: 500 });
   }
 }

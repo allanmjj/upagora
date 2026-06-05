@@ -9,6 +9,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { logger } from '@/lib/logger';
 import { SOUL_PRESETS } from '../src/lib/soul-presets';
 
 // Load env from .env.local
@@ -21,13 +22,13 @@ const supabase = createClient(
 );
 
 async function seed() {
-  console.log('🌱 Seeding preset souls...\n');
+  logger.info('🌱 Seeding preset souls...\n');
 
   const presets = SOUL_PRESETS;
-  console.log(`Found ${presets.length} soul presets to seed\n`);
+  logger.info(`Found ${presets.length} soul presets to seed\n`);
 
   for (const preset of presets) {
-    console.log(`  Seeding: ${preset.name_native} (${preset.name})`);
+    logger.info(`  Seeding: ${preset.name_native} (${preset.name})`);
 
     // 1. Insert into town_souls
     const { data: soul, error: soulErr } = await supabase
@@ -51,10 +52,10 @@ async function seed() {
       .select();
 
     if (soulErr) {
-      console.error(`    ❌ town_souls: ${soulErr.message}`);
+      logger.error(`    ❌ town_souls: ${soulErr.message}`);
       continue;
     }
-    console.log(`    ✅ town_souls`);
+    logger.info(`    ✅ town_souls`);
 
     // 2. Insert persona into generated_persona_files
     if (preset.persona) {
@@ -68,9 +69,9 @@ async function seed() {
         }, { onConflict: 'soul_id' });
 
       if (personaErr) {
-        console.log(`    ⏭️ generated_persona_files: ${personaErr.message}`);
+        logger.info(`    ⏭️ generated_persona_files: ${personaErr.message}`);
       } else {
-        console.log(`    ✅ persona`);
+        logger.info(`    ✅ persona`);
       }
     }
 
@@ -91,16 +92,16 @@ async function seed() {
         }, { onConflict: 'soul_id' });
 
       if (constraintErr) {
-        console.log(`    ⏭️ soul_constraints: ${constraintErr.message}`);
+        logger.info(`    ⏭️ soul_constraints: ${constraintErr.message}`);
       } else {
-        console.log(`    ✅ constraints`);
+        logger.info(`    ✅ constraints`);
       }
     }
 
-    console.log();
+    logger.info();
   }
 
-  console.log('✅ Seeding complete!\n');
+  logger.info('✅ Seeding complete!\n');
 }
 
 seed().catch(console.error);

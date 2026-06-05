@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -52,7 +53,7 @@ export default function SkillTab({ status, onSkillGenerated }: SkillTabProps) {
         onSkillGenerated()
       }
     } catch (err) {
-      console.error('Skill generation failed:', err)
+      logger.error('Skill generation failed:', err)
       alert('Skill generation failed, please try again')
     }
     setGenerating(false)

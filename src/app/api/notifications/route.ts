@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Notifications fetch error:', error);
+      logger.error('Notifications fetch error:', error);
       return Response.json({ error: 'Failed to fetch notifications' }, { status: 500 });
     }
 
@@ -56,7 +57,7 @@ export async function GET(req: NextRequest) {
       unread_count: unreadCount || 0,
     });
   } catch (err) {
-    console.error('Notifications error:', err);
+    logger.error('Notifications error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
         .eq('read', false);
 
       if (error) {
-        console.error('Mark all read error:', error);
+        logger.error('Mark all read error:', error);
         return Response.json({ error: 'Failed to mark all as read' }, { status: 500 });
       }
     } else if (notification_id) {
@@ -100,14 +101,14 @@ export async function POST(req: NextRequest) {
         .eq('user_id', userId);
 
       if (error) {
-        console.error('Mark read error:', error);
+        logger.error('Mark read error:', error);
         return Response.json({ error: 'Failed to mark as read' }, { status: 500 });
       }
     }
 
     return Response.json({ success: true });
   } catch (err) {
-    console.error('Notification read error:', err);
+    logger.error('Notification read error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

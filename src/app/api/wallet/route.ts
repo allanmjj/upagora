@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -69,7 +70,7 @@ export async function GET(req: NextRequest) {
 
     return Response.json(wallet);
   } catch (err) {
-    console.error('Wallet GET error:', err);
+    logger.error('Wallet GET error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -155,7 +156,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Mine upsert error:', error);
+      logger.error('Mine upsert error:', error);
       return Response.json({ error: 'Failed to mine' }, { status: 500 });
     }
 
@@ -167,7 +168,7 @@ export async function POST(req: NextRequest) {
       total_blocks: walletUpdated.total_blocks_mined,
     });
   } catch (err) {
-    console.error('Wallet POST error:', err);
+    logger.error('Wallet POST error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 import { resolveProvider, callLLM } from "@/lib/llm";
 import { loadSoulConstraints } from "@/lib/soul-constraint-loader";
 import { buildConstraintPrompt } from "@/lib/soul-constraints";
@@ -164,7 +165,7 @@ export async function POST(req: NextRequest) {
       insights_applied: calibrationSummary.top_insights.length,
     });
   } catch (err) {
-    console.error("[soul-evolve] Error:", err);
+    logger.error("[soul-evolve] Error:", err);
     return jsonResp(500, { error: "Evolution failed", details: String(err).slice(0, 300) });
   }
 }

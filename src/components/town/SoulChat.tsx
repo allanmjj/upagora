@@ -7,6 +7,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 
 interface SoulChatProps {
   soulId: string;
@@ -135,7 +136,7 @@ export default function SoulChat({
         setMessages((prev) => [...prev, soulMessage]);
       }
     } catch (e) {
-      console.error('Chat error:', e);
+      logger.error('Chat error:', e);
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'soul',

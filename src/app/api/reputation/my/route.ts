@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 import { getAuthUser, errorResponse, successResponse } from '@/lib/auth';
 
@@ -80,7 +81,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error('My reputation error:', err);
+    logger.error('My reputation error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

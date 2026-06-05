@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { SOUL_PRESETS } from '@/lib/soul-presets';
 import { createClient } from '@supabase/supabase-js';
 
@@ -82,7 +83,7 @@ export async function GET(req: NextRequest) {
       total: finalSouls.length,
     });
   } catch (err) {
-    console.error('[gallery] Error:', err);
+    logger.error('[gallery] Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -125,7 +126,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, data });
   } catch (err) {
-    console.error('[gallery] POST error:', err);
+    logger.error('[gallery] POST error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

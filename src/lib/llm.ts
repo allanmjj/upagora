@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 ﻿// src/lib/llm.ts — Unified LLM provider abstraction
 // Supports: anthropic, openai, deepseek, openrouter, anthropic
 
@@ -116,7 +117,7 @@ export async function callLLM(
     return { content };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(`LLM call failed (${config.provider}):`, msg);
+    logger.error(`LLM call failed (${config.provider}):`, msg);
     return { content: null, error: msg };
   }
 }

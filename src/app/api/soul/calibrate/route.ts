@@ -8,6 +8,7 @@
  * Body: { soul_id, response_id, feedback_type, comment, suggested_correction? }
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 type FeedbackType = 'positive' | 'negative' | 'correction';
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Calibration insert error:', error);
+      logger.error('Calibration insert error:', error);
       // If table doesn't exist, return success anyway (graceful degradation)
       if (error.code === '42P01') {
         return NextResponse.json({
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
       data,
     });
   } catch (error) {
-    console.error('Calibration API error:', error);
+    logger.error('Calibration API error:', error);
     throw error;
   }
 }
@@ -124,7 +125,7 @@ export async function GET(req: NextRequest) {
       .limit(50);
 
     if (error) {
-      console.error('Calibration fetch error:', error);
+      logger.error('Calibration fetch error:', error);
       // If table doesn't exist, return empty array
       if (error.code === '42P01') {
         return NextResponse.json({ success: true, data: [] });
@@ -134,7 +135,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, data: data || [] });
   } catch (error) {
-    console.error('Calibration API error:', error);
+    logger.error('Calibration API error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal error' },
       { status: 500 }

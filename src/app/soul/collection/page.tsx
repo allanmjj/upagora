@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 import { useRouter } from 'next/navigation';
 import {
   Trophy, Star, Zap, Wallet, Ghost, Share2, ChevronRight,
@@ -107,7 +108,7 @@ export default function SoulCollectionPage() {
         setTransactions(econData.transactions || []);
       }
     } catch (err) {
-      console.error('Failed to load collection data:', err);
+      logger.error('Failed to load collection data:', err);
     } finally {
       setLoading(false);
     }

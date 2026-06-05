@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -98,7 +99,7 @@ export default function SoulDistillationPage() {
         setTimelineData(d?.snapshots || [])
       }
     } catch (err) {
-      console.error('Timeline load failed:', err)
+      logger.error('Timeline load failed:', err)
     }
     setTimelineLoading(false)
   }
@@ -154,7 +155,7 @@ export default function SoulDistillationPage() {
         await loadStatus()
       }
     } catch (err) {
-      console.error('Import failed:', err)
+      logger.error('Import failed:', err)
       alert('Import failed, please retry')
     }
   }
@@ -178,7 +179,7 @@ export default function SoulDistillationPage() {
         await loadStatus()
       }
     } catch (err) {
-      console.error('Extraction failed:', err)
+      logger.error('Extraction failed:', err)
       alert('Extraction failed, please retry')
     }
     setExtracting(prev => ({ ...prev, [importId]: false }))
@@ -199,7 +200,7 @@ export default function SoulDistillationPage() {
       await loadCalibrations()
       await loadStatus()
     } catch (err) {
-      console.error('Calibration failed:', err)
+      logger.error('Calibration failed:', err)
       alert('Calibration submission failed, please retry')
     }
   }
@@ -222,7 +223,7 @@ export default function SoulDistillationPage() {
         window.location.href = '/soul-distille'
       }
     } catch (err) {
-      console.error('Quick extract failed:', err)
+      logger.error('Quick extract failed:', err)
       alert('Extraction failed, please retry')
     }
     setQuickLoading(false)
@@ -237,7 +238,7 @@ export default function SoulDistillationPage() {
         setShowCard(true)
       }
     } catch (err) {
-      console.error('Share card failed:', err)
+      logger.error('Share card failed:', err)
     }
   }
 
@@ -252,7 +253,7 @@ export default function SoulDistillationPage() {
         await loadStatus()
       }
     } catch (err) {
-      console.error('Snapshot failed:', err)
+      logger.error('Snapshot failed:', err)
       alert('Snapshot generation failed, please retry')
       setSnapping(false)
     }
@@ -345,10 +346,10 @@ export default function SoulDistillationPage() {
                   snapshots={timelineData}
                   isLoading={timelineLoading}
                   onView={(snap) => {
-                    console.log('View snapshot:', snap)
+                    logger.info('View snapshot:', snap)
                   }}
                   onStar={(id) => {
-                    console.log('Star snapshot:', id)
+                    logger.info('Star snapshot:', id)
                   }}
                 />
               )}
@@ -374,7 +375,7 @@ export default function SoulDistillationPage() {
                     guardian_signature: snap.guardian_signature,
                   }))}
                   isLoading={timelineLoading}
-                  onSelectSnapshot={(version) => console.log('Selected snapshot v' + version)}
+                  onSelectSnapshot={(version) => logger.info('Selected snapshot v' + version)}
                 />
               )}
             </div>

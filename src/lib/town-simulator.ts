@@ -1,6 +1,7 @@
 // Town Simulator - Core engine that drives soul behavior, emotions, and interactions
 
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 import OpenAI from "openai";
 import { MA_JUNJIE_CONSTRAINTS } from "./soul-constraints";
 
@@ -145,7 +146,7 @@ Return ONLY valid JSON:
       is_public: true,
     };
   } catch (e) {
-    console.error("Failed to generate encounter:", e);
+    logger.error("Failed to generate encounter:", e);
     return null;
   }
 }
@@ -159,7 +160,7 @@ export async function simulatorTick(): Promise<any[]> {
     .eq("town_souls.is_active", true);
 
   if (soulsError || !souls) {
-    console.error("Failed to load souls:", soulsError);
+    logger.error("Failed to load souls:", soulsError);
     return [];
   }
 

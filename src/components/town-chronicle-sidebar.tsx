@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { logger } from '@/lib/logger';
 
 interface ChronicleEvent {
   id: string;
@@ -89,7 +90,7 @@ export function EraChronicle({ onClose }: { onClose?: () => void }) {
           if (data.stats) setStats(data.stats);
         }
       } catch (e) {
-        console.error("Failed to fetch chronicle:", e);
+        logger.error("Failed to fetch chronicle:", e);
       } finally {
         setLoading(false);
       }

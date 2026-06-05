@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Guardian vote error:', error);
+      logger.error('Guardian vote error:', error);
       return Response.json({ error: 'Vote failed' }, { status: 500 });
     }
 
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
       message: `${action} vote recorded`,
     });
   } catch (err) {
-    console.error('Guardian vote error:', err);
+    logger.error('Guardian vote error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

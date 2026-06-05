@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[economy] Error:', error);
+    logger.error('[economy] Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -354,7 +355,7 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[economy] GET error:', error);
+    logger.error('[economy] GET error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

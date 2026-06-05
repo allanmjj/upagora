@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
 import { getConversationCount, getPersonalMemories } from '@/lib/soul-memory';
 
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
       recommendation,
     });
   } catch (err) {
-    console.error('[health] Error:', err);
+    logger.error('[health] Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

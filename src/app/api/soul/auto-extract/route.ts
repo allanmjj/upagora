@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -10,7 +11,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // Step 1: Search for public information
-    console.log(`[auto-extract] Searching for: ${name}`);
+    logger.info(`[auto-extract] Searching for: ${name}`);
     const searchResults = await searchPerson(name);
 
     if (searchResults.length === 0) {
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[auto-extract] Error:', error);
+    logger.error('[auto-extract] Error:', error);
     return NextResponse.json({
       error: 'Internal server error',
     }, { status: 500 });
@@ -68,7 +69,7 @@ async function searchPerson(name: string) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(`[search] Wikipedia summary for ${name}:`, data.title);
+        logger.info(`[search] Wikipedia summary for ${name}:`, data.title);
         allResults.push({
           title: data.title,
           description: data.description,
@@ -77,7 +78,7 @@ async function searchPerson(name: string) {
         });
       }
     } catch (err) {
-      console.log(`[search] Wikipedia failed:`, err);
+      logger.info(`[search] Wikipedia failed:`, err);
     }
 
     // Also search via DuckDuckGo lite
@@ -101,7 +102,7 @@ async function searchPerson(name: string) {
         allResults = [...allResults, ...newResults];
       }
     } catch (err) {
-      console.log(`[search] DuckDuckGo failed:`, err);
+      logger.info(`[search] DuckDuckGo failed:`, err);
     }
   }
 
@@ -113,7 +114,7 @@ async function searchPerson(name: string) {
     return true;
   }).slice(0, 10);
 
-  console.log(`[search] Found ${results.length} results for ${name}`);
+  logger.info(`[search] Found ${results.length} results for ${name}`);
   return results;
 }
 
@@ -164,11 +165,11 @@ async function extractPersonData(urls: string[]) {
       }
 
     } catch (err) {
-      console.log(`[extract] Failed to extract from:`, url, err);
+      logger.info(`[extract] Failed to extract from:`, url, err);
     }
   }
 
-  console.log(`[extract] Extracted ${fullContent.length} characters`);
+  logger.info(`[extract] Extracted ${fullContent.length} characters`);
   return fullContent;
 }
 
@@ -256,11 +257,11 @@ Output ONLY valid JSON with this structure:
     }
 
     const soulProfile = JSON.parse(jsonMatch[0]);
-    console.log(`[synthesize] Soul profile generated for ${name}`);
+    logger.info(`[synthesize] Soul profile generated for ${name}`);
     return soulProfile;
 
   } catch (error) {
-    console.error(`[synthesize] LLM synthesis failed:`, error);
+    logger.error(`[synthesize] LLM synthesis failed:`, error);
     throw error;
   }
 }
@@ -304,13 +305,13 @@ async function createSoulSession(name: string, soulProfile: any, sources: any[])
         }),
       });
     } catch (err) {
-      console.log('[create-socket] Soul profile update failed (non-critical):', err);
+      logger.info('[create-socket] Soul profile update failed (non-critical):', err);
     }
 
     return session;
 
   } catch (error) {
-    console.error('[create-socket] Failed to create soul:', error);
+    logger.error('[create-socket] Failed to create soul:', error);
     throw error;
   }
 }

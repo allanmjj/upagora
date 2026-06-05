@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
       complete: (result.data || []).length >= VALID_DIMENSIONS.length,
     });
   } catch (err) {
-    console.error('Persona GET error:', err);
+    logger.error('Persona GET error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -92,7 +93,7 @@ export async function PUT(req: NextRequest) {
       data: result.data,
     });
   } catch (err) {
-    console.error('Persona PUT error:', err);
+    logger.error('Persona PUT error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

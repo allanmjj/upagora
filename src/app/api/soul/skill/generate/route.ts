@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -147,7 +148,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ skills: data || [], count: (data || []).length });
   } catch (err: any) {
-    console.error("Skill GET error:", err);
+    logger.error("Skill GET error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -247,7 +248,7 @@ export async function POST(req: NextRequest) {
       .select()
       .limit(50)
     if (insertErr) {
-      console.error("Skill save error:", insertErr);
+      logger.error("Skill save error:", insertErr);
       return NextResponse.json({
         message: "Skill generated (DB save skipped)",
         skill: {
@@ -281,7 +282,7 @@ export async function POST(req: NextRequest) {
       saved: true,
     });
   } catch (err: any) {
-    console.error("Skill generate error:", err);
+    logger.error("Skill generate error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -306,7 +307,7 @@ export async function DELETE(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ message: "Skill unpublished" });
   } catch (err: any) {
-    console.error("Skill delete error:", err);
+    logger.error("Skill delete error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

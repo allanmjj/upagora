@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 import { resolveProvider, callLLM } from "@/lib/llm";
 
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
       subject_name: session.subject_name,
     });
   } catch (err) {
-    console.error("Quick chat error:", err);
+    logger.error("Quick chat error:", err);
     return NextResponse.json(
       { error: "Conversation failed, please try again" },
       { status: 500 }

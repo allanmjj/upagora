@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
       .limit(50);
 
     if (error) {
-      console.error('Jobs status error:', error);
+      logger.error('Jobs status error:', error);
       return Response.json({ error: 'Failed to fetch jobs' }, { status: 500 });
     }
 
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
       total: (jobs || []).length,
     });
   } catch (err) {
-    console.error('Jobs status error:', err);
+    logger.error('Jobs status error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
       .eq('assignee_id', userId);
 
     if (error) {
-      console.error('Job complete error:', error);
+      logger.error('Job complete error:', error);
       return Response.json({ error: 'Failed to complete job' }, { status: 500 });
     }
 
@@ -119,7 +120,7 @@ export async function POST(req: NextRequest) {
       message: 'Job completed! +50 AGU',
     });
   } catch (err) {
-    console.error('Job complete error:', err);
+    logger.error('Job complete error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

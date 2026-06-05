@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
 import { getConversationCount } from '@/lib/soul-memory';
 import { calculateMemoryStrength } from '@/lib/soul-memory-enhanced';
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: true });
 
     if (memError) {
-      console.warn('[intimacy] Failed to get memories:', memError);
+      logger.warn('[intimacy] Failed to get memories:', memError);
       const basicScore = Math.min(100, conversationCount * 5);
       return NextResponse.json({
         intimacy_score: basicScore,
@@ -134,7 +135,7 @@ export async function GET(request: NextRequest) {
       last_interaction: new Date(lastInteraction).toISOString(),
     });
   } catch (err) {
-    console.error('[intimacy] Error:', err);
+    logger.error('[intimacy] Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

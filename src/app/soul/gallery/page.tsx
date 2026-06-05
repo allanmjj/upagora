@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 import { useRouter } from 'next/navigation';
 import { Search, MessageCircle, Calendar, Sparkles, Brain, ChevronRight } from 'lucide-react';
 
@@ -80,7 +81,7 @@ export default function SoulGalleryPage() {
         setCategories(data.categories || []);
       }
     } catch (err) {
-      console.error('[gallery] Failed to load:', err);
+      logger.error('[gallery] Failed to load:', err);
     } finally {
       setLoading(false);
     }

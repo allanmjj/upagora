@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '@/hooks/use-auth';
@@ -50,7 +51,7 @@ export default function SoulDetailPage() {
         .single();
 
       if (error) {
-        console.error('Failed to load soul:', error);
+        logger.error('Failed to load soul:', error);
       } else {
         setSoul(data as SoulData);
       }

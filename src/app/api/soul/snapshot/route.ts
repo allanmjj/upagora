@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
       latest_version: data?.[0]?.version || 0,
     });
   } catch (err) {
-    console.error('Snapshot GET error:', err);
+    logger.error('Snapshot GET error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest) {
       dimensions_collected: personaFiles?.length || 0,
     });
   } catch (err) {
-    console.error('Snapshot POST error:', err);
+    logger.error('Snapshot POST error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

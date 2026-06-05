@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 import { OpenAI } from "openai";
 import { webhookDispatcher } from "./webhook-dispatcher";
 
@@ -124,17 +125,17 @@ Generate a short, natural response (1-2 sentences).`,
     
     return response.choices[0]?.message?.content;
   } catch (e) {
-    console.error("Failed to generate external soul response:", e);
+    logger.error("Failed to generate external soul response:", e);
     return null;
   }
 }
 
 // Main daily beat function
 export async function runDailyBeat() {
-  console.log("Running daily soul beat...");
+  logger.info("Running daily soul beat...");
   
   const souls = await getSoulsInTown();
-  console.log(`Found ${souls.length} souls in town`);
+  logger.info(`Found ${souls.length} souls in town`);
   
   const events = [];
   const moodUpdates = [];
@@ -162,11 +163,11 @@ export async function runDailyBeat() {
         });
       }
     } catch (e) {
-      console.error(`Failed to process soul ${soul.soul_id}:`, e);
+      logger.error(`Failed to process soul ${soul.soul_id}:`, e);
     }
   }
   
-  console.log(`Daily beat complete: ${events.length} events generated, ${moodUpdates.length} moods updated`);
+  logger.info(`Daily beat complete: ${events.length} events generated, ${moodUpdates.length} moods updated`);
   
   return {
     souls_processed: souls.length,
@@ -179,10 +180,10 @@ export async function runDailyBeat() {
 export default async function dailyBeatScheduler() {
   try {
     const result = await runDailyBeat();
-    console.log("Daily beat result:", result);
+    logger.info("Daily beat result:", result);
     return result;
   } catch (e) {
-    console.error("Daily beat failed:", e);
+    logger.error("Daily beat failed:", e);
     throw e;
   }
 }

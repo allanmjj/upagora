@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * 灵魂大脑引擎 (Soul Brain Engine)
  * 
@@ -94,13 +95,13 @@ export async function fetchNewsDigest(): Promise<string> {
           digest += `\n--- ${source.name} ---\n${cleanText.substring(0, 1500)}\n`;
         }
       } catch (err) {
-        console.log(`[soul-brain] Failed to fetch from ${source.name}:`, err);
+        logger.info(`[soul-brain] Failed to fetch from ${source.name}:`, err);
       }
     }
 
     return digest || 'No news available at this time.';
   } catch (err) {
-    console.error('[soul-brain] News digest error:', err);
+    logger.error('[soul-brain] News digest error:', err);
     return 'No news available at this time.';
   }
 }
@@ -192,7 +193,7 @@ async function callLLMSoulDecision(context: string): Promise<SoulDecision> {
 
     return JSON.parse(jsonMatch[0]);
   } catch (error) {
-    console.error('[soul-brain] Soul thought error:', error);
+    logger.error('[soul-brain] Soul thought error:', error);
     // Fallback: return a random decision with default reasoning
     const activities: any[] = ['learn', 'rest', 'explore'];
     return {
@@ -220,9 +221,9 @@ export async function addSoulMemory(soulId: string, memory: SoulMemory): Promise
       event_date: memory.event_date || new Date().toISOString(),
     });
 
-    console.log(`[soul-brain] Memory added for soul ${soulId}`);
+    logger.info(`[soul-brain] Memory added for soul ${soulId}`);
   } catch (error) {
-    console.error('[soul-brain] Failed to add memory:', error);
+    logger.error('[soul-brain] Failed to add memory:', error);
   }
 }
 
@@ -240,7 +241,7 @@ export async function loadSoulMemories(soulId: string, limit: number = 20): Prom
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('[soul-brain] Failed to load memories:', error);
+    logger.error('[soul-brain] Failed to load memories:', error);
     return [];
   }
 }
@@ -260,7 +261,7 @@ export async function soulWakeUp(soulId: string): Promise<SoulEnvironment> {
   const timeOfDay = getTimeOfDay();
   const scheduledActivity = getScheduledActivity(timeOfDay);
   
-  console.log(`[soul-brain] Soul ${soulId} woke up at ${timeOfDay} with mood: ${scheduledActivity}`);
+  logger.info(`[soul-brain] Soul ${soulId} woke up at ${timeOfDay} with mood: ${scheduledActivity}`);
   
   // Clear memory stores in daily_log with previous day's memories
   await addSoulMemory(soulId, {
@@ -284,7 +285,7 @@ export async function soulWakeUp(soulId: string): Promise<SoulEnvironment> {
 }
 
 export async function soulSleep(soulId: string): Promise<void> {
-  console.log(`[soul-brain] Soul ${soulId} going to sleep`);
+  logger.info(`[soul-brain] Soul ${soulId} going to sleep`);
   // Add a daily log entry
   await addSoulMemory(soulId, {
     id: crypto.randomUUID(),

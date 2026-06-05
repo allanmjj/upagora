@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { logger } from '@/lib/logger';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Bot, Send, Loader2, ChevronLeft, Zap, Sparkles } from 'lucide-react';
 
@@ -65,7 +66,7 @@ export default function SoulDialoguePage() {
         });
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
     }
   }
 
@@ -88,7 +89,7 @@ export default function SoulDialoguePage() {
         setDialogue(data.dialogue);
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
     } finally {
       setLoading(false);
     }

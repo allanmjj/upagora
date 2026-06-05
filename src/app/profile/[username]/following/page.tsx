@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -61,7 +62,7 @@ export default function FollowingPage() {
         }
       }
     } catch (error) {
-      console.error('Failed to fetch following:', error)
+      logger.error('Failed to fetch following:', error)
     } finally {
       setLoading(false)
     }

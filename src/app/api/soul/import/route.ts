@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
       import_session: result.data,
     });
   } catch (err) {
-    console.error('Soul import error:', err);
+    logger.error('Soul import error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest) {
     const result = await query;
     return NextResponse.json({ imports: result.data || [], total: result.data?.length || 0 });
   } catch (err) {
-    console.error('Soul imports list error:', err);
+    logger.error('Soul imports list error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

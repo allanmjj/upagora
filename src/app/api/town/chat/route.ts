@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 import { OpenAI } from "openai";
 import { KNOWN_CONSTRAINTS_MAP } from "@/lib/soul-constraint-loader";
 import { buildConstraintPromptLang } from "@/lib/soul-constraints";
 import { refinePersonaFromFeedback } from "@/lib/persona-refiner";
-import { logger } from "@/lib/logger"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

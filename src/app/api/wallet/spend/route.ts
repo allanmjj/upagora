@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
       .eq('session_id', session.id);
 
     if (updateError) {
-      console.error('Spend update error:', updateError);
+      logger.error('Spend update error:', updateError);
       return Response.json({ error: 'Failed to spend credits' }, { status: 500 });
     }
 
@@ -96,7 +97,7 @@ export async function POST(req: NextRequest) {
       spent: amount,
     });
   } catch (err) {
-    console.error('Wallet spend error:', err);
+    logger.error('Wallet spend error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

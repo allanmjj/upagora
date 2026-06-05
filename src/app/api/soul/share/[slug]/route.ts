@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -73,7 +74,7 @@ export async function GET(
       dimensions: formattedDimensions,
     });
   } catch (err) {
-    console.error("share API error:", err);
+    logger.error("share API error:", err);
     return NextResponse.json({ error: "服务器错误" }, { status: 500 });
   }
 }

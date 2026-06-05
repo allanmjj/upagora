@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 import { rateLimiter } from "@/lib/rate-limiter";
 
@@ -72,7 +73,7 @@ export async function GET(request: Request) {
       hasMore: feedItems.length === limit,
     });
   } catch (err: any) {
-    console.error("Social feed error:", err);
+    logger.error("Social feed error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 import { KNOWN_CONSTRAINTS_MAP } from "@/lib/soul-constraint-loader";
 
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
       .limit(50);
 
     if (error) {
-      console.error("[soul-dialogue] fetch error:", error);
+      logger.error("[soul-dialogue] fetch error:", error);
       return jsonResp(200, { dialogues: [] });
     }
 
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest) {
       dialogues: dialogues || [],
     });
   } catch (err) {
-    console.error("[soul-dialogue] GET error:", err);
+    logger.error("[soul-dialogue] GET error:", err);
     return jsonResp(500, { error: "Internal server error" });
   }
 }
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error("[soul-dialogue] save error:", error);
+      logger.error("[soul-dialogue] save error:", error);
     }
 
     return jsonResp(200, {
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("[soul-dialogue] POST error:", err);
+    logger.error("[soul-dialogue] POST error:", err);
     return jsonResp(500, { error: "Internal server error" });
   }
 }
@@ -191,7 +192,7 @@ async function generateDialogue(systemPrompt: string, maxTurns: number): Promise
       };
     }
   } catch (err) {
-    console.error("[soul-dialogue] LLM error:", err);
+    logger.error("[soul-dialogue] LLM error:", err);
     return generateFallbackDialogue(maxTurns);
   }
 }

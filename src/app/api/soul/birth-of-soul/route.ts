@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 import { SOUL_PRESETS } from '@/lib/soul-presets';
 
@@ -190,7 +191,7 @@ export async function POST(req: NextRequest) {
       message: `Soul "${soul.name_native || soul.name}" has been born successfully.`,
     });
   } catch (error: any) {
-    console.error('[Birth API] Error:', error);
+    logger.error('[Birth API] Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

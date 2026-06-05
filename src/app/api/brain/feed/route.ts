@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Brain feed error:', error);
+      logger.error('Brain feed error:', error);
       return Response.json({ error: 'Failed to feed brain' }, { status: 500 });
     }
 
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
       chars_processed: text.length,
     });
   } catch (err) {
-    console.error('Brain feed error:', err);
+    logger.error('Brain feed error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

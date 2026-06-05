@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 import {
   generateEmbedding,
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
       count: results.length,
     });
   } catch (error) {
-    console.error('Memory recall error:', error);
+    logger.error('Memory recall error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -67,7 +68,7 @@ export async function POSTEmbed(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Memory embed error:', error);
+    logger.error('Memory embed error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -93,7 +94,7 @@ export async function POSTReindex(request: NextRequest) {
       message: `Re-embedded ${result.stored} memories`,
     });
   } catch (error) {
-    console.error('Re-index error:', error);
+    logger.error('Re-index error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }

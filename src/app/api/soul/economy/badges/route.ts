@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -127,7 +128,7 @@ export async function GET(req: NextRequest) {
       stats,
     });
   } catch (err) {
-    console.error('Badges error:', err);
+    logger.error('Badges error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

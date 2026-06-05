@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -88,7 +89,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("export-image error:", err);
+    logger.error("export-image error:", err);
     return NextResponse.json({ error: "Export failed" }, { status: 500 });
   }
 }

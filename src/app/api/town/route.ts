@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 import { OpenAI } from "openai";
 
@@ -165,7 +166,7 @@ Return ONLY valid JSON:
               last_heartbeat: new Date().toISOString(),
             });
         } catch (e) {
-          console.error("LLM call failed:", e);
+          logger.error("LLM call failed:", e);
         }
       } else {
         // Just move without conversation

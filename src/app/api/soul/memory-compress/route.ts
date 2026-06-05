@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 import { resolveProvider } from "@/lib/llm";
 
@@ -216,7 +217,7 @@ Output a JSON object:
       },
     });
   } catch (err) {
-    console.error("[memory-compress] Error:", err);
+    logger.error("[memory-compress] Error:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

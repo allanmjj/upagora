@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { PostCard } from '@/components/features/post-card'
-import { PostSkeleton } from '@/components/ui/skeleton'
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll'
 import type { Post, AuthUser, PaginatedResponse } from '@/types/api'
 
@@ -284,7 +283,7 @@ export default function FeedPage() {
 
       {/* Posts Feed */}
       {initialLoading ? (
-        <PostSkeleton />
+        <div className="animate-pulse rounded-md bg-zinc-800/50 h-32" />
       ) : posts.length === 0 ? (
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 py-16 text-center">
           <p className="text-zinc-500 mb-4">No posts yet</p>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
       calibration_id: calib?.id,
     });
   } catch (err) {
-    console.error("Guardian calibrate error:", err);
+    logger.error("Guardian calibrate error:", err);
     return NextResponse.json({ error: "校准失败" }, { status: 500 });
   }
 }

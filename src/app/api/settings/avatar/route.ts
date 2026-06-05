@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
       .upload(filename, uint8Array, { contentType: file.type, upsert: true });
 
     if (uploadError) {
-      console.error('Avatar upload error:', uploadError);
+      logger.error('Avatar upload error:', uploadError);
       return Response.json({ error: 'Failed to upload avatar' }, { status: 500 });
     }
 
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
       message: 'Avatar updated successfully',
     });
   } catch (err) {
-    console.error('Avatar upload error:', err);
+    logger.error('Avatar upload error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

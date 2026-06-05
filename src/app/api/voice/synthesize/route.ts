@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 /**
  * Voice Studio TTS Webhook API
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
-    console.error('[voice/synthesize] Error:', err);
+    logger.error('[voice/synthesize] Error:', err);
     return NextResponse.json(
       { error: 'Failed to synthesize speech' },
       { status: 500 }
@@ -125,7 +126,7 @@ async function synthesizeEdgeTTS(
     
     return { audioUrl, duration };
   } catch (err) {
-    console.warn('[voice/edge] fallback to text-only:', err);
+    logger.warn('[voice/edge] fallback to text-only:', err);
     return {
       audioUrl: '',
       duration: Math.ceil(text.length / 15),

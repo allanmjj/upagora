@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
@@ -30,7 +31,7 @@ export async function GET(
       .limit(20)
 
     if (error) {
-      console.error('Reviews GET error:', error)
+      logger.error('Reviews GET error:', error)
       return NextResponse.json({ reviews: [] })
     }
 
@@ -45,7 +46,7 @@ export async function GET(
 
     return NextResponse.json({ reviews: formatted })
   } catch (err) {
-    console.error('Reviews error:', err)
+    logger.error('Reviews error:', err)
     return NextResponse.json({ reviews: [] })
   }
 }

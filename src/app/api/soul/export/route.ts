@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -99,7 +100,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error('Soul export error:', err);
+    logger.error('Soul export error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -142,7 +143,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (sessionError) {
-      console.error('Soul import session error:', sessionError);
+      logger.error('Soul import session error:', sessionError);
       return Response.json({ error: 'Failed to create session' }, { status: 500 });
     }
 
@@ -170,7 +171,7 @@ export async function POST(req: NextRequest) {
       message: `Soul "${subject.name}" imported successfully with ${importedCount} dimensions.`,
     });
   } catch (err) {
-    console.error('Soul import error:', err);
+    logger.error('Soul import error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

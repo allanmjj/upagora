@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -119,7 +120,7 @@ export async function POST(req: NextRequest) {
       timestamp: now,
     });
   } catch (err) {
-    console.error('Trade error:', err);
+    logger.error('Trade error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

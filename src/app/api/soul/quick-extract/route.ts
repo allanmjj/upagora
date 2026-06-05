@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 import crypto from "crypto";
 import { resolveProvider, callLLM } from "@/lib/llm";
 
@@ -142,7 +143,7 @@ export async function POST(req: NextRequest) {
       }
     );
   } catch (err) {
-    console.error("Quick extract error:", err);
+    logger.error("Quick extract error:", err);
     return NextResponse.json(
       { error: "Extraction failed, please try again" },
       { status: 500 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 import { rateLimiter } from "@/lib/rate-limiter";
 
@@ -96,7 +97,7 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (err: any) {
-    console.error("Guardian POST error:", err);
+    logger.error("Guardian POST error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -159,7 +160,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(result);
   } catch (err: any) {
-    console.error("Guardian GET error:", err);
+    logger.error("Guardian GET error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

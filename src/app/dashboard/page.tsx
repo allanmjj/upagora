@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { logger } from '@/lib/logger';
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
@@ -110,7 +111,7 @@ export default function GuardianDashboard() {
           setNotifications(notifs);
         }
       } catch (e) {
-        console.error("Failed to load dashboard:", e);
+        logger.error("Failed to load dashboard:", e);
       } finally {
         setLoading(false);
       }

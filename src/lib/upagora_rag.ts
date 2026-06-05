@@ -2,6 +2,7 @@
 // Powers semantic memory search using pgvector + embeddings
 
 import { createClient } from '@supabase/supabase-js';
+import { logger } from '@/lib/logger';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -53,7 +54,7 @@ async function generateOpenAIEmbedding(text: string): Promise<number[]> {
 
   if (!response.ok) {
     const err = await response.text();
-    console.error('OpenAI embedding failed:', err);
+    logger.error('OpenAI embedding failed:', err);
     throw new Error(`Embedding API error: ${response.status} ${err}`);
   }
 
@@ -124,12 +125,12 @@ export async function embedAndStoreChunks(
           });
 
         if (error) {
-          console.error('Failed to store embedding:', error);
+          logger.error('Failed to store embedding:', error);
         } else {
           stored++;
         }
       } catch (err) {
-        console.error('Chunk embedding failed:', err);
+        logger.error('Chunk embedding failed:', err);
       }
     }
 
@@ -170,7 +171,7 @@ export async function searchMemories(
   });
 
   if (error) {
-    console.error('Semantic search failed:', error);
+    logger.error('Semantic search failed:', error);
     return [];
   }
 

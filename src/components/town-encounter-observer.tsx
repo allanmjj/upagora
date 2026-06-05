@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { logger } from '@/lib/logger';
 
 interface Soul {
   id: string;
@@ -66,7 +67,7 @@ export function EncounterObserver({
       setError(null);
     } catch (e: any) {
       setError(e.message || "Failed to load encounter");
-      console.error("Encounter fetch error:", e);
+      logger.error("Encounter fetch error:", e);
     } finally {
       setLoading(false);
     }

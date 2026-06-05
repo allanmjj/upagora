@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -86,7 +87,7 @@ export default function VoiceCloningPage() {
         setStatus(data);
       }
     } catch (err) {
-      console.error("Failed to fetch voice status:", err);
+      logger.error("Failed to fetch voice status:", err);
     }
   }, []);
 
@@ -212,7 +213,7 @@ export default function VoiceCloningPage() {
         setPlayingSample(sample.id);
       }
     } catch (err) {
-      console.error("Failed to play sample:", err);
+      logger.error("Failed to play sample:", err);
     }
   };
 

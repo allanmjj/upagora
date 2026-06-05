@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { logger } from '@/lib/logger';
 
 // Town chat API client
 export class TownChatClient {
@@ -81,7 +82,7 @@ export class TownChatClient {
                 }
               } catch (e) {
                 // Skip malformed JSON
-                console.warn("Failed to parse SSE data:", e);
+                logger.warn("Failed to parse SSE data:", e);
               }
             }
           }
@@ -131,7 +132,7 @@ export class TownChatClient {
 
       return await response.json();
     } catch (e) {
-      console.warn("Failed to fetch welcome message:", e);
+      logger.warn("Failed to fetch welcome message:", e);
       return null;
     }
   }

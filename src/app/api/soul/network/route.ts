@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
 
 
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
       .limit(50);
 
     if (error) {
-      console.error('[social/network] Error:', error);
+      logger.error('[social/network] Error:', error);
       return NextResponse.json({ connections: [] });
     }
 
@@ -93,7 +94,7 @@ export async function GET(request: NextRequest) {
       total_connections: enrichedConnections.length,
     });
   } catch (err) {
-    console.error('[social/network] Error:', err);
+    logger.error('[social/network] Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -177,7 +178,7 @@ export async function POST(request: NextRequest) {
       connection,
     });
   } catch (err) {
-    console.error('[social/network] Error:', err);
+    logger.error('[social/network] Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

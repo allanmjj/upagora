@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
 
 /**
@@ -108,7 +109,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (err) {
-    console.error('[evolution] Error:', err);
+    logger.error('[evolution] Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -163,7 +164,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       // Table might not exist yet - return gracefully
-      console.warn('[evolution] soul_snapshots table not available:', error.message);
+      logger.warn('[evolution] soul_snapshots table not available:', error.message);
       return NextResponse.json({
         action: 'simulated',
         message: 'Snapshot created in memory (table not yet provisioned)',
@@ -176,7 +177,7 @@ export async function POST(request: NextRequest) {
       snapshot,
     });
   } catch (err) {
-    console.error('[evolution] Error:', err);
+    logger.error('[evolution] Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

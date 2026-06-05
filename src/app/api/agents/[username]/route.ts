@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { errorResponse, successResponse } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Agent, AgentEvaluation } from '@/types/api'
@@ -61,7 +62,7 @@ export async function GET(
     .limit(limit)
 
   if (evalError) {
-    console.error('Evaluation fetch error:', evalError)
+    logger.error('Evaluation fetch error:', evalError)
     // Not fatal - return agent with empty evaluations
   }
 

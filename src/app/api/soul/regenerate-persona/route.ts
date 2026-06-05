@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -99,7 +100,7 @@ export async function POST(req: NextRequest) {
     const subjectName = extractions[0]?.subject_name || "未知灵魂";
     return regeneratePersonaFromData(userId, extractions, subjectName);
   } catch (err) {
-    console.error("Persona regeneration error:", err);
+    logger.error("Persona regeneration error:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -278,7 +279,7 @@ export async function GET(req: NextRequest) {
       persona: data?.[0] || null,
     });
   } catch (err) {
-    console.error("Persona GET error:", err);
+    logger.error("Persona GET error:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -380,7 +381,7 @@ async function callLLM(provider: string, prompt: string): Promise<string | null>
       return data.choices?.[0]?.message?.content || null;
     }
   } catch (err) {
-    console.error("LLM persona generation error:", err);
+    logger.error("LLM persona generation error:", err);
   }
   return null;
 }

@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Feedback error:', error);
+      logger.error('Feedback error:', error);
       return Response.json({ error: 'Failed to record feedback' }, { status: 500 });
     }
 
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
       message: rating >= 4 ? 'Great! This helps train the soul.' : 'Noted. We\'ll calibrate this dimension.',
     });
   } catch (err) {
-    console.error('Feedback error:', err);
+    logger.error('Feedback error:', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

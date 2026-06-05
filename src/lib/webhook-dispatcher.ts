@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { logger } from '@/lib/logger';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,9 +68,9 @@ export class WebhookDispatcher {
           }),
         }).then(async (res) => {
           if (res.ok) {
-            console.log(`Webhook delivered to ${soul.callback_url} for event ${event.event_id}`);
+            logger.info(`Webhook delivered to ${soul.callback_url} for event ${event.event_id}`);
           } else {
-            console.error(`Webhook failed for ${soul.callback_url}: ${res.status}`);
+            logger.error(`Webhook failed for ${soul.callback_url}: ${res.status}`);
             // Mark as failed after 3 consecutive failures
             await supabase
               .from("town_external_souls")
@@ -79,7 +80,7 @@ export class WebhookDispatcher {
               .eq("ws_token", soul.ws_token);
           }
         }).catch((err) => {
-          console.error(`Webhook error for ${soul.callback_url}:`, err);
+          logger.error(`Webhook error for ${soul.callback_url}:`, err);
           supabase
             .from("town_external_souls")
             .update({
@@ -122,10 +123,10 @@ export class WebhookDispatcher {
           }),
         }).then(async (res) => {
           if (!res.ok) {
-            console.error(`Batch webhook failed for ${soul.callback_url}: ${res.status}`);
+            logger.error(`Batch webhook failed for ${soul.callback_url}: ${res.status}`);
           }
         }).catch((err) => {
-          console.error(`Batch webhook error for ${soul.callback_url}:`, err);
+          logger.error(`Batch webhook error for ${soul.callback_url}:`, err);
         });
       })
     );

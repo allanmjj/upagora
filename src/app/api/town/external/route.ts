@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
 
@@ -112,7 +113,7 @@ export async function dispatchEventToExternal(event: any, externalSoulId: string
       return await response.json();
     }
   } catch (e) {
-    console.error("Webhook delivery failed:", e);
+    logger.error("Webhook delivery failed:", e);
   }
 
   return null;

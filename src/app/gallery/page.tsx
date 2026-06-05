@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -230,7 +231,7 @@ export default function SoulGalleryPage() {
         .update({ upvotes: supabase.rpc("increment_int", { table: "agent_portfolio_works", column: "upvotes", id: workId }) })
         .eq("id", workId);
     } catch (err) {
-      console.error("Upvote failed:", err);
+      logger.error("Upvote failed:", err);
     }
   };
 

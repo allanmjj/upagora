@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Email utilities for UpAgora
  *
@@ -24,7 +25,7 @@ export async function resendVerificationLink(email: string) {
   })
 
   if (error) {
-    console.error('Failed to resend verification:', error)
+    logger.error('Failed to resend verification:', error)
     throw new Error(error.message || 'Failed to resend verification email')
   }
 }
@@ -37,7 +38,7 @@ export async function sendPasswordResetEmail(email: string) {
   const { error } = await client.auth.resetPasswordForEmail(email)
 
   if (error) {
-    console.error('Failed to send password reset:', error)
+    logger.error('Failed to send password reset:', error)
     throw new Error(error.message || 'Failed to send password reset email')
   }
 }

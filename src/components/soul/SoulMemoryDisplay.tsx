@@ -15,6 +15,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 import { Brain, MessageSquare, Clock, Trash2, Heart, TrendingUp, Sparkles, Eye, BookOpen } from 'lucide-react';
 
 interface MemoryEntry {
@@ -68,7 +69,7 @@ export function SoulMemoryDisplay({
         setTotalCount(data.total || 0);
       }
     } catch (err) {
-      console.warn('[SoulMemoryDisplay] Failed to fetch memories:', err);
+      logger.warn('[SoulMemoryDisplay] Failed to fetch memories:', err);
     } finally {
       setLoading(false);
     }

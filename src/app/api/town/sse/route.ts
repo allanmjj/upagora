@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -55,7 +56,7 @@ export async function GET() {
             ));
           }
         } catch (e) {
-          console.error("SSE polling error:", e);
+          logger.error("SSE polling error:", e);
         }
       }, 5000);
 

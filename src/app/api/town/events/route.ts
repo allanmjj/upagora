@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from '@/lib/logger';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -174,7 +175,7 @@ Return ONLY valid JSON:
       is_public: true,
     };
   } catch (e) {
-    console.error("LLM conversation failed:", e);
+    logger.error("LLM conversation failed:", e);
     return null;
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 import { useSoulVoice, detectEmotion, EMOTION_META, SoulEmotion } from '@/components/soul/SoulVoice';
 import { Send, Volume2, VolumeX, Mic, MicOff, Sparkles, Clock, Loader2, Bot, User, Play, Square } from 'lucide-react';
 
@@ -118,7 +119,7 @@ export default function SoulChatCore({
         speak(fullContent, { emotion: assistantMessage.emotion || 'neutral', lang });
       }
     } catch (err) {
-      console.error('[SoulChatCore] Error:', err);
+      logger.error('[SoulChatCore] Error:', err);
       setMessages((prev) => [
         ...prev,
         {

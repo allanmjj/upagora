@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (qError) {
-      console.error('Questionnaire save error:', qError)
+      logger.error('Questionnaire save error:', qError)
       return NextResponse.json({ error: 'Failed to save questionnaire' }, { status: 500 })
     }
 
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
             })
             .eq('id', session.id)
         } catch (err) {
-          console.error('Extraction save error:', err)
+          logger.error('Extraction save error:', err)
         }
       }
     }
@@ -99,7 +100,7 @@ export async function POST(req: NextRequest) {
       questionnaire_id: questionnaire?.id,
     })
   } catch (err) {
-    console.error('Questionnaire error:', err)
+    logger.error('Questionnaire error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
