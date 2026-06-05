@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import { cache } from '@/lib/cache';
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
@@ -36,6 +37,10 @@ export async function GET(req: NextRequest) {
     }
 
     // Build query
+    const cacheKey = `soul_market:${q}:${category}:${sort}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return NextResponse.json(cached);
+
     let query = supabase
       .from('soul_listings')
       .select('*')
@@ -79,10 +84,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ listings: [], purchased_ids: purchasedIds })
     }
 
-    return NextResponse.json({
+    const result = {
       listings: listings || [],
       purchased_ids: purchasedIds,
-    })
+    }
+    cache.set(cacheKey, result, 120);
+    return NextResponse.json(result)
   } catch (err) {
     logger.error('Marketplace error:', err)
     return NextResponse.json({ listings: [], purchased_ids: [] })
