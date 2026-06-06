@@ -5,6 +5,7 @@ import { getMemoryContext } from '@/lib/upagora_rag';
 import { loadSoulConstraints } from '@/lib/soul-constraint-loader';
 import { buildConstraintPrompt } from '@/lib/soul-constraints';
 import { logger } from '@/lib/logger';
+import { trimConversationContext } from '@/lib/conversation-context';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -119,12 +120,22 @@ export async function POST(req: NextRequest) {
     systemPrompt.push('- 展现' + subjectName + '的情感深度和思考层次');
     systemPrompt.push('- 回答长度适中，不要过于冗长');
 
-    // 6. Build conversation messages
+    // 6. Build conversation messages with context window management
+    const rawMessages = conversationHistory.map((msg: any) => ({
+      role: msg.role === 'user' ? 'user' : 'assistant',
+      content: msg.content,
+    }));
+    
+    // Trim to stay within token budget (8000 total, 2000 reserved for response)
+    const trimmedHistory = trimConversationContext(
+      rawMessages,
+      systemPrompt.join('\n'),
+      8000,
+      2000
+    );
+    
     const messages = [
-      ...conversationHistory.map((msg: any) => ({
-        role: msg.role === 'user' ? 'user' : 'assistant',
-        content: msg.content,
-      })),
+      ...trimmedHistory,
       { role: 'user', content: message },
     ];
 

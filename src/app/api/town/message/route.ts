@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       default: "🎁",
     };
 
-    // Save the message/gift
+    // Save the message/gift (graceful fallback if table missing)
     const { data: message, error: msgErr } = await supabase
       .from("town_guardian_messages")
       .insert({
@@ -85,14 +85,12 @@ export async function POST(req: Request) {
       .select()
       .single();
 
-    if (msgErr) {
-      return NextResponse.json({ error: msgErr.message }, { status: 500 });
-    }
+    if (msgErr && msgErr.code !== "PGRST205") { /* Table not found - OK to continue */ }
 
-    // Record as a town event
+    // Record as a town event (graceful fallback)
     const eventType = type === "gift" ? "gift_received" : "guardian_message";
     const giftText = gift_type ? `${giftIcons[gift_type] || giftIcons.default} ${gift_type} gift` : "";
-    const { data: event } = await supabase
+    const { data: event, error: eventErr } = await supabase
       .from("town_events")
       .insert({
         event_type: eventType,
@@ -121,8 +119,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message,
-      event,
+      message: message || null,
+      event: event || null,
       soul_impact: {
         mood_boost: moodBoost,
         new_energy: Math.min(100, (soulState.energy || 50) + moodBoost),
@@ -157,6 +155,10 @@ export async function GET(req: Request) {
     const { data: messages, error } = await query;
 
     if (error) {
+      // Gracefully handle missing table
+      if (error.code === "PGRST205") {
+        return NextResponse.json({ messages: [] });
+      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 

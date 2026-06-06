@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from '@/lib/logger';
+import { trimConversationContext } from '@/lib/conversation-context';
 import { createClient } from "@supabase/supabase-js";
 import { MA_JUNJIE_CONSTRAINTS, buildConstraintPrompt } from "@/lib/soul-constraints"
 

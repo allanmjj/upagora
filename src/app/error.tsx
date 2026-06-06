@@ -1,3 +1,5 @@
+'use client'
+
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <div className="flex min-h-[50vh] items-center justify-center p-4">
