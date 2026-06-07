@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { SoulRadar } from "@/components/features/soul-radar";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,107 +19,6 @@ const DIMENSIONS = [
   { key: "life_narrative", label: "Life Narrative", color: "#5b21b6" },
 ];
 
-// ─── Radar Chart Component ───
-
-function RadarChart({ data }: { data: { score: number }[] | undefined }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    if (!data) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const size = 300;
-    canvas.width = size * 2;
-    canvas.height = size * 2;
-    ctx.scale(2, 2);
-
-    const cx = size / 2, cy = size / 2, r = 110;
-    const n = data.length;
-    ctx.clearRect(0, 0, size, size);
-
-    // Grid circles
-    for (let ring = 1; ring <= 5; ring++) {
-      const rr = (r / 5) * ring;
-      ctx.beginPath();
-      ctx.arc(cx, cy, rr, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(99,102,241,0.15)";
-      ctx.lineWidth = 0.5;
-      ctx.stroke();
-    }
-
-    // Axes
-    for (let i = 0; i < n; i++) {
-      const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
-      ctx.strokeStyle = "rgba(99,102,241,0.2)";
-      ctx.lineWidth = 0.5;
-      ctx.stroke();
-    }
-
-    // Data polygon
-    ctx.beginPath();
-    for (let i = 0; i < n; i++) {
-      const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
-      const score = data[i]?.score || 0;
-      const dr = r * score;
-      const x = cx + Math.cos(angle) * dr;
-      const y = cy + Math.sin(angle) * dr;
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.fillStyle = "rgba(99,102,241,0.25)";
-    ctx.fill();
-
-    // Data line
-    ctx.beginPath();
-    for (let i = 0; i < n; i++) {
-      const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
-      const score = data[i]?.score || 0;
-      const dr = r * score;
-      const x = cx + Math.cos(angle) * dr;
-      const y = cy + Math.sin(angle) * dr;
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.strokeStyle = "#6366f1";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Data points + labels
-    for (let i = 0; i < n; i++) {
-      const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
-      const score = data[i]?.score || 0;
-      const dr = r * score;
-      const x = cx + Math.cos(angle) * dr;
-      const y = cy + Math.sin(angle) * dr;
-      ctx.beginPath();
-      ctx.arc(x, y, 4, 0, Math.PI * 2);
-      ctx.fillStyle = DIMENSIONS[i]?.color || "#6366f1";
-      ctx.fill();
-
-      // Label
-      const lx = cx + Math.cos(angle) * (r + 22);
-      const ly = cy + Math.sin(angle) * (r + 22);
-      ctx.font = "11px system-ui, sans-serif";
-      ctx.fillStyle = "#a5b4fc";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(`${DIMENSIONS[i]?.label || ""} ${(score * 100).toFixed(0)}%`, lx, ly);
-    }
-  }, [data]);
-
-  return (
-    <div className="flex justify-center mt-6">
-      <canvas ref={canvasRef} className="w-[300px] h-[300px]" />
-    </div>
-  );
-}
-
 // ─── Main Page ───
 
 export default function ExperiencePage() {
@@ -132,6 +32,20 @@ export default function ExperiencePage() {
   const [chatResponse, setChatResponse] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [sessionSlug, setSessionSlug] = useState("");
+  const [distillPhase, setDistillPhase] = useState(0);
+
+  // Distillation phase messages
+  const phaseMessages = [
+    "Initializing soul matrix...",
+    "Mapping cognitive patterns...",
+    "Analyzing value judgments...",
+    "Tracing expression style...",
+    "Charting knowledge structure...",
+    "Reading emotional responses...",
+    "Building relationship map...",
+    "Weaving life narrative...",
+    "Soul crystallization complete.",
+  ];
 
   // Check existing session from cookie
   useEffect(() => {
@@ -161,6 +75,14 @@ export default function ExperiencePage() {
     }
     setError("");
     setLoading(true);
+    setDistillPhase(0);
+    setStep(2);
+
+    // Animate distillation phases
+    const phaseInterval = setInterval(() => {
+      setDistillPhase((p) => Math.min(p + 1, phaseMessages.length - 1));
+    }, 800);
+
     try {
       const res = await fetch("/api/soul/quick-extract", {
         method: "POST",
@@ -168,19 +90,30 @@ export default function ExperiencePage() {
         body: JSON.stringify({ raw_text: rawText, subject_name: subjectName || "Soul" }),
       });
       const data = await res.json();
+      clearInterval(phaseInterval);
+
       if (!res.ok) {
         setError(data.error || "Extraction failed");
         setLoading(false);
+        setStep(1);
         return;
       }
       setSessionSlug(data.session_slug);
       setDimensions(data.dimensions || []);
       setSubjectName(data.subject_name || subjectName);
-      setStep(3);
+      setDistillPhase(phaseMessages.length - 1);
+
+      // Brief pause to show completion message
+      setTimeout(() => {
+        setLoading(false);
+        setStep(3);
+      }, 1000);
     } catch (err: any) {
+      clearInterval(phaseInterval);
       setError(err.message || "Extraction failed");
+      setLoading(false);
+      setStep(1);
     }
-    setLoading(false);
   };
 
   // Step 3 → chat
@@ -234,11 +167,12 @@ export default function ExperiencePage() {
               </span>
             </h1>
             <p className="text-xl text-indigo-300/70">
-              In 3 minutes, AI can map your soul profile
+              In 3 minutes, AI maps your 7-dimensional soul profile
             </p>
             <p className="text-base text-white/40 max-w-md mx-auto">
-              Paste your recent chat logs, emails, diary entries<br />
-              AI will distill your 7-dimensional soul profile in 3 minutes
+              Paste your recent chat logs, emails, diary entries.
+              <br />
+              AI will distill your unique soul signature.
             </p>
           </div>
 
@@ -307,7 +241,7 @@ export default function ExperiencePage() {
               disabled={loading}
               className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg font-semibold text-lg disabled:opacity-50 hover:from-indigo-500 hover:to-purple-500 transition"
             >
-              {loading ? "⏳ Extracting soul... (up to 3 minutes)" : "Start Distillation ✦"}
+              {loading ? "⏳ Distilling..." : "Start Distillation ✦"}
             </button>
           </div>
         </div>
@@ -318,25 +252,43 @@ export default function ExperiencePage() {
   if (step === 2) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center p-6">
-        <div className="text-center space-y-6">
-          <div className="relative mx-auto w-32 h-32">
-            <div className="absolute inset-0 rounded-full border-2 border-indigo-500/20 animate-ping" />
-            <div className="absolute inset-4 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-600/30 animate-pulse" />
+        <div className="max-w-2xl text-center space-y-8">
+          {/* Animated Radar during distillation */}
+          <div className="relative mx-auto">
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-5xl animate-bounce" style={{ animationDuration: "2s" }}>✦</span>
+              <div className="w-64 h-64 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-600/10 animate-pulse" />
+            </div>
+            <div className="relative">
+              <SoulRadar
+                data={dimensions.length > 0 ? dimensions : DIMENSIONS.map((d) => ({ ...d, score: 0.3 + Math.random() * 0.4 }))}
+                animating={true}
+                size={280}
+              />
             </div>
           </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-indigo-400">Soul is being refined...</h2>
-            <p className="text-white/40">AI is analyzing your 7-dimensional soul profile</p>
-            <div className="flex gap-2 justify-center mt-4">
-              {[0, 1, 2].map((i) => (
+
+          {/* Phase messages */}
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-indigo-400">
+              Distilling Your Soul...
+            </h2>
+            <div className="h-6 overflow-hidden">
+              <p className="text-white/50 animate-pulse transition-all duration-300">
+                {phaseMessages[distillPhase]}
+              </p>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-64 mx-auto mt-4">
+              <div className="h-1 bg-white/10 rounded-full overflow-hidden">
                 <div
-                  key={i}
-                  className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce"
-                  style={{ animationDelay: `${i * 0.3}s` }}
+                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500"
+                  style={{ width: `${(distillPhase / (phaseMessages.length - 1)) * 100}%` }}
                 />
-              ))}
+              </div>
+              <p className="text-xs text-white/30 mt-2">
+                {distillPhase + 1} / {phaseMessages.length} dimensions analyzed
+              </p>
             </div>
           </div>
         </div>
@@ -348,18 +300,18 @@ export default function ExperiencePage() {
     return (
       <div className="min-h-screen bg-[#0a0a0f] text-white p-6">
         <div className="max-w-4xl mx-auto space-y-8">
-          {/* Data */}
+          {/* Header */}
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-              {subjectName ? `${subjectName}` : "Your"}
+              {subjectName ? `${subjectName}&apos;s Soul` : "Your Soul Profile"}
             </h2>
-            <p className="text-white/50">AI distilled 7 soul dimensions from your text in 3 minutes</p>
+            <p className="text-white/50">7 dimensions distilled from your authentic text</p>
           </div>
 
           {/* Radar Chart */}
           <div className="bg-white/5 rounded-xl p-6 border border-white/10">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-indigo-300">7-Dimension Radar Chart</h3>
+              <h3 className="text-lg font-medium text-indigo-300">7-Dimension Radar</h3>
               <button
                 onClick={downloadRadar}
                 className="text-xs text-white/40 hover:text-indigo-400 px-3 py-1 border border-white/10 rounded"
@@ -367,7 +319,7 @@ export default function ExperiencePage() {
                 Save Image
               </button>
             </div>
-            <RadarChart data={dimensions} />
+            <SoulRadar data={dimensions} size={320} />
           </div>
 
           {/* Dimension Details */}
@@ -389,7 +341,7 @@ export default function ExperiencePage() {
 
           {/* Chat Section */}
           <div className="bg-white/5 rounded-xl p-6 border border-white/10">
-            <h3 className="text-lg font-medium text-indigo-300 mb-4">Chat with Your Soul</h3>
+            <h3 className="text-lg font-medium text-indigo-300 mb-4">Chat With Your Soul</h3>
 
             {chatResponse ? (
               <div className="space-y-4">
@@ -421,7 +373,6 @@ export default function ExperiencePage() {
               />
               <button
                 onClick={() => {
-                  // Simple trigger: read from input
                   const input = document.querySelector('input[placeholder="What do you want to ask your soul?"]') as HTMLInputElement;
                   if (input?.value?.trim()) {
                     handleChat(input.value.trim());
@@ -439,7 +390,7 @@ export default function ExperiencePage() {
 
           {/* CTA */}
           <div className="text-center space-y-4 pt-6 pb-12">
-            <p className="text-white/60">Want to save your Soul Profile?'s Soul Profile？</p>
+            <p className="text-white/60">Want to save your Soul Profile?</p>
             <a
               href="/register"
               className="inline-block px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full font-semibold hover:from-indigo-500 hover:to-purple-500 transition"
