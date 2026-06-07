@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { ChatWithLegends } from '@/components/features/chat-with-legends'
 import {
   ArrowRight,
   Brain,
@@ -236,6 +237,9 @@ export default function HomePage() {
           </div>
         </Link>
       </section>
+      {/* ═══ Chat with Legends (Instant Wow Moment) ═══ */}
+      <ChatWithLegends />
+
       {/* ═══ Featured Souls ═══ */}
       <section className="border-t border-zinc-800">
         <div className="container mx-auto px-4 py-20 md:py-24">

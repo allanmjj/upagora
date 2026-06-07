@@ -1,277 +1,392 @@
-'use client';
+"use client";
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { MessageSquare, Zap, Send, Loader2, ArrowLeftRight, Sparkles, Bot } from "lucide-react";
 
-import { useEffect, useState, useRef } from 'react';
-import { logger } from '@/lib/logger';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Bot, Send, Loader2, ChevronLeft, Zap, Sparkles } from 'lucide-react';
-
-interface DialogueTurn {
-  speaker: string;
-  line: string;
-  context?: string;
+interface SoulOption {
+  id: string;
+  name: string;
+  username: string;
+  capability_description?: string;
 }
 
-// Curated soul pair matchups for quick discovery
-// Matchups use `soul_key` (name_native) to locate souls by name
-// The API resolves names to UUIDs dynamically
-const RECOMMENDED_MATCHUPS = [
-  { a: { soul_key: "苏轼·东坡", name: "苏轼·东坡", avatar: "🎋", era: "1037–1101" }, b: { soul_key: "孔子·万世师表", name: "孔子", avatar: "📜", era: "551–479 BCE" }, topic: "人生苦乐该如何看待？", label: "诗人 vs 圣哲" },
-  { a: { soul_key: "李白·青莲居士", name: "李白", avatar: "🍷", era: "701–762" }, b: { soul_key: "William Shakespeare", name: "Shakespeare", avatar: "✍️", era: "1564–1616" }, topic: "Poetry Across Worlds: East meets West", label: "两大诗人跨时空" },
-  { a: { soul_key: "孔子·万世师表", name: "孔子", avatar: "📜", era: "551–479 BCE" }, b: { soul_key: "Socrates", name: "Socrates", avatar: "🏛️", era: "470–399 BCE" }, topic: "What is the foundation of a good society?", label: "东西方哲学碰撞" },
-  { a: { soul_key: "Marie Curie", name: "Marie Curie", avatar: "⚛️", era: "1867–1934" }, b: { soul_key: "Leonardo da Vinci", name: "Leonardo", avatar: "🎨", era: "1452–1519" }, topic: "The nature of curiosity and discovery", label: "科学 × 艺术" },
-  { a: { soul_key: "苏轼·东坡", name: "苏轼·东坡", avatar: "🎋", era: "1037–1101" }, b: { soul_key: "李白·青莲居士", name: "李白", avatar: "🍷", era: "701–762" }, topic: "What makes poetry immortal?", label: "两位诗人论诗" },
-  { a: { soul_key: "Abraham Lincoln", name: "Lincoln", avatar: "🗽", era: "1809–1865" }, b: { soul_key: "孔子·万世师表", name: "孔子", avatar: "📜", era: "551–479 BCE" }, topic: "Leadership through moral authority", label: "领导力跨千年" },
-];
-
-interface DialogueResult {
-  summary: string;
-  turns: DialogueTurn[];
-  raw?: string;
-  simulated?: boolean;
+interface DialogueMessage {
+  id: string;
+  soul_id: string;
+  soul_name: string;
+  content: string;
+  timestamp: Date;
 }
 
 export default function SoulDialoguePage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const soulA = searchParams?.get('soul_a') || '';
-  const soulB = searchParams?.get('soul_b') || '';
-  const initialTopic = searchParams?.get('topic') || '';
-
-  const [topic, setTopic] = useState(initialTopic);
-  const [dialogue, setDialogue] = useState<DialogueResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [history, setHistory] = useState<any[]>([]);
-  const [soulNames, setSoulNames] = useState({ a: soulA, b: soulB });
+  const [souls, setSouls] = useState<SoulOption[]>([]);
+  const [soulA, setSoulA] = useState<string>("");
+  const [soulB, setSoulB] = useState<string>("");
+  const [messages, setMessages] = useState<DialogueMessage[]>([]);
+  const [topic, setTopic] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (soulA && soulB) {
-      fetchHistory();
+    async function fetchSouls() {
+      try {
+        const res = await fetch("/api/agents?sort=popular");
+        const data = await res.json();
+        setSouls(data.data || []);
+      } catch (err) {
+        console.error("Failed to fetch souls:", err);
+      } finally {
+        setLoading(false);
+      }
     }
-  }, [soulA, soulB]);
+    fetchSouls();
+  }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [dialogue]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  async function fetchHistory() {
-    try {
-      const resp = await fetch(`/api/soul/dialogue?soul_a=${soulA}&soul_b=${soulB}`);
-      if (resp.ok) {
-        const data = await resp.json();
-        setHistory(data.dialogues || []);
-        setSoulNames({
-          a: data.soul_a?.soul_name || soulA,
-          b: data.soul_b?.soul_name || soulB,
+  const soulAData = souls.find((s) => s.id === soulA);
+  const soulBData = souls.find((s) => s.id === soulB);
+
+  const handleStartDialogue = async () => {
+    if (!soulA || !soulB || !topic.trim()) {
+      setError("Please select two souls and enter a topic.");
+      return;
+    }
+    if (soulA === soulB) {
+      setError("Please select two different souls.");
+      return;
+    }
+    setError("");
+    setGenerating(true);
+    setMessages([]);
+
+    // Simulate dialogue exchange
+    const exchanges = 4;
+    for (let i = 0; i < exchanges; i++) {
+      const speaker = i % 2 === 0 ? soulAData : soulBData;
+      if (!speaker) continue;
+
+      // Call soul chat API for each response
+      try {
+        const res = await fetch("/api/soul/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            agent_id: speaker.id,
+            message: topic,
+            context: messages
+              .slice(-4)
+              .map((m) => `${m.soul_name}: ${m.content}`)
+              .join("\n"),
+          }),
         });
-      }
-    } catch (err) {
-      logger.error(err);
-    }
-  }
 
-  async function startDialogue() {
-    if (!soulA || !soulB) return;
-    setLoading(true);
-    try {
-      const resp = await fetch('/api/soul/dialogue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        if (res.ok) {
+          const data = await res.json();
+          const response = data.reply || data.response || data.message || "No response generated.";
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `${speaker.id}-${i}`,
+              soul_id: speaker.id,
+              soul_name: speaker.name,
+              content: response,
+              timestamp: new Date(),
+            },
+          ]);
+        } else {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `${speaker.id}-${i}`,
+              soul_id: speaker.id,
+              soul_name: speaker.name,
+              content: "[Soul is currently unavailable]",
+              timestamp: new Date(),
+            },
+          ]);
+        }
+      } catch (err) {
+        console.error(`Dialogue generation failed for ${speaker.name}:`, err);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `${speaker.id}-${i}`,
+            soul_id: speaker.id,
+            soul_name: speaker.name,
+            content: "[Error generating response]",
+            timestamp: new Date(),
+          },
+        ]);
+      }
+
+      // Small delay between exchanges
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
+    setGenerating(false);
+  };
+
+  const handleCustomTopic = () => {
+    if (!topic.trim() || messages.length === 0) return;
+    setGenerating(true);
+
+    // Continue the dialogue with a new custom message
+    const lastSpeaker = messages[messages.length - 1];
+    const otherSoul = lastSpeaker.soul_id === soulA ? soulBData : soulAData;
+
+    if (otherSoul) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `custom-${Date.now()}`,
+          soul_id: "user",
+          soul_name: "You",
+          content: topic,
+          timestamp: new Date(),
+        },
+      ]);
+
+      // Get response from the other soul
+      fetch("/api/soul/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          soul_a: soulA,
-          soul_b: soulB,
-          topic: topic || null,
-          max_turns: 10,
+          agent_id: otherSoul.id,
+          message: topic,
+          context: messages.slice(-4).map((m) => `${m.soul_name}: ${m.content}`).join("\n"),
         }),
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        setDialogue(data.dialogue);
-      }
-    } catch (err) {
-      logger.error(err);
-    } finally {
-      setLoading(false);
+      })
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
+          if (data) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `${otherSoul.id}-${Date.now()}`,
+                soul_id: otherSoul.id,
+                soul_name: otherSoul.name,
+                content: data.reply || data.response || data.message || "[No response]",
+                timestamp: new Date(),
+              },
+            ]);
+          }
+        })
+        .catch(console.error)
+        .finally(() => {
+          setGenerating(false);
+          setTopic("");
+        });
     }
-  }
+  };
 
-
-  function startMatchup(matchup: typeof RECOMMENDED_MATCHUPS[0]) {
-    // Navigate to this page with the pair selected
-    const params = new URLSearchParams();
-    params.set('soul_a', matchup.a.soul_key);
-    params.set('soul_b', matchup.b.soul_key);
-    params.set('topic', matchup.topic);
-    router.replace(`/soul/dialogue?${params.toString()}`);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      {/* Header */}
-      <div className="border-b border-zinc-800 bg-zinc-900/50">
-        <div className="container mx-auto px-4 py-6">
-          <button
-            onClick={() => router.back()}
-            className="text-sm text-zinc-500 hover:text-white mb-3 flex items-center gap-1 transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" /> Back
-          </button>
-          <div className="flex items-center gap-3 mb-2">
-            <Zap className="w-7 h-7 text-amber-400" />
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-amber-400 to-violet-400 bg-clip-text text-transparent">
-              Soul-to-Soul Dialogue
-            </h1>
-          </div>
-          <p className="text-zinc-400 text-sm">
-            Watch two souls converse based on their 9-dimensional constraints. Each voice is shaped by era, education, beliefs, and personality.
+    <div className="min-h-screen bg-zinc-950 text-zinc-50">
+      <div className="border-b border-zinc-800 bg-gradient-to-b from-zinc-900/50 to-transparent">
+        <div className="container mx-auto px-4 py-12">
+          <h1 className="text-4xl font-bold text-white mb-3">Soul Dialogue</h1>
+          <p className="text-lg text-zinc-400 max-w-2xl">
+            Watch two souls converse on any topic. See how different personalities
+            and perspectives create unique dialogues.
           </p>
-
-          {/* Soul Pair Display */}
-          <div className="flex items-center gap-4 mt-4">
-            <div className="flex-1 rounded-xl border border-violet-800/50 bg-violet-950/20 p-3">
-              <div className="text-sm font-bold text-violet-300">{soulNames.a}</div>
-              <div className="text-xs text-zinc-500">Soul A</div>
-            </div>
-            <div className="text-zinc-600 font-bold">⟷</div>
-            <div className="flex-1 rounded-xl border border-amber-800/50 bg-amber-950/20 p-3">
-              <div className="text-sm font-bold text-amber-300">{soulNames.b}</div>
-              <div className="text-xs text-zinc-500">Soul B</div>
-            </div>
-          </div>
-
-          {/* Topic Input */}
-          <div className="flex gap-3 mt-4">
-            <input
-              type="text"
-              value={topic}
-              onChange={e => setTopic(e.target.value)}
-              placeholder="Enter a topic for their conversation (optional)..."
-              className="flex-1 rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-600"
-              onKeyDown={e => e.key === 'Enter' && startDialogue()}
-            />
-            <button
-              onClick={startDialogue}
-              disabled={loading || !soulA || !soulB}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-violet-600 text-white font-medium text-sm hover:from-amber-500 hover:to-violet-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              {loading ? 'Generating...' : 'Start Dialogue'}
-            </button>
-          </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Main Dialogue Area */}
-        <div className="lg:col-span-3">
-          {dialogue ? (
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-              {/* Summary */}
-              <div className="p-4 border-b border-zinc-800 bg-zinc-900/80">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs font-bold text-amber-400">DIALOGUE SUMMARY</span>
-                  {dialogue.simulated && <span className="text-[10px] text-zinc-600 ml-auto">(simulated)</span>}
-                </div>
-                <p className="text-sm text-zinc-300">{dialogue.summary}</p>
-              </div>
-
-              {/* Turns */}
-              <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-                {dialogue.turns.map((turn, i) => {
-                  const isA = turn.speaker === 'soul_a';
-                  return (
-                    <div key={i} className={`flex gap-3 ${isA ? '' : 'flex-row-reverse'}`}>
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
-                        isA ? 'bg-violet-600 text-white' : 'bg-amber-600 text-white'
-                      }`}>
-                        <Bot className="w-5 h-5" />
-                      </div>
-                      <div className={`max-w-[70%] ${isA ? '' : 'text-right'}`}>
-                        <div className="text-xs text-zinc-500 mb-1">
-                          {isA ? soulNames.a : soulNames.b} · Turn {i + 1}
-                        </div>
-                        <div className={`inline-block rounded-2xl px-4 py-3 text-sm ${
-                          isA
-                            ? 'bg-violet-900/30 border border-violet-800/30 text-zinc-200'
-                            : 'bg-amber-900/30 border border-amber-800/30 text-zinc-200'
-                        }`}>
-                          {turn.line}
-                        </div>
-                        {turn.context && (
-                          <div className="text-xs text-zinc-600 mt-1 italic">{turn.context}</div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </div>
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Soul Selection */}
+        <div className="grid sm:grid-cols-2 gap-6 mb-8">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-3 h-3 rounded-full bg-blue-500" />
+              <h3 className="font-semibold text-white">Soul A</h3>
             </div>
-          ) : (
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
-              <div className="text-center mb-6">
-                <Bot className="w-10 h-10 mx-auto text-zinc-700 mb-3" />
-                <h2 className="text-lg font-bold text-zinc-300">
-                  {!soulA || !soulB ? "Choose Two Souls to Start a Dialogue" : "Enter a topic and start the conversation"}
-                </h2>
-                <p className="text-sm text-zinc-500 mt-1">Historical minds, reborn as conversational agents</p>
-              </div>
+            <select
+              value={soulA}
+              onChange={(e) => setSoulA(e.target.value)}
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-50 focus:border-indigo-500 focus:outline-none"
+              disabled={messages.length > 0}
+            >
+              <option value="">Select a soul...</option>
+              {souls.map((s) => (
+                <option key={s.id} value={s.id} disabled={s.id === soulB}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+            {soulAData && (
+              <p className="text-xs text-zinc-500 mt-2 line-clamp-2">
+                {soulAData.capability_description || "No description"}
+              </p>
+            )}
+          </div>
 
-              {!soulA || !soulB ? (
-                <div>
-                  <div className="flex items-center gap-2 mb-4 justify-center">
-                    <Zap className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-bold text-amber-400">RECOMMENDED MATCHUPS</span>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {RECOMMENDED_MATCHUPS.map((m, i) => (
-                      <button
-                        key={i}
-                        onClick={() => startMatchup(m)}
-                        className="group text-left rounded-xl border border-zinc-800 bg-zinc-800/30 p-4 hover:border-amber-800/50 hover:bg-zinc-800/50 transition-all duration-200"
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg">{m.a.avatar}</span>
-                          <span className="font-bold text-sm text-zinc-200">{m.a.name}</span>
-                          <span className="text-xs text-zinc-600">vs</span>
-                          <span className="text-lg">{m.b.avatar}</span>
-                          <span className="font-bold text-sm text-zinc-200">{m.b.name}</span>
-                        </div>
-                        <div className="text-xs text-zinc-500 mb-2">{m.a.era} · {m.label} · {m.b.era}</div>
-                        <div className="text-xs text-amber-400/80 italic">{`"${m.topic}"`}</div>
-                        <div className="text-[10px] text-indigo-400 mt-1.5 group-hover:text-amber-400 transition-colors">Watch them talk →</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-3 h-3 rounded-full bg-purple-500" />
+              <h3 className="font-semibold text-white">Soul B</h3>
+            </div>
+            <select
+              value={soulB}
+              onChange={(e) => setSoulB(e.target.value)}
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-50 focus:border-indigo-500 focus:outline-none"
+              disabled={messages.length > 0}
+            >
+              <option value="">Select a soul...</option>
+              {souls.map((s) => (
+                <option key={s.id} value={s.id} disabled={s.id === soulA}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+            {soulBData && (
+              <p className="text-xs text-zinc-500 mt-2 line-clamp-2">
+                {soulBData.capability_description || "No description"}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Topic Input */}
+        <div className="mb-8">
+          <div className="flex gap-3">
+            <input
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder={messages.length > 0 ? "Continue with your own message..." : "Enter a topic for these souls to discuss..."}
+              className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-zinc-50 placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  messages.length > 0 ? handleCustomTopic() : handleStartDialogue();
+                }
+              }}
+              disabled={generating || (messages.length === 0 && (!soulA || !soulB))}
+            />
+            <button
+              onClick={messages.length > 0 ? handleCustomTopic : handleStartDialogue}
+              disabled={generating || (!soulA || !soulB)}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-700 disabled:text-zinc-500 rounded-lg text-white font-medium transition-colors flex items-center gap-2"
+            >
+              {generating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : messages.length > 0 ? (
+                <Send className="h-4 w-4" />
               ) : (
-                <p className="text-sm text-zinc-400 text-center">Ready to watch {soulNames.a} and {soulNames.b} converse?</p>
+                <ArrowLeftRight className="h-4 w-4" />
               )}
+              {generating ? "Thinking..." : messages.length > 0 ? "Continue" : "Start"}
+            </button>
+          </div>
+          {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+
+          {messages.length === 0 && souls.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="text-xs text-zinc-500">Try:</span>
+              {[
+                "The meaning of creativity",
+                "AI vs human intuition",
+                "The future of art",
+                "What makes a good life",
+                "Technology and human connection",
+              ].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTopic(t)}
+                  className="px-3 py-1 rounded-full bg-zinc-800 text-xs text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300 transition-colors"
+                >
+                  {t}
+                </button>
+              ))}
             </div>
           )}
         </div>
 
-        {/* History Sidebar */}
-        <div className="lg:col-span-1">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4">
-            <h3 className="font-bold text-sm text-zinc-400 mb-3">Previous Dialogues</h3>
-            {history.length === 0 ? (
-              <p className="text-xs text-zinc-600">No previous dialogues between these souls.</p>
-            ) : (
-              <div className="space-y-3">
-                {history.map((h, i) => (
-                  <div key={i} className="p-3 rounded-lg bg-zinc-800/50 text-xs">
-                    {h.topic && <div className="text-amber-400 mb-1">Topic: {h.topic}</div>}
-                    <div className="text-zinc-500">
-                      {new Date(h.created_at).toLocaleDateString()}
+        {/* Dialogue Messages */}
+        {messages.length > 0 && (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+            <div className="p-4 border-b border-zinc-800 bg-zinc-900">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-white flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-indigo-400" />
+                  Dialogue
+                </h3>
+                <button
+                  onClick={() => {
+                    setMessages([]);
+                    setTopic("");
+                  }}
+                  className="text-xs text-zinc-500 hover:text-zinc-300"
+                >
+                  Reset
+                </button>
+              </div>
+              <p className="text-xs text-zinc-500 mt-1">
+                {soulAData?.name} ↔ {soulBData?.name}
+              </p>
+            </div>
+
+            <div className="p-4 space-y-4 max-h-[500px] overflow-y-auto">
+              {messages.map((msg) => {
+                const isA = msg.soul_id === soulA;
+                const isUser = msg.soul_id === "user";
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex ${isUser ? "justify-end" : isA ? "justify-start" : "justify-end"}`}
+                  >
+                    <div
+                      className={`max-w-[80%] rounded-xl px-4 py-3 ${
+                        isUser
+                          ? "bg-indigo-600 text-white"
+                          : isA
+                          ? "bg-blue-500/10 border border-blue-500/20 text-zinc-200"
+                          : "bg-purple-500/10 border border-purple-500/20 text-zinc-200"
+                      }`}
+                    >
+                      <div className="text-xs font-medium mb-1 opacity-70">
+                        {msg.soul_name}
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Empty state */}
+        {messages.length === 0 && souls.length < 2 && (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-12 text-center">
+            <Bot className="mx-auto h-12 w-12 text-zinc-600 mb-4" />
+            <h3 className="text-xl font-semibold text-zinc-300 mb-2">
+              Not enough souls for dialogue
+            </h3>
+            <p className="text-zinc-500 mb-6">
+              At least two souls are needed to start a dialogue.
+            </p>
+            <Link
+              href="/soul/distill"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white transition-colors"
+            >
+              <Sparkles className="h-4 w-4" />
+              Distill More Souls
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

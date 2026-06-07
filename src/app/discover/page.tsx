@@ -1,304 +1,238 @@
-'use client';
+"use client";
+import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
+import { Sparkles, TrendingUp, Clock, Star, Zap, Flame, Compass, Eye, Loader2, ArrowRight, Brain } from "lucide-react";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import {
-  Search, Filter, Star, TrendingUp, Clock, Eye, Heart,
-  Ghost, ArrowRight, Sparkles, Flame, Users
-} from 'lucide-react';
-import { Navbar } from '@/components/layout/navbar';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-
-type SoulListing = {
+interface SoulOption {
   id: string;
   name: string;
-  preview: string;
-  type: 'beloved' | 'mentor' | 'self' | 'expert';
-  rating: number;
-  reviews: number;
-  interactions: number;
-  tags: string[];
-  owner: string;
-  featured?: boolean;
-};
+  username: string;
+  capability_description?: string;
+  capabilities?: string[];
+  avg_rating?: number;
+  review_count?: number;
+  invocation_count?: number;
+  is_verified?: boolean;
+  created_at?: string;
+}
 
-const mockSouls: SoulListing[] = [
-  {
-    id: '1', name: 'Su Dongpo', preview: 'Chinese poet and statesman of the Song Dynasty.',
-    type: 'mentor', rating: 4.9, reviews: 234, interactions: 12840,
-    tags: ['Poetry', 'Philosophy', 'Song Dynasty', 'Chinese Culture'], owner: 'scholar', featured: true,
-  },
-  {
-    id: '2', name: 'Socrates', preview: 'Ancient Greek philosopher, father of Western philosophy.',
-    type: 'mentor', rating: 4.8, reviews: 189, interactions: 9870,
-    tags: ['Philosophy', 'Ancient Greece', 'Ethics'], owner: 'philosopher', featured: true,
-  },
-  {
-    id: '3', name: 'Grandma Yukiyo', preview: 'Japanese grandmother, 92 years of wisdom and warmth.',
-    type: 'beloved', rating: 5.0, reviews: 45, interactions: 3200,
-    tags: ['Family', 'Cooking', 'Japanese'], owner: 'newbie',
-  },
-  {
-    id: '4', name: 'Ada Lovelace', preview: 'Mathematician, first computer programmer.',
-    type: 'expert', rating: 4.7, reviews: 128, interactions: 7650,
-    tags: ['Mathematics', 'Computing', 'Victorian Era'], owner: 'techie', featured: true,
-  },
-  {
-    id: '5', name: 'Your Digital Twin', preview: 'A mirror of your own mind and patterns.',
-    type: 'self', rating: 4.5, reviews: 67, interactions: 2100,
-    tags: ['Self-Discovery', 'AI Mirror'], owner: 'explorer',
-  },
-  {
-    id: '6', name: 'Walt Whitman', preview: 'American poet, pioneer of free verse.',
-    type: 'mentor', rating: 4.6, reviews: 95, interactions: 5430,
-    tags: ['Poetry', 'American Literature'], owner: 'literati',
-  },
-  {
-    id: '7', name: 'Abuela Maria', preview: 'Mexican grandmother, stories of faith and family.',
-    type: 'beloved', rating: 5.0, reviews: 34, interactions: 1890,
-    tags: ['Family', 'Mexican Culture', 'Faith'], owner: 'familia',
-  },
-  {
-    id: '8', name: 'Marie Curie', preview: 'Physicist and chemist, pioneer of radioactivity research.',
-    type: 'expert', rating: 4.8, reviews: 201, interactions: 11200,
-    tags: ['Science', 'Physics', 'Nobel Prize'], owner: 'scientist', featured: true,
-  },
-];
-
-const typeIcons: Record<string, typeof Ghost> = {
-  beloved: Heart,
-  mentor: Sparkles,
-  self: Star,
-  expert: Eye,
-};
-
-const typeColors: Record<string, string> = {
-  beloved: 'from-pink-500 to-rose-500',
-  mentor: 'from-purple-500 to-violet-500',
-  self: 'from-blue-500 to-cyan-500',
-  expert: 'from-amber-500 to-orange-500',
-};
-
-const sortOptions = [
-  { value: 'trending', label: 'Trending', icon: TrendingUp },
-  { value: 'newest', label: 'Newest', icon: Clock },
-  { value: 'highest_rated', label: 'Highest Rated', icon: Star },
-  { value: 'most_interactions', label: 'Most Chatted', icon: Users },
-];
-
-export default function SoulDiscoveryPage() {
-  const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('trending');
-  const [filterType, setFilterType] = useState('all');
-  const [souls, setSouls] = useState<SoulListing[]>(mockSouls);
-  const [featured, setFeatured] = useState<SoulListing[]>([]);
-  const [randomSoul, setRandomSoul] = useState<SoulListing | null>(null);
+export default function DiscoverPage() {
+  const [souls, setSouls] = useState<SoulOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"trending" | "new" | "top_rated">("trending");
 
   useEffect(() => {
-    setFeatured(mockSouls.filter((s) => s.featured));
-    setRandomSoul(mockSouls[Math.floor(Math.random() * mockSouls.length)]);
+    async function fetchSouls() {
+      try {
+        const [trendingRes, newRes, ratedRes] = await Promise.all([
+          fetch("/api/agents?sort=popular"),
+          fetch("/api/agents?sort=new"),
+          fetch("/api/agents?sort=rating"),
+        ]);
+        const [trendingData, newData, ratedData] = await Promise.all([
+          trendingRes.json(),
+          newRes.json(),
+          ratedRes.json(),
+        ]);
+        // Merge all souls, deduplicate by id
+        const allSouls = new Map<string, SoulOption>();
+        [...(trendingData.data || []), ...(newData.data || []), ...(ratedData.data || [])].forEach((s: any) => {
+          if (!allSouls.has(s.id)) {
+            allSouls.set(s.id, s);
+          }
+        });
+        setSouls(Array.from(allSouls.values()));
+      } catch (err) {
+        console.error("Failed to fetch souls:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchSouls();
   }, []);
 
-  const filteredSouls = souls.filter((soul) => {
-    const matchesSearch =
-      !search ||
-      soul.name.toLowerCase().includes(search.toLowerCase()) ||
-      soul.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
-    const matchesType = filterType === 'all' || soul.type === filterType;
-    return matchesSearch && matchesType;
-  });
+  const trending = useMemo(
+    () => [...souls].sort((a, b) => (b.invocation_count || 0) - (a.invocation_count || 0)).slice(0, 6),
+    [souls]
+  );
 
-  const handleRandomSoul = () => {
-    setRandomSoul(mockSouls[Math.floor(Math.random() * mockSouls.length)]);
-  };
+  const newest = useMemo(
+    () =>
+      [...souls]
+        .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+        .slice(0, 6),
+    [souls]
+  );
+
+  const topRated = useMemo(
+    () =>
+      [...souls]
+        .filter((s) => (s.review_count || 0) > 0)
+        .sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0))
+        .slice(0, 6),
+    [souls]
+  );
+
+  const featured = useMemo(() => {
+    return [...souls]
+      .filter((s) => s.is_verified)
+      .slice(0, 3);
+  }, [souls]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-400 mx-auto mb-4" />
+          <p className="text-zinc-400">Discovering souls...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
-      <Navbar />
+    <div className="min-h-screen bg-zinc-950 text-zinc-50">
+      {/* Hero */}
+      <div className="border-b border-zinc-800 bg-gradient-to-b from-zinc-900/50 to-transparent">
+        <div className="container mx-auto px-4 py-12">
+          <h1 className="text-4xl font-bold text-white mb-3 flex items-center gap-3">
+            <Compass className="h-8 w-8 text-indigo-400" />
+            Discover
+          </h1>
+          <p className="text-lg text-zinc-400 max-w-2xl">
+            Explore trending, new, and top-rated souls from the UpAgora community.
+          </p>
+        </div>
+      </div>
 
-      <div className="pt-24 pb-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Hero */}
-          <div className="text-center mb-12">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"
-            >
-              Discover Souls
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="text-xl text-gray-400 max-w-2xl mx-auto"
-            >
-              Explore living AI companions distilled from real people. Chat with thinkers, mentors,
-              and beloved ones from across time and culture.
-            </motion.p>
-          </div>
-
-          {/* Random Soul Feature */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mb-12"
-          >
-            <Card className="p-6 bg-gradient-to-r from-purple-900/20 to-pink-900/20 border-purple-500/20">
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                {randomSoul && (
-                  <>
-                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-                      <Ghost className="w-8 h-8 text-white" />
-                    </div>
-                    <div className="flex-1 text-center md:text-left">
-                      <h3 className="text-xl font-bold mb-1">
-                        Meet {randomSoul.name}
-                      </h3>
-                      <p className="text-gray-400">{randomSoul.preview}</p>
-                    </div>
-                    <div className="flex gap-3">
-                      <Button asChild className="bg-purple-500 hover:bg-purple-600">
-                        <Link href={`/chat?soul=${randomSoul.id}`}>
-                          Chat Now <ArrowRight className="ml-2 w-4 h-4" />
-                        </Link>
-                      </Button>
-                      <Button variant="outline" onClick={handleRandomSoul}>
-                        <Flame className="w-4 h-4" />
-                        Random
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </Card>
-          </motion.div>
-
-          {/* Search & Filters */}
-          <div className="flex flex-col md:flex-row gap-4 mb-8">
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-              <Input
-                placeholder="Search souls by name, tag, or topic..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-12 bg-gray-900 border-gray-800 h-12 text-lg"
-              />
-            </div>
-            <div className="flex gap-2">
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="px-4 py-3 rounded-xl bg-gray-900 border border-gray-800 text-white focus:border-purple-500 outline-none"
-              >
-                <option value="all">All Types</option>
-                <option value="beloved">Beloved</option>
-                <option value="mentor">Mentor</option>
-                <option value="self">Self</option>
-                <option value="expert">Expert</option>
-              </select>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-3 rounded-xl bg-gray-900 border border-gray-800 text-white focus:border-purple-500 outline-none"
-              >
-                {sortOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSouls.map((soul, i) => {
-              const Icon = typeIcons[soul.type];
-              const colors = typeColors[soul.type];
-              return (
-                <motion.div
+      <div className="container mx-auto px-4 py-8">
+        {/* Featured Souls */}
+        {featured.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+              <Flame className="h-6 w-6 text-amber-400" />
+              Featured Souls
+            </h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {featured.map((soul) => (
+                <Link
                   key={soul.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
+                  href={`/soul/${soul.name || "unknown"}`}
+                  className="group block rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-transparent p-6 hover:border-amber-500/50 transition-all"
                 >
-                  <Card className="p-6 bg-gray-900/50 border-gray-800 hover:border-purple-500/30 transition-all duration-300 group">
-                    <div className="flex items-start gap-4 mb-4">
-                      <div
-                        className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center flex-shrink-0`}
-                      >
-                        <Icon className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-lg truncate group-hover:text-purple-400 transition-colors">
-                          {soul.name}
-                        </h3>
-                        <p className="text-sm text-gray-500">by @{soul.owner}</p>
-                      </div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-14 w-14 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-xl font-bold">
+                      {soul.name?.[0]?.toUpperCase()}
                     </div>
-
-                    <p className="text-gray-400 text-sm mb-4 line-clamp-2">
-                      {soul.preview}
-                    </p>
-
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {soul.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-1 rounded-full bg-gray-800 text-xs text-gray-400"
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                    <div>
+                      <h3 className="font-bold text-white group-hover:text-amber-300 transition-colors">
+                        {soul.name}
+                      </h3>
+                      <p className="text-xs text-zinc-500">{soul.username}</p>
                     </div>
-
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1">
-                          <Star className="w-4 h-4 text-yellow-500" />
-                          {soul.rating} ({soul.reviews})
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          {soul.interactions.toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-4 border-t border-gray-800 flex gap-2">
-                      <Button asChild className="flex-1 bg-purple-500 hover:bg-purple-600">
-                        <Link href={`/chat?soul=${soul.id}`}>
-                          Chat
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        asChild
-                        className="border-gray-700 hover:bg-gray-800"
-                      >
-                        <Link href={`/soul/${soul.id}`}>
-                          Profile
-                        </Link>
-                      </Button>
-                    </div>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {filteredSouls.length === 0 && (
-            <div className="text-center py-16">
-              <Ghost className="w-16 h-16 text-gray-700 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-500 mb-2">No souls found</h3>
-              <p className="text-gray-600">Try a different search or filter.</p>
+                    <ArrowRight className="h-4 w-4 text-zinc-600 group-hover:text-amber-400 ml-auto transition-colors" />
+                  </div>
+                  {soul.capability_description && (
+                    <p className="text-sm text-zinc-400 line-clamp-2">{soul.capability_description}</p>
+                  )}
+                </Link>
+              ))}
             </div>
-          )}
+          </section>
+        )}
+
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6">
+          {[
+            { key: "trending", label: "Trending", icon: TrendingUp },
+            { key: "new", label: "New Arrivals", icon: Clock },
+            { key: "top_rated", label: "Top Rated", icon: Star },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as any)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                  activeTab === tab.key
+                    ? "bg-indigo-600 text-white"
+                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Soul Grid */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {(activeTab === "trending" ? trending : activeTab === "new" ? newest : topRated).map((soul, idx) => (
+            <Link
+              key={soul.id}
+              href={`/soul/${soul.name || "unknown"}`}
+              className="group block rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 hover:border-indigo-500/50 hover:bg-zinc-900/80 transition-all"
+            >
+              <div className="flex items-start gap-3 mb-3">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                  {soul.name?.[0]?.toUpperCase() || "?"}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-white group-hover:text-indigo-300 transition-colors truncate">
+                    {soul.name}
+                  </div>
+                  <div className="text-xs text-zinc-500">{soul.username || "Anonymous"}</div>
+                </div>
+              </div>
+
+              {soul.capability_description && (
+                <p className="text-sm text-zinc-400 line-clamp-2 mb-3">{soul.capability_description}</p>
+              )}
+
+              {/* Stats */}
+              <div className="flex items-center justify-between text-sm text-zinc-500 border-t border-zinc-800 pt-3">
+                <span className="flex items-center gap-1">
+                  <Star className="h-3 w-3" />
+                  {soul.avg_rating?.toFixed(1) || "0.0"}
+                </span>
+                <span className="flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3" />
+                  {soul.invocation_count || 0}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Eye className="h-3 w-3" />
+                  #{idx + 1}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {(activeTab === "trending" ? trending : activeTab === "new" ? newest : topRated).length === 0 && (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-12 text-center mt-8">
+            <Brain className="mx-auto h-12 w-12 text-zinc-600 mb-4" />
+            <h3 className="text-xl font-semibold text-zinc-300 mb-2">No souls to discover yet</h3>
+            <p className="text-zinc-500 mb-6">Be the first to distill a soul.</p>
+            <Link
+              href="/soul/distill"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white transition-colors"
+            >
+              <Sparkles className="h-4 w-4" />
+              Distill a Soul
+            </Link>
+          </div>
+        )}
+
+        {/* Browse More */}
+        <div className="mt-12 text-center">
+          <Link
+            href="/soul/marketplace"
+            className="inline-flex items-center gap-2 px-6 py-3 border border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors"
+          >
+            Browse All Souls
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </div>
     </div>

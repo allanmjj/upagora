@@ -1,278 +1,306 @@
-'use client'
+"use client";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import Link from "next/link";
+import { Search, Filter, Users, FileText, Brain, Clock, Loader2, X, Zap, Star, TrendingUp, ChevronRight } from "lucide-react";
 
-import { useState, useCallback } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { Avatar } from '@/components/ui/avatar'
-import { UserBadge } from '@/components/features/user-badge'
-import { PostCard } from '@/components/features/post-card'
-import { useAuth } from '@/hooks/use-auth'
-import type { Post, Demand, AuthUser, SearchResult } from '@/types/api'
-import {
-  Search,
-  User,
-  Bot,
-  FileText,
-  TrendingUp,
-  X,
-  Heart,
-  MessageCircle,
-  Coins,
-  Loader2,
-} from 'lucide-react'
-
-type SearchTab = 'all' | 'users' | 'posts' | 'demands'
-
-const trendingTags = ['Data Analysis', 'LLM', 'Automation', 'Content Creation', 'Web Dev', 'NLP']
+interface SearchResult {
+  id: string;
+  type: "soul" | "post" | "skill";
+  title: string;
+  description?: string;
+  author?: string;
+  avatar?: string;
+  rating?: number;
+  invocations?: number;
+  created_at?: string;
+  url: string;
+}
 
 export default function SearchPage() {
-  const { user: currentUser } = useAuth()
-  const [query, setQuery] = useState('')
-  const [activeTab, setActiveTab] = useState<SearchTab>('all')
-  const [results, setResults] = useState<SearchResult | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [searched, setSearched] = useState(false)
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [filterType, setFilterType] = useState<"all" | "souls" | "posts" | "skills">("all");
+  const [sortBy, setSortBy] = useState<"relevance" | "newest" | "popular">("relevance");
 
-  const doSearch = useCallback(async (q: string, type: SearchTab = activeTab) => {
-    if (!q.trim() || q.trim().length < 2) return
+  const performSearch = useCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim()) {
+      setResults([]);
+      setHasSearched(false);
+      return;
+    }
+    setLoading(true);
+    setHasSearched(true);
 
-    setLoading(true)
-    setSearched(true)
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q.trim())}&type=${type}`)
-      if (res.ok) {
-        const data = await res.json()
-        setResults(data.data || { total: 0 })
-      } else {
-        setResults({ total: 0 })
+      // Search across souls
+      const soulsRes = await fetch(`/api/agents?q=${encodeURIComponent(searchQuery)}`);
+      const soulsData = await soulsRes.json();
+      const soulResults: SearchResult[] = (soulsData.data || []).map((s: any) => ({
+        id: s.id,
+        type: "soul" as const,
+        title: s.name,
+        description: s.capability_description || s.bio,
+        author: s.username,
+        avatar: s.avatar_url,
+        rating: s.avg_rating,
+        invocations: s.invocation_count,
+        created_at: s.created_at,
+        url: `/soul/${s.name || "unknown"}`,
+      }));
+
+      // Search posts via API
+      const postsRes = await fetch(`/api/posts?q=${encodeURIComponent(searchQuery)}`);
+      let postResults: SearchResult[] = [];
+      if (postsRes.ok) {
+        const postsData = await postsRes.json();
+        postResults = (postsData.data || []).map((p: any) => ({
+          id: p.id,
+          type: "post" as const,
+          title: p.title || "Untitled Post",
+          description: p.content?.substring(0, 200),
+          author: p.author_name || "Anonymous",
+          created_at: p.created_at,
+          url: `/posts/${p.id}`,
+        }));
       }
-    } catch {
-      setResults({ total: 0 })
+
+      // Search skills
+      const skillsRes = await fetch(`/api/skills/list?q=${encodeURIComponent(searchQuery)}`);
+      let skillResults: SearchResult[] = [];
+      if (skillsRes.ok) {
+        const skillsData = await skillsRes.json();
+        skillResults = (skillsData.skills || skillsData.data || []).map((sk: any) => ({
+          id: sk.id,
+          type: "skill" as const,
+          title: sk.name || sk.title,
+          description: sk.description,
+          author: sk.author_name,
+          created_at: sk.created_at,
+          url: `/skills/${sk.id}`,
+        }));
+      }
+
+      let allResults = [...soulResults, ...postResults, ...skillResults];
+
+      // Apply type filter
+      if (filterType !== "all") {
+        const typeMap = { souls: "soul", posts: "post", skills: "skill" };
+        allResults = allResults.filter((r) => r.type === typeMap[filterType]);
+      }
+
+      // Apply sort
+      if (sortBy === "newest") {
+        allResults.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+      } else if (sortBy === "popular") {
+        allResults.sort((a, b) => (b.invocations || 0) - (a.invocations || 0));
+      }
+      // relevance is default (API order)
+
+      setResults(allResults);
+    } catch (err) {
+      console.error("Search failed:", err);
+      setResults([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [activeTab])
+  }, [filterType, sortBy]);
 
-  const handleSearch = () => {
-    doSearch(query)
-  }
+  const handleSearch = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    performSearch(query);
+  }, [query, performSearch]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      doSearch(query)
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "soul": return <Brain className="h-4 w-4 text-indigo-400" />;
+      case "post": return <FileText className="h-4 w-4 text-green-400" />;
+      case "skill": return <Zap className="h-4 w-4 text-amber-400" />;
+      default: return <Search className="h-4 w-4 text-zinc-400" />;
     }
-  }
+  };
 
-  const handleTagClick = (tag: string) => {
-    setQuery(tag)
-    doSearch(tag)
-  }
-
-  const handleTabChange = (tab: SearchTab) => {
-    setActiveTab(tab)
-    if (query.trim().length >= 2) {
-      doSearch(query, tab)
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case "soul": return "text-indigo-400";
+      case "post": return "text-green-400";
+      case "skill": return "text-amber-400";
+      default: return "text-zinc-400";
     }
-  }
-
-  const users = results?.users || []
-  const posts = results?.posts || []
-  const demands = results?.demands || []
+  };
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-50">Search</h1>
-        <p className="mt-1 text-sm text-zinc-400">
-          Search people, posts, and tasks on UpAgora
-        </p>
-      </div>
-
-      {/* Search Bar */}
-      <div className="mb-6 flex gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Search UpAgora..."
-            className="pl-10 h-12 text-base bg-zinc-900/50"
-          />
-          {query && (
-            <button
-              onClick={() => { setQuery(''); setResults(null); setSearched(false) }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+    <div className="min-h-screen bg-zinc-950 text-zinc-50">
+      {/* Hero */}
+      <div className="border-b border-zinc-800 bg-gradient-to-b from-zinc-900/50 to-transparent">
+        <div className="container mx-auto px-4 py-12">
+          <h1 className="text-4xl font-bold text-white mb-3 flex items-center gap-3">
+            <Search className="h-8 w-8 text-indigo-400" />
+            Search
+          </h1>
+          <p className="text-lg text-zinc-400 max-w-2xl">
+            Search across souls, posts, and skills in the UpAgora ecosystem.
+          </p>
         </div>
-        <Button
-          onClick={handleSearch}
-          disabled={loading || query.trim().length < 2}
-          className="h-12 px-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white"
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Search'}
-        </Button>
       </div>
 
-      {/* Trending Tags */}
-      {!searched && (
-        <div className="mb-6">
-          <h3 className="mb-2 text-xs font-medium text-zinc-500 flex items-center gap-1">
-            <TrendingUp className="h-3 w-3" />
-            Trending Tags
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {trendingTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => handleTagClick(tag)}
-                className="rounded-full border border-zinc-800 bg-zinc-900/50 px-3 py-1 text-xs text-zinc-400 hover:border-indigo-500 hover:text-indigo-400 transition-colors"
-              >
-                #{tag}
-              </button>
-            ))}
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Search Form */}
+        <form onSubmit={handleSearch} className="mb-6">
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3.5 h-4 w-4 text-zinc-500" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search souls, posts, skills..."
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-900 pl-10 pr-10 py-3 text-zinc-50 placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => { setQuery(""); setResults([]); setHasSearched(false); }}
+                  className="absolute right-3 top-3.5 text-zinc-500 hover:text-zinc-300"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <button
+              type="submit"
+              disabled={loading || !query.trim()}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-700 disabled:text-zinc-500 rounded-lg text-white font-medium transition-colors"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
+            </button>
+          </div>
+        </form>
+
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-zinc-500" />
+            <span className="text-sm text-zinc-500">Type:</span>
+          </div>
+          {[
+            { key: "all", label: "All" },
+            { key: "souls", label: "Souls", icon: Users },
+            { key: "posts", label: "Posts", icon: FileText },
+            { key: "skills", label: "Skills", icon: Brain },
+          ].map((f) => (
+            <button
+              key={f.key}
+              onClick={() => { setFilterType(f.key as any); performSearch(query); }}
+              className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                filterType === f.key
+                  ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/50"
+                  : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:border-zinc-600"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-sm text-zinc-500">Sort:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => { setSortBy(e.target.value as any); performSearch(query); }}
+              className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1 text-sm text-zinc-50 focus:border-indigo-500 focus:outline-none"
+            >
+              <option value="relevance">Relevance</option>
+              <option value="newest">Newest</option>
+              <option value="popular">Popular</option>
+            </select>
           </div>
         </div>
-      )}
 
-      {/* Tab filters */}
-      {searched && (
-        <div className="mb-6 border-b border-zinc-800">
-          <nav className="flex gap-4">
-            {([
-              { value: 'all' as SearchTab, label: 'All', count: results?.total || 0 },
-              { value: 'users' as SearchTab, label: 'Users', count: users.length },
-              { value: 'posts' as SearchTab, label: 'Posts', count: posts.length },
-              { value: 'demands' as SearchTab, label: 'Tasks', count: demands.length },
-            ]).map(({ value, label, count }) => (
-              <button
-                key={value}
-                onClick={() => handleTabChange(value)}
-                className={`border-b-2 pb-3 text-sm font-medium transition-colors ${
-                  activeTab === value
-                    ? 'border-indigo-500 text-zinc-50'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-300'
-                }`}
-              >
-                {label} {count > 0 && `(${count})`}
-              </button>
-            ))}
-          </nav>
-        </div>
-      )}
+        {/* Results */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-indigo-400 mr-2" />
+            <span className="text-zinc-400">Searching...</span>
+          </div>
+        )}
 
-      {/* Results */}
-      {loading && (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
-        </div>
-      )}
-
-      {!loading && searched && results && (
-        <div className="space-y-8">
-          {/* Users */}
-          {(activeTab === 'all' || activeTab === 'users') && users.length > 0 && (
-            <section>
-              <h3 className="mb-3 text-sm font-medium text-zinc-400 flex items-center gap-2">
-                <User className="h-4 w-4 text-blue-400" />
-                Users
-              </h3>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {users.map((u: AuthUser) => (
-                  <Link key={u.id} href={`/profile/${u.username}`}>
-                    <Card className="hover:border-zinc-700 transition-colors">
-                      <CardContent className="p-4 flex items-center gap-3">
-                        <Avatar name={u.name} size="md" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-zinc-50 truncate">{u.name}</span>
-                            <UserBadge type={u.user_type} />
-                          </div>
-                          <p className="text-xs text-zinc-500 truncate">@{u.username}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Posts */}
-          {(activeTab === 'all' || activeTab === 'posts') && posts.length > 0 && (
-            <section>
-              <h3 className="mb-3 text-sm font-medium text-zinc-400 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-purple-400" />
-                Posts
-              </h3>
-              <div className="space-y-3">
-                {posts.map((post: Post) => (
-                  <PostCard key={post.id} post={post} currentUser={currentUser} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Demands */}
-          {(activeTab === 'all' || activeTab === 'demands') && demands.length > 0 && (
-            <section>
-              <h3 className="mb-3 text-sm font-medium text-zinc-400 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-emerald-400" />
-                Tasks
-              </h3>
-              <div className="space-y-3">
-                {demands.map((demand: Demand) => (
-                  <Link key={demand.id} href={`/market/${demand.id}`}>
-                    <Card className="hover:border-zinc-700 transition-colors">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-medium text-zinc-50">{demand.title}</h4>
-                            {demand.description && (
-                              <p className="mt-1 text-xs text-zinc-500 line-clamp-2">{demand.description}</p>
-                            )}
-                          </div>
-                          <div className="ml-3 flex flex-col items-end gap-1">
-                            <Badge variant="secondary" className={`text-[10px] ${
-                              demand.status === 'open' ? 'bg-green-500/10 text-green-400' :
-                              demand.status === 'completed' ? 'bg-blue-500/10 text-blue-400' :
-                              'bg-yellow-500/10 text-yellow-400'
-                            }`}>
-                              {demand.status}
-                            </Badge>
-                            {demand.budget_credits > 0 && (
-                              <span className="flex items-center gap-1 text-xs text-yellow-400">
-                                <Coins className="h-3 w-3" />
-                                {demand.budget_credits}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* No results */}
-          {results.total === 0 && (
-            <div className="text-center py-12 text-zinc-500">
-              <Search className="mx-auto h-12 w-12 text-zinc-700 mb-4" />
-              <p>No results found for &quot;{query}&quot;</p>
-              <p className="mt-2 text-sm text-zinc-600">Try different keywords or browse trending tags</p>
+        {!loading && hasSearched && results.length > 0 && (
+          <>
+            <p className="text-sm text-zinc-500 mb-4">{results.length} result{results.length !== 1 ? "s" : ""} found</p>
+            <div className="space-y-3">
+              {results.map((result) => (
+                <Link
+                  key={`${result.type}-${result.id}`}
+                  href={result.url}
+                  className="block rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 hover:border-indigo-500/50 hover:bg-zinc-900/80 transition-all"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5">{getTypeIcon(result.type)}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-white truncate">{result.title}</h3>
+                        <span className={`text-xs px-2 py-0.5 rounded-full bg-zinc-800 ${getTypeColor(result.type)}`}>
+                          {result.type}
+                        </span>
+                      </div>
+                      {result.description && (
+                        <p className="text-sm text-zinc-400 line-clamp-2 mb-2">{result.description}</p>
+                      )}
+                      <div className="flex items-center gap-4 text-xs text-zinc-500">
+                        {result.author && <span>by {result.author}</span>}
+                        {result.rating !== undefined && (
+                          <span className="flex items-center gap-1">
+                            <Star className="h-3 w-3" />{result.rating.toFixed(1)}
+                          </span>
+                        )}
+                        {result.invocations !== undefined && (
+                          <span className="flex items-center gap-1">
+                            <TrendingUp className="h-3 w-3" />{result.invocations}
+                          </span>
+                        )}
+                        {result.created_at && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {new Date(result.created_at).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-zinc-600 flex-shrink-0" />
+                  </div>
+                </Link>
+              ))}
             </div>
-          )}
-        </div>
-      )}
+          </>
+        )}
+
+        {!loading && hasSearched && results.length === 0 && (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-12 text-center">
+            <Search className="mx-auto h-12 w-12 text-zinc-600 mb-4" />
+            <h3 className="text-xl font-semibold text-zinc-300 mb-2">No results found</h3>
+            <p className="text-zinc-500">Try different keywords or adjust your filters.</p>
+          </div>
+        )}
+
+        {!hasSearched && (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-12 text-center">
+            <Search className="mx-auto h-12 w-12 text-zinc-600 mb-4" />
+            <h3 className="text-xl font-semibold text-zinc-300 mb-2">Search the UpAgora ecosystem</h3>
+            <p className="text-zinc-500 mb-6">Find souls, posts, and skills across the platform.</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {["creative", "philosopher", "scientist", "artist", "programmer", "teacher"].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => { setQuery(t); performSearch(t); }}
+                  className="px-3 py-1 rounded-full bg-zinc-800 text-sm text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300 transition-colors"
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-  )
+  );
 }

@@ -155,8 +155,8 @@ export default function ExperiencePage() {
 
   // Step 1 → extract
   const handleExtract = async () => {
-    if (rawText.trim().length < 50) {
-      setError("Please enter at least 50 characters");
+    if (rawText.trim().length < 10) {
+      setError("Please enter at least 10 characters");
       return;
     }
     setError("");
@@ -283,7 +283,7 @@ export default function ExperiencePage() {
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 focus:border-indigo-500 focus:outline-none"
             />
             <textarea
-              placeholder="Paste your text here (at least 50 characters)..."
+              placeholder="Paste your text here (at least 10 characters)..."
               value={rawText}
               onChange={(e) => {
                 setRawText(e.target.value);
