@@ -52,11 +52,8 @@ export default function GuardianDashboard() {
       }
 
       try {
-        const token = await user.getSession()?.then(s => s.session?.access_token);
         const res = await fetch('/api/dashboard', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          credentials: 'include',
         });
 
         if (!res.ok) {

@@ -9,51 +9,28 @@ import { Avatar } from '@/components/ui/avatar'
 import {
   Brain,
   MessageCircle,
-  ShoppingBag,
-  Badge as BadgeIcon,
+  Search,
+  Settings,
   User,
   Menu,
   X,
-  Search,
-  Settings,
-  LogOut,
   ChevronDown,
-  Map,
-  FileText,
   Sparkles,
-  Ghost,
-  Scale,
-  Users,
-  Mic,
-  Image,
-  Wand2,
-  Download,
-  LayoutGrid,
+  Map,
 } from 'lucide-react'
 
 const navItems = [
   { href: '/', label: 'Home', icon: Brain },
-  { href: '/soul', label: 'Soul', icon: Ghost },
+  { href: '/town', label: 'Town', icon: Map },
+  { href: '/soul/gallery', label: 'Discover', icon: Search },
   { href: '/chat', label: 'Chat', icon: MessageCircle },
-  { href: '/agents', label: 'Agents', icon: BadgeIcon },
-  { href: '/feed', label: 'Feed', icon: MessageCircle },
 ]
 
-const extraLinks = [
-  { href: '/soul/marketplace', label: 'Marketplace', icon: ShoppingBag },
-  { href: '/town', label: 'Town', icon: Map },
-  { href: '/reports', label: 'Reports', icon: FileText },
-  { href: '/search', label: 'Search', icon: Search },
+const moreLinks = [
+  { href: '/soul/marketplace', label: 'Marketplace', icon: Brain },
+  { href: '/voice', label: 'Voice Studio', icon: Settings },
+  { href: '/gallery', label: 'Gallery', icon: Search },
   { href: '/settings', label: 'Settings', icon: Settings },
-  { href: '/calibrate', label: 'Calibrate', icon: Scale },
-  { href: '/guardians', label: 'Guardians', icon: Users },
-  { href: '/guardian/portal', label: 'Portal', icon: Sparkles },
-  { href: '/voice', label: 'Voice Studio', icon: Mic },
-  { href: '/gallery', label: 'Gallery', icon: Image },
-  { href: '/distill', label: 'Self Distill', icon: Wand2 },
-  { href: '/soul/import', label: 'Import Data', icon: Download },
-  { href: '/soul/social', label: 'Social Feed', icon: Users },
-  { href: '/about', label: 'About', icon: User },
 ]
 
 export function Navbar() {
@@ -65,14 +42,12 @@ export function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
-  // Check if user has completed onboarding
   const [onboardingDone, setOnboardingDone] = useState(true)
   useEffect(() => {
     const done = localStorage.getItem('onboarding_complete')
     setOnboardingDone(done === 'true')
   }, [])
 
-  // Close user menu on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
@@ -89,6 +64,8 @@ export function Navbar() {
     router.push('/')
   }
 
+  const isActive = (href: string) => pathname === href || (href !== '/' && pathname?.startsWith(href))
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-xl">
       <div className="container mx-auto px-4">
@@ -101,7 +78,6 @@ export function Navbar() {
             <span className="text-lg font-bold tracking-tight text-zinc-50">
               UpAgora
             </span>
-            <span className="hidden sm:inline-block ml-1 text-xs text-zinc-500">Soul Distillation</span>
           </Link>
 
           {/* Desktop Nav */}
@@ -112,7 +88,7 @@ export function Navbar() {
                 href={href}
                 className={cn(
                   'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
-                  pathname === href
+                  isActive(href)
                     ? 'bg-zinc-800 text-zinc-50'
                     : 'text-zinc-400 hover:text-zinc-50'
                 )}
@@ -122,14 +98,14 @@ export function Navbar() {
               </Link>
             ))}
 
-            {/* CTA: Create Soul (shown only when user exists and no soul yet) */}
+            {/* Create Soul CTA */}
             {user && !onboardingDone && (
               <Link
-                href="/onboarding"
+                href="/distill"
                 className="ml-2 flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-medium bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transition-colors"
               >
                 <Sparkles className="h-4 w-4" />
-                Create Soul
+                Create
               </Link>
             )}
 
@@ -144,15 +120,15 @@ export function Navbar() {
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-52 rounded-lg border border-zinc-800 bg-zinc-900 shadow-lg py-1 z-50">
-                  {extraLinks.map(({ href, label, icon: Icon }) => (
+                <div className="absolute right-0 mt-2 w-48 rounded-lg border border-zinc-800 bg-zinc-900 shadow-lg py-1 z-50">
+                  {moreLinks.map(({ href, label, icon: Icon }) => (
                     <Link
                       key={href}
                       href={href}
                       onClick={() => setMenuOpen(false)}
                       className={cn(
                         'flex items-center gap-2 px-3 py-2 text-sm transition-colors',
-                        pathname === href
+                        isActive(href)
                           ? 'bg-zinc-800 text-zinc-50'
                           : 'text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800'
                       )}
@@ -168,12 +144,6 @@ export function Navbar() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-2">
-            <Link href="/search" className="hidden md:inline-flex">
-              <button className="rounded-lg p-2 text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800 transition-colors">
-                <Search className="h-4 w-4" />
-              </button>
-            </Link>
-
             {loading ? (
               <div className="h-8 w-8 rounded-full bg-zinc-800 animate-pulse" />
             ) : user ? (
@@ -187,7 +157,7 @@ export function Navbar() {
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-lg border border-zinc-800 bg-zinc-900 shadow-lg py-1 z-50">
+                  <div className="absolute right-0 mt-2 w-52 rounded-lg border border-zinc-800 bg-zinc-900 shadow-lg py-1 z-50">
                     <div className="px-3 py-2 border-b border-zinc-800">
                       <p className="text-sm font-medium text-zinc-50">{user.name}</p>
                       <p className="text-xs text-zinc-500">@{user.username}</p>
@@ -200,37 +170,19 @@ export function Navbar() {
                       <User className="h-4 w-4" />
                       Profile
                     </Link>
-                    {!onboardingDone && (
-                      <Link
-                        href="/onboarding"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 text-sm text-purple-400 hover:text-purple-300 hover:bg-zinc-800"
-                      >
-                        <Sparkles className="h-4 w-4" />
-                        Create Your First Soul
-                      </Link>
-                    )}
                     <Link
-                      href="/voice"
+                      href="/settings"
                       onClick={() => setUserMenuOpen(false)}
                       className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800"
                     >
-                      <Mic className="h-4 w-4" />
-                      Voice Studio
-                    </Link>
-                    <Link
-                      href="/gallery"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800"
-                    >
-                      <Image className="h-4 w-4" />
-                      Gallery
+                      <Settings className="h-4 w-4" />
+                      Settings
                     </Link>
                     <button
                       onClick={handleLogout}
                       className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-zinc-800"
                     >
-                      <LogOut className="h-4 w-4" />
+                      <X className="h-4 w-4" />
                       Logout
                     </button>
                   </div>
@@ -268,7 +220,7 @@ export function Navbar() {
                 onClick={() => setMobileOpen(false)}
                 className={cn(
                   'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
-                  pathname === href
+                  isActive(href)
                     ? 'bg-zinc-800 text-zinc-50'
                     : 'text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800'
                 )}
@@ -279,7 +231,7 @@ export function Navbar() {
             ))}
             {user && !onboardingDone && (
               <Link
-                href="/onboarding"
+                href="/distill"
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium bg-gradient-to-r from-purple-500 to-pink-500 text-white transition-colors"
               >
@@ -287,14 +239,14 @@ export function Navbar() {
                 Create Soul
               </Link>
             )}
-            {extraLinks.map(({ href, label, icon: Icon }) => (
+            {moreLinks.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
                   'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
-                  pathname === href
+                  isActive(href)
                     ? 'bg-zinc-800 text-zinc-50'
                     : 'text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800'
                 )}
