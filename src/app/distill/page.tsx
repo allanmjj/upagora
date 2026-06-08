@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const STEPS = [
   {
@@ -94,17 +94,94 @@ const FEED_LEVELS = [
   },
 ];
 
-export default function SoulDistillWizard() {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
-  const [selectedFeed, setSelectedFeed] = useState<string | null>(null);
+const DISTILL_STORAGE_KEY = "upagora_distill_progress";
 
-  // Form data for soul creation
-  const [soulName, setSoulName] = useState("");
-  const [soulLanguage, setSoulLanguage] = useState("zh");
-  const [soulCategory, setSoulCategory] = useState("historical");
+interface DistillProgress {
+  currentStep: number;
+  selectedMethod: string | null;
+  selectedFeed: string | null;
+  soulName: string;
+  soulLanguage: string;
+  soulCategory: string;
+}
+
+function loadProgress(): DistillProgress | null {
+  try {
+    const raw = localStorage.getItem(DISTILL_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    // Validate
+    if (typeof parsed.currentStep !== "number") return null;
+    if (parsed.currentStep < 0 || parsed.currentStep >= STEPS.length) return null;
+    return parsed as DistillProgress;
+  } catch {
+    return null;
+  }
+}
+
+function saveProgress(progress: DistillProgress) {
+  try {
+    localStorage.setItem(DISTILL_STORAGE_KEY, JSON.stringify(progress));
+  } catch {
+    // silently fail - storage might be full
+  }
+}
+
+function clearProgress() {
+  try {
+    localStorage.removeItem(DISTILL_STORAGE_KEY);
+  } catch {
+    // silently fail
+  }
+}
+
+const defaultProgress: DistillProgress = {
+  currentStep: 0,
+  selectedMethod: null,
+  selectedFeed: null,
+  soulName: "",
+  soulLanguage: "zh",
+  soulCategory: "historical",
+};
+
+export default function SoulDistillWizard() {
+  const [currentStep, setCurrentStep] = useState(defaultProgress.currentStep);
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(defaultProgress.selectedMethod);
+  const [selectedFeed, setSelectedFeed] = useState<string | null>(defaultProgress.selectedFeed);
+  const [soulName, setSoulName] = useState(defaultProgress.soulName);
+  const [soulLanguage, setSoulLanguage] = useState(defaultProgress.soulLanguage);
+  const [soulCategory, setSoulCategory] = useState(defaultProgress.soulCategory);
   const [isDistilling, setIsDistilling] = useState(false);
   const [distillError, setDistillError] = useState<string | null>(null);
+  const [hasRestored, setHasRestored] = useState(false);
+
+  // Restore progress on mount
+  useEffect(() => {
+    const saved = loadProgress();
+    if (saved) {
+      setCurrentStep(saved.currentStep);
+      setSelectedMethod(saved.selectedMethod);
+      setSelectedFeed(saved.selectedFeed);
+      setSoulName(saved.soulName);
+      setSoulLanguage(saved.soulLanguage);
+      setSoulCategory(saved.soulCategory);
+      setHasRestored(true);
+    }
+  }, []);
+
+  // Persist progress on change (debounced via useEffect)
+  useEffect(() => {
+    if (hasRestored) {
+      saveProgress({
+        currentStep,
+        selectedMethod,
+        selectedFeed,
+        soulName,
+        soulLanguage,
+        soulCategory,
+      });
+    }
+  }, [currentStep, selectedMethod, selectedFeed, soulName, soulLanguage, soulCategory, hasRestored]);
 
   async function startDistillation() {
     if (!soulName.trim() || !selectedMethod || !selectedFeed) return;
@@ -123,13 +200,13 @@ export default function SoulDistillWizard() {
           feed_level: selectedFeed,
           language: soulLanguage,
           category: soulCategory,
-          // For auto method, no text needed; for upload/guide, text would be provided
           raw_text: "Starting extraction via " + selectedMethod + " method. Default persona initialization.",
         }),
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "Extraction failed");
-      // Navigate to calibrate after successful extraction
+      // Clear progress on success and navigate
+      clearProgress();
       window.location.href = `/calibrate?subject=${encodeURIComponent(soulName)}`;
     } catch (e: any) {
       setDistillError(e.message || "Extraction failed");
@@ -160,6 +237,14 @@ export default function SoulDistillWizard() {
             but <em className="text-zinc-300">who they were</em>.
             Through 7 dimensions of personality, backed by memory and refined by guardianship.
           </p>
+          {hasRestored && currentStep > 0 && (
+            <button
+              onClick={() => { clearProgress(); window.location.reload(); }}
+              className="mt-4 text-xs text-zinc-600 hover:text-zinc-400 underline"
+            >
+              Start fresh
+            </button>
+          )}
         </div>
       </div>
 

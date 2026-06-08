@@ -51,7 +51,6 @@ const extraLinks = [
   { href: '/voice', label: 'Voice Studio', icon: Mic },
   { href: '/gallery', label: 'Gallery', icon: Image },
   { href: '/distill', label: 'Self Distill', icon: Wand2 },
-  { href: '/soul/gallery', label: 'Soul Gallery', icon: LayoutGrid },
   { href: '/soul/import', label: 'Import Data', icon: Download },
   { href: '/soul/social', label: 'Social Feed', icon: Users },
   { href: '/about', label: 'About', icon: User },

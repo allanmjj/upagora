@@ -3,13 +3,8 @@
 import { useEffect, useState } from "react";
 import { logger } from '@/lib/logger';
 import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+import { useAuth } from '@/hooks/use-auth';
 
 interface Soul {
   id: string;
@@ -43,7 +38,7 @@ const MOOD_EMOJIS: Record<string, string> = {
 
 export default function GuardianDashboard() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const { user, loading: authLoading } = useAuth();
   const [souls, setSouls] = useState<Soul[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,65 +46,26 @@ export default function GuardianDashboard() {
 
   useEffect(() => {
     async function loadData() {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          setLoading(false);
-          return;
-        }
-        setUser(user);
+        const token = await user.getSession()?.then(s => s.session?.access_token);
+        const res = await fetch('/api/dashboard', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
 
-        // Load souls where user is a guardian
-        const { data: guardianSouls } = await supabase
-          .from("soul_guardians")
-          .select("soul_id")
-          .eq("user_id", user.id);
-
-        if (guardianSouls && guardianSouls.length > 0) {
-          const soulIds = guardianSouls.map(g => g.soul_id);
-          
-          // Load soul data
-          const { data: soulData } = await supabase
-            .from("soul_extraction_results")
-            .select("*")
-            .in("id", soulIds);
-
-          // Load town states
-          const townStates = await Promise.all(
-            soulIds.map(async (soulId) => {
-              const { data } = await supabase
-                .from("soul_states")
-                .select("*")
-                .eq("soul_id", soulId)
-                .single();
-              return data;
-            })
-          );
-
-          const combined = (soulData || []).map((soul, idx) => ({
-            ...soul,
-            mood: townStates[idx]?.mood || "calm",
-            energy: townStates[idx]?.energy || 50,
-            social_need: townStates[idx]?.social_need || 50,
-            is_in_town: townStates[idx]?.is_in_town || false,
-            current_region: townStates[idx]?.current_region || "plaza",
-            last_activity: townStates[idx]?.updated_at || "",
-          }));
-
-          setSouls(combined);
+        if (!res.ok) {
+          throw new Error(`API error: ${res.status}`);
         }
 
-        // Load notifications
-        const { data: notifs } = await supabase
-          .from("notifications")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(10);
-
-        if (notifs) {
-          setNotifications(notifs);
-        }
+        const data = await res.json();
+        setSouls(data.souls || []);
+        setNotifications(data.notifications || []);
       } catch (e) {
         logger.error("Failed to load dashboard:", e);
       } finally {
@@ -117,10 +73,12 @@ export default function GuardianDashboard() {
       }
     }
 
-    loadData();
-  }, []);
+    if (!authLoading) {
+      loadData();
+    }
+  }, [user, authLoading]);
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-zinc-950 text-white">
         <div className="flex items-center justify-center min-h-screen">
