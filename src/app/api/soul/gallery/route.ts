@@ -45,6 +45,11 @@ export async function GET(req: NextRequest) {
       persona_preview: soul.persona ? soul.persona.slice(0, 200) + '...' : null,
       created_at: soul.created_at,
       is_preset: false,
+      era: '',
+      profession: '',
+      personality: {},
+      theme_color: '#6366f1',
+      avatar_emoji: soul.avatar || '🧠',
     }));
 
     // 3. Build gallery items from presets
