@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
       is_preset: false,
       era: '',
       profession: '',
-      personality: {},
+      personality: { openness: 0, agreeableness: 0, conscientiousness: 0, neuroticism: 0 },
       theme_color: '#6366f1',
       avatar_emoji: soul.avatar || '🧠',
     }));
