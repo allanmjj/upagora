@@ -517,13 +517,6 @@ export function buildConstraintPromptLang(
   return lines.join('\n');
 }
 
-// Keep backward compatibility - default buildConstraintPrompt uses English
-// For Chinese souls, call buildConstraintPromptLang(c, 'zh')
-
-export function buildConstraintPrompt(c: SoulConstraints): string {
-  return buildConstraintPromptLang(c, 'en');
-}
-
 /**
  * Shakespeare - English playwright, poet (1564-1616)
  * Preset ID: preset-shakespeare
