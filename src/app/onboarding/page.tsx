@@ -1,165 +1,58 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Brain, MessageSquare, Zap, Check, ArrowRight, ArrowLeft, SkipForward, Loader2, User, Settings, Palette } from "lucide-react";
+import { Sparkles, MessageCircle, Zap, Check, ArrowRight, ArrowLeft, UserPlus, Brain, SkipForward, Loader2 } from "lucide-react";
+import { SOUL_PRESETS, type SoulPreset } from '@/lib/soul-presets';
 
-interface OnboardingStep {
-  key: string;
-  title: string;
-  description: string;
-  icon: any;
-}
+/* ─── 3-step onboarding for Soul Town ─── */
 
-const STEPS: OnboardingStep[] = [
-  {
-    key: "welcome",
-    title: "Welcome to UpAgora",
-    description: "Where AI agents and humans connect. Let's set up your experience.",
-    icon: Sparkles,
-  },
-  {
-    key: "interests",
-    title: "What interests you?",
-    description: "Select topics you're passionate about. This helps us recommend relevant souls.",
-    icon: Brain,
-  },
-  {
-    key: "goals",
-    title: "What's your goal?",
-    description: "How do you plan to use UpAgora?",
-    icon: Zap,
-  },
-  {
-    key: "experience",
-    title: "Your experience level",
-    description: "How familiar are you with AI agents?",
-    icon: User,
-  },
-  {
-    key: "preferences",
-    title: "Display preferences",
-    description: "Customize your interface experience.",
-    icon: Palette,
-  },
-];
-
-const INTERESTS = [
-  "Philosophy", "Psychology", "Creative Writing", "Programming",
-  "Science", "Art", "Music", "Business", "Education",
-  "History", "Technology", "Health", "Spirituality", "Politics",
-  "Sports", "Gaming", "Mathematics", "Literature",
-];
-
-const GOALS = [
-  { key: "chat", label: "Chat with AI souls", description: "Have meaningful conversations with distilled personalities" },
-  { key: "distill", label: "Distill souls", description: "Create AI souls from real people and personalities" },
-  { key: "learn", label: "Learn and explore", description: "Discover new perspectives and knowledge" },
-  { key: "create", label: "Build and create", description: "Use AI souls for creative projects" },
-  { key: "community", label: "Join community", description: "Connect with other users and share experiences" },
-];
-
-const EXPERIENCE_LEVELS = [
-  { key: "beginner", label: "Beginner", description: "New to AI agents" },
-  { key: "intermediate", label: "Intermediate", description: "Some experience with AI tools" },
-  { key: "advanced", label: "Advanced", description: "Familiar with AI and agents" },
-  { key: "expert", label: "Expert", description: "Deep experience with AI systems" },
-];
+const TOTAL_STEPS = 3;
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(0);
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [completed, setCompleted] = useState(false);
-  const [formData, setFormData] = useState({
-    interests: [] as string[],
-    goals: [] as string[],
-    experience: "",
-    displayDensity: "comfortable",
-  });
+  const [path, setPath] = useState<"adopt" | "distill" | "">("");
+  const [selectedSoulId, setSelectedSoulId] = useState<string>("");
 
-  // Check if user has already completed onboarding
+  // Already onboarded?
   useEffect(() => {
-    const saved = localStorage.getItem("upagora_onboarding_done");
-    if (saved === "true") {
-      router.push("/");
+    if (localStorage.getItem("upagora_onboarding_done") === "true") {
+      router.push("/dashboard");
     }
   }, [router]);
 
-  const toggleInterest = (interest: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      interests: prev.interests.includes(interest)
-        ? prev.interests.filter((i) => i !== interest)
-        : [...prev.interests, interest],
-    }));
-  };
-
-  const toggleGoal = (goal: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      goals: prev.goals.includes(goal)
-        ? prev.goals.filter((g) => g !== goal)
-        : [...prev.goals, goal],
-    }));
-  };
-
-  const nextStep = useCallback(() => {
-    if (currentStep < STEPS.length - 1) {
-      setCurrentStep((s) => s + 1);
-    } else {
-      finishOnboarding();
-    }
-  }, [currentStep]);
-
-  const prevStep = () => {
-    if (currentStep > 0) setCurrentStep((s) => s - 1);
-  };
-
-  const skipOnboarding = () => {
-    localStorage.setItem("upagora_onboarding_done", "true");
-    router.push("/");
-  };
-
-  const finishOnboarding = async () => {
+  function finish(pathChoice: string, soulId: string) {
     setLoading(true);
-    try {
-      // Save preferences to localStorage (and API if authenticated)
-      localStorage.setItem("upagora_onboarding_done", "true");
-      localStorage.setItem("upagora_onboarding_data", JSON.stringify(formData));
-
-      // Save to API if available
-      try {
-        await fetch("/api/settings/profile", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            interests: formData.interests,
-            goals: formData.goals,
-            experience_level: formData.experience,
-            display_density: formData.displayDensity,
-          }),
-        });
-      } catch (err) {
-        // Non-critical - preferences saved locally
-        console.log("API save skipped:", err);
-      }
-    } finally {
-      setLoading(false);
-      setCompleted(true);
-      setTimeout(() => router.push("/discover"), 500);
+    localStorage.setItem("upagora_onboarding_done", "true");
+    localStorage.setItem("upagora_onboarding_path", pathChoice);
+    if (soulId) {
+      localStorage.setItem("upagora_onboarding_soul", soulId);
     }
-  };
+    setTimeout(() => {
+      setLoading(false);
+      if (soulId) {
+        router.push(`/chat?soul=${soulId}`);
+      } else if (pathChoice === "distill") {
+        router.push("/distill");
+      } else {
+        router.push("/dashboard");
+      }
+    }, 600);
+  }
 
-  const step = STEPS[currentStep];
-  const StepIcon = step.icon;
+  function skip() {
+    localStorage.setItem("upagora_onboarding_done", "true");
+    router.push("/dashboard");
+  }
 
-  if (completed) {
+  /* ─── Loading / Complete ─── */
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-zinc-950">
         <div className="text-center">
-          <Check className="h-16 w-16 text-green-400 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-white mb-2">All Set!</h2>
-          <p className="text-zinc-400">Redirecting you to discover...</p>
+          <Loader2 className="h-12 w-12 text-indigo-400 animate-spin mx-auto mb-4" />
+          <p className="text-zinc-400">Getting things ready...</p>
         </div>
       </div>
     );
@@ -170,240 +63,195 @@ export default function OnboardingPage() {
       {/* Progress bar */}
       <div className="w-full h-1 bg-zinc-800">
         <div
-          className="h-full bg-indigo-500 transition-all duration-300"
-          style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
+          className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500"
+          style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
         />
       </div>
 
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="max-w-2xl w-full">
-          {/* Step indicator */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            {STEPS.map((_, idx) => (
+          {/* Step dots */}
+          <div className="flex items-center justify-center gap-3 mb-10">
+            {[1, 2, 3].map((s) => (
               <div
-                key={idx}
-                className={`h-2 w-2 rounded-full transition-colors ${
-                  idx <= currentStep ? "bg-indigo-500" : "bg-zinc-700"
+                key={s}
+                className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ${
+                  s <= step
+                    ? "bg-indigo-500 scale-110"
+                    : "bg-zinc-700"
                 }`}
               />
             ))}
           </div>
 
-          {/* Step content */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-indigo-500/10 mb-4">
-                <StepIcon className="h-8 w-8 text-indigo-400" />
+          {/* ─── STEP 1: Welcome ─── */}
+          {step === 1 && (
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center h-20 w-20 rounded-2xl bg-indigo-500/10 mb-6">
+                <Sparkles className="h-10 w-10 text-indigo-400" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">{step.title}</h2>
-              <p className="text-zinc-400">{step.description}</p>
+              <h1 className="text-3xl font-bold mb-3">Welcome to Soul Town</h1>
+              <p className="text-lg text-zinc-400 mb-2 max-w-md mx-auto">
+                A place where distilled AI souls live, grow, and connect with you.
+              </p>
+              <p className="text-sm text-zinc-500 mb-8 max-w-md mx-auto">
+                Each soul is unique — shaped by real people, ideas, and conversations.
+                They have personalities, beliefs, and boundaries.
+              </p>
+
+              <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto mb-10">
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+                  <MessageCircle className="h-6 w-6 text-green-400 mx-auto mb-2" />
+                  <div className="text-xs text-zinc-400">Chat with souls</div>
+                </div>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+                  <Brain className="h-6 w-6 text-amber-400 mx-auto mb-2" />
+                  <div className="text-xs text-zinc-400">Distill your own</div>
+                </div>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+                  <Zap className="h-6 w-6 text-purple-400 mx-auto mb-2" />
+                  <div className="text-xs text-zinc-400">Watch them grow</div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setStep(2)}
+                className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-white font-medium transition-colors inline-flex items-center gap-2"
+              >
+                Let's Go <ArrowRight className="h-4 w-4" />
+              </button>
             </div>
+          )}
 
-            {/* Welcome step */}
-            {step.key === "welcome" && (
-              <div className="space-y-4">
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
-                  <h3 className="text-lg font-semibold text-white mb-3">What is UpAgora?</h3>
-                  <ul className="space-y-3 text-sm text-zinc-400">
-                    <li className="flex items-start gap-3">
-                      <Brain className="h-4 w-4 text-indigo-400 mt-0.5 flex-shrink-0" />
-                      <span><strong className="text-zinc-300">Soul Distillation</strong> — Create AI personalities from real people, books, or conversations</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <MessageSquare className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                      <span><strong className="text-zinc-300">Meaningful Chat</strong> — Have deep conversations with distilled souls</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <Zap className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                      <span><strong className="text-zinc-300">Community</strong> — Share, discover, and connect with other users</span>
-                    </li>
-                  </ul>
-                </div>
+          {/* ─── STEP 2: Choose Path ─── */}
+          {step === 2 && (
+            <div>
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold mb-2">How do you want to start?</h2>
+                <p className="text-zinc-400">Pick a path — you can always explore the other later.</p>
               </div>
-            )}
 
-            {/* Interests step */}
-            {step.key === "interests" && (
-              <div>
-                <div className="flex flex-wrap gap-2">
-                  {INTERESTS.map((interest) => {
-                    const selected = formData.interests.includes(interest);
-                    return (
-                      <button
-                        key={interest}
-                        onClick={() => toggleInterest(interest)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                          selected
-                            ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
-                            : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-                        }`}
-                      >
-                        {selected && <Check className="h-3 w-3 inline mr-1.5" />}
-                        {interest}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="text-xs text-zinc-500 mt-3 text-center">
-                  {formData.interests.length} selected
-                </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Adopt a soul */}
+                <button
+                  onClick={() => { setPath("adopt"); setStep(3); }}
+                  className="group rounded-2xl border-2 border-zinc-800 hover:border-indigo-500 bg-zinc-900/50 p-6 text-left transition-all hover:shadow-lg hover:shadow-indigo-500/10"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 group-hover:bg-indigo-500/20 transition-colors">
+                      <UserPlus className="h-5 w-5 text-indigo-400" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-white">Adopt a Soul</div>
+                      <div className="text-xs text-zinc-500">Start chatting right away</div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-zinc-400">
+                    Choose from featured souls — historical figures, the founder, or original creations.
+                    Chat immediately, no setup needed.
+                  </p>
+                </button>
+
+                {/* Distill your own */}
+                <button
+                  onClick={() => { setPath("distill"); finish("distill", ""); }}
+                  className="group rounded-2xl border-2 border-zinc-800 hover:border-purple-500 bg-zinc-900/50 p-6 text-left transition-all hover:shadow-lg hover:shadow-purple-500/10"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
+                      <Brain className="h-5 w-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-white">Distill Your Soul</div>
+                      <div className="text-xs text-zinc-500">Create something unique</div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-zinc-400">
+                    Capture the essence of yourself, a person, or a character.
+                    Answer questions, set boundaries, and watch your soul come alive.
+                  </p>
+                </button>
               </div>
-            )}
 
-            {/* Goals step */}
-            {step.key === "goals" && (
-              <div className="space-y-3">
-                {GOALS.map((goal) => {
-                  const selected = formData.goals.includes(goal.key);
+              <div className="mt-6 flex justify-start">
+                <button
+                  onClick={() => setStep(1)}
+                  className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors flex items-center gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Back
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ─── STEP 3: Pick a Soul ─── */}
+          {step === 3 && path === "adopt" && (
+            <div>
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold mb-2">Choose a Soul to Chat With</h2>
+                <p className="text-zinc-400">Each one has a unique personality and story.</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                {SOUL_PRESETS.map((soul) => {
+                  const isSelected = selectedSoulId === soul.id;
                   return (
                     <button
-                      key={goal.key}
-                      onClick={() => toggleGoal(goal.key)}
-                      className={`w-full text-left rounded-xl border p-4 transition-all ${
-                        selected
-                          ? "border-indigo-500 bg-indigo-500/10"
-                          : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"
+                      key={soul.id}
+                      onClick={() => setSelectedSoulId(soul.id)}
+                      className={`rounded-2xl border-2 p-5 text-left transition-all ${
+                        isSelected
+                          ? "border-indigo-500 bg-indigo-500/10 shadow-lg shadow-indigo-500/10"
+                          : "border-zinc-800 bg-zinc-900/50 hover:border-zinc-600"
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-semibold text-white">{goal.label}</div>
-                          <div className="text-sm text-zinc-400">{goal.description}</div>
-                        </div>
-                        <div
-                          className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
-                            selected ? "border-indigo-500 bg-indigo-500" : "border-zinc-600"
-                          }`}
-                        >
-                          {selected && <Check className="h-3 w-3 text-white" />}
+                      <div className="flex items-start gap-3">
+                        <span className="text-3xl">{soul.avatar}</span>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-semibold text-white">{soul.name_native}</div>
+                              <div className="text-xs text-zinc-500">{soul.name} · {soul.era}</div>
+                            </div>
+                            {isSelected && (
+                              <div className="h-5 w-5 rounded-full bg-indigo-500 flex items-center justify-center">
+                                <Check className="h-3 w-3 text-white" />
+                              </div>
+                            )}
+                          </div>
+                          <p className="mt-2 text-xs text-zinc-400 line-clamp-2">{soul.profession}</p>
                         </div>
                       </div>
                     </button>
                   );
                 })}
               </div>
-            )}
 
-            {/* Experience step */}
-            {step.key === "experience" && (
-              <div className="space-y-3">
-                {EXPERIENCE_LEVELS.map((level) => {
-                  const selected = formData.experience === level.key;
-                  return (
-                    <button
-                      key={level.key}
-                      onClick={() =>
-                        setFormData((prev) => ({ ...prev, experience: level.key }))
-                      }
-                      className={`w-full text-left rounded-xl border p-4 transition-all ${
-                        selected
-                          ? "border-indigo-500 bg-indigo-500/10"
-                          : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-semibold text-white">{level.label}</div>
-                          <div className="text-sm text-zinc-400">{level.description}</div>
-                        </div>
-                        <div
-                          className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
-                            selected ? "border-indigo-500 bg-indigo-500" : "border-zinc-600"
-                          }`}
-                        >
-                          {selected && <Check className="h-3 w-3 text-white" />}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setStep(2)}
+                  className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors flex items-center gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Back
+                </button>
+                <button
+                  onClick={() => finish(path, selectedSoulId)}
+                  disabled={!selectedSoulId}
+                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-700 disabled:text-zinc-500 rounded-xl text-white font-medium transition-colors inline-flex items-center gap-2"
+                >
+                  Start Chatting <ArrowRight className="h-4 w-4" />
+                </button>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Preferences step */}
-            {step.key === "preferences" && (
-              <div className="space-y-6">
-                <div>
-                  <label className="text-sm font-medium text-zinc-300 block mb-3">
-                    Display density
-                  </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { key: "compact", label: "Compact" },
-                      { key: "comfortable", label: "Comfortable" },
-                      { key: "spacious", label: "Spacious" },
-                    ].map((opt) => (
-                      <button
-                        key={opt.key}
-                        onClick={() =>
-                          setFormData((prev) => ({ ...prev, displayDensity: opt.key }))
-                        }
-                        className={`rounded-xl border p-4 text-center transition-all ${
-                          formData.displayDensity === opt.key
-                            ? "border-indigo-500 bg-indigo-500/10"
-                            : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"
-                        }`}
-                      >
-                        <div className="font-medium text-white">{opt.label}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Summary */}
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-                  <h4 className="text-sm font-medium text-zinc-300 mb-2">Your setup summary</h4>
-                  <div className="space-y-2 text-sm text-zinc-400">
-                    {formData.interests.length > 0 && (
-                      <p>Interests: {formData.interests.join(", ")}</p>
-                    )}
-                    {formData.goals.length > 0 && (
-                      <p>Goals: {GOALS.filter((g) => formData.goals.includes(g.key)).map((g) => g.label).join(", ")}</p>
-                    )}
-                    {formData.experience && (
-                      <p>Experience: {EXPERIENCE_LEVELS.find((l) => l.key === formData.experience)?.label}</p>
-                    )}
-                    <p>Display: {formData.displayDensity}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Navigation */}
-          <div className="flex items-center justify-between mt-6">
+          {/* Skip */}
+          <div className="text-center mt-8">
             <button
-              onClick={prevStep}
-              disabled={currentStep === 0}
-              className="px-4 py-2 rounded-lg text-sm text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              onClick={skip}
+              className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors inline-flex items-center gap-1"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </button>
-
-            <button
-              onClick={skipOnboarding}
-              className="px-4 py-2 rounded-lg text-sm text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-2"
-            >
-              <SkipForward className="h-4 w-4" />
-              Skip
-            </button>
-
-            <button
-              onClick={nextStep}
-              disabled={loading || (step.key === "experience" && !formData.experience)}
-              className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-700 disabled:text-zinc-500 rounded-lg text-white font-medium transition-colors flex items-center gap-2"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : currentStep === STEPS.length - 1 ? (
-                "Finish"
-              ) : (
-                <>
-                  Next
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
+              <SkipForward className="h-3 w-3" /> Skip onboarding
             </button>
           </div>
         </div>

@@ -5,6 +5,9 @@ import { logger } from '@/lib/logger';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from '@/hooks/use-auth';
+import { calculateGrowth, getAchievedMilestones, getNextMilestones, SOUL_LEVELS, SOUL_MILESTONES } from '@/lib/soul-growth';
+import { SOUL_PRESETS, type SoulPreset } from '@/lib/soul-presets';
+import { ArrowRight, Sparkles, MessageCircle, Trophy } from 'lucide-react';
 
 interface Soul {
   id: string;
@@ -19,6 +22,11 @@ interface Soul {
   is_in_town: boolean;
   current_region: string;
   last_activity: string;
+  total_events_count?: number;
+  conversations_count?: number;
+  discoveries_count?: number;
+  calibration_count?: number;
+  days_active?: number;
 }
 
 interface Notification {
@@ -35,6 +43,103 @@ interface Notification {
 const MOOD_EMOJIS: Record<string, string> = {
   happy: "😊", calm: "😌", melancholic: "😔", anxious: "😟", inspired: "✨",
 };
+
+/* ─── Soul Growth Badge ─── */
+function SoulGrowthBadge({ soul }: { soul: Soul }) {
+  const growth = calculateGrowth({
+    totalEvents: soul.total_events_count || soul.days_active || 1,
+    conversations: soul.conversations_count || 0,
+    discoveries: soul.discoveries_count || 0,
+    giftsReceived: 0,
+    giftsGiven: 0,
+    calibrations: soul.calibration_count || 0,
+    daysActive: soul.days_active || 1,
+  });
+
+  const levelInfo = growth.levelInfo;
+  const nextMilestones = getNextMilestones(growth, {
+    conversations: soul.conversations_count || 0,
+  });
+
+  return (
+    <div className="mt-3 space-y-2">
+      {/* Level badge */}
+      <div className="flex items-center gap-2">
+        <span className="text-lg">{levelInfo.particle}</span>
+        <span className="text-xs font-medium" style={{ color: levelInfo.color }}>
+          L{growth.level} {levelInfo.title}
+        </span>
+        {!growth.isMaxLevel && (
+          <div className="flex-1">
+            <div className="h-1.5 w-full rounded-full bg-zinc-800">
+              <div
+                className="h-1.5 rounded-full transition-all"
+                style={{
+                  width: `${growth.progressPercent}%`,
+                  backgroundColor: levelInfo.color,
+                }}
+              />
+            </div>
+            <div className="mt-0.5 text-[10px] text-zinc-500">
+              {growth.xpToNext} XP to L{growth.level + 1}
+            </div>
+          </div>
+        )}
+        {growth.isMaxLevel && (
+          <span className="text-[10px] text-amber-400">MAX</span>
+        )}
+      </div>
+
+      {/* Unlocked traits */}
+      {growth.unlockedTraits.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {growth.unlockedTraits.map((trait) => (
+            <span
+              key={trait.id}
+              className="rounded px-1.5 py-0.5 text-[10px] bg-zinc-800 text-zinc-400"
+              title={trait.description}
+            >
+              {trait.icon} {trait.name}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Next milestone */}
+      {nextMilestones.length > 0 && (
+        <div className="flex items-center gap-1.5 rounded bg-zinc-800/50 px-2 py-1">
+          <Trophy className="h-3 w-3 text-amber-400" />
+          <span className="text-[10px] text-zinc-400">
+            Next: {nextMilestones[0].icon} {nextMilestones[0].title}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Preset Soul Card ─── */
+function PresetSoulCard({ soul }: { soul: SoulPreset }) {
+  return (
+    <Link
+      href="/soul/gallery"
+      className="group relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 transition-all duration-200 hover:border-zinc-600 hover:shadow-lg hover:scale-[1.02]"
+    >
+      <div className="absolute inset-0 bg-gradient-to-br" style={{
+        background: `linear-gradient(135deg, ${soul.color}20, ${soul.color}05)`
+      }} />
+      <div className="relative">
+        <div className="text-3xl mb-2">{soul.avatar}</div>
+        <h3 className="font-semibold text-zinc-100 text-sm">{soul.name_native}</h3>
+        <p className="text-xs text-zinc-500">{soul.name} · {soul.category}</p>
+        <div className="mt-2 flex items-center gap-1 text-xs text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">
+          <MessageCircle className="h-3 w-3" />
+          Chat now →
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default function GuardianDashboard() {
   const router = useRouter();
@@ -102,6 +207,9 @@ export default function GuardianDashboard() {
   }
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  // Featured presets to show in empty state
+  const featuredPresets = SOUL_PRESETS;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -212,13 +320,30 @@ export default function GuardianDashboard() {
         {souls.length === 0 ? (
           <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-8 text-center">
             <div className="mb-4 text-4xl">👻</div>
-            <p className="text-zinc-400">You haven&apos;t been assigned to any souls yet.</p>
-            <div className="mt-4 flex justify-center gap-3">
-              <Link href="/soul" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm hover:bg-indigo-500">
-                Create Your First Soul
+            <p className="text-zinc-400 mb-6">No souls yet — start by experiencing one, then create your own.</p>
+            
+            {/* Preset souls to try first */}
+            <div className="mb-6">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Sparkles className="h-4 w-4 text-amber-400" />
+                <h3 className="text-sm font-semibold text-zinc-300">Try a Soul First</h3>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 max-w-4xl mx-auto mb-4">
+                {featuredPresets.map((soul) => (
+                  <PresetSoulCard key={soul.id} soul={soul} />
+                ))}
+              </div>
+              <p className="text-xs text-zinc-500 mb-4">Chat with featured souls — no setup needed</p>
+            </div>
+
+            <div className="flex justify-center gap-3 border-t border-zinc-800 pt-6">
+              <Link href="/soul/gallery" className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm hover:bg-indigo-500">
+                <MessageCircle className="h-4 w-4" />
+                Chat with a Soul
               </Link>
-              <Link href="/discovery" className="rounded-lg border border-zinc-700 px-4 py-2 text-sm hover:bg-zinc-800">
-                Discover Souls
+              <Link href="/distill" className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm hover:bg-zinc-800">
+                <Sparkles className="h-4 w-4" />
+                Create Your Soul
               </Link>
             </div>
           </div>
@@ -275,6 +400,9 @@ export default function GuardianDashboard() {
                     </div>
                   </div>
                 </div>
+
+                {/* Growth badge */}
+                <SoulGrowthBadge soul={soul} />
 
                 <div className="mt-4 flex items-center justify-between text-xs text-zinc-400">
                   <span>📍 {soul.current_region}</span>
