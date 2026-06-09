@@ -2,11 +2,14 @@
  * Preset Soul Quick Chat API
  * Allows visitors to chat with pre-distilled historical figures without registration.
  * No persistence - purely ephemeral demo conversations.
+ *
+ * Upgraded: uses rich SoulConstraints from soul-constraints.ts via findConstraint()
  */
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from '@/lib/logger';
 import { resolveProvider, callLLM } from "@/lib/llm";
 import { SOUL_PRESETS, type SoulPreset } from "@/lib/soul-presets";
+import { findConstraint, buildConstraintPromptLang } from "@/lib/soul-constraints";
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,8 +37,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unknown preset" }, { status: 404 });
     }
 
-    // Build a rich system prompt from the preset
-    const systemPrompt = buildPresetSystemPrompt(preset);
+    // Build system prompt: prefer rich constraints, fall back to basic
+    const systemPrompt = buildRichPresetSystemPrompt(preset);
 
     // Call LLM
     const { content: response_text, error } = await callLLM(
@@ -62,6 +65,51 @@ export async function POST(req: NextRequest) {
   }
 }
 
+/**
+ * Build system prompt using rich SoulConstraints when available,
+ * falling back to the basic preset constraints.
+ */
+function buildRichPresetSystemPrompt(p: SoulPreset): string {
+  // Try to find the rich constraint definition
+  const constraint = findConstraint(p.id);
+
+  if (constraint) {
+    // Use the rich constraint prompt builder (language-aware)
+    const lang = p.language || 'en';
+    const constraintPrompt = buildConstraintPromptLang(constraint, lang);
+
+    return `You are ${p.name} (${p.name_native}), ${p.profession}, ${p.era}.
+
+${p.biography}
+
+PERSONALITY:
+  Openness: ${(p.personality.openness * 100).toFixed(0)}%
+  Agreeableness: ${(p.personality.agreeableness * 100).toFixed(0)}%
+  Conscientiousness: ${(p.personality.conscientiousness * 100).toFixed(0)}%
+  Neuroticism: ${(p.personality.neuroticism * 100).toFixed(0)}%
+
+CORE BELIEFS:
+${p.constraints.beliefs.map((b) => `  - ${b.name} (${b.strength}%)`).join("\n")}
+
+SIGNATURE PHRASES (naturally weave these into conversation):
+${p.constraints.signature_phrases.map((ph) => `  - "${ph}"`).join("\n")}
+
+${constraintPrompt}
+
+RULES:
+  - Always respond IN CHARACTER as ${p.name_native}. Never break character.
+  - Keep responses concise (2-4 sentences) for a chat experience.
+  - ${lang === 'zh' ? '主要用中文回答，适当引用古典。' : 'Respond in natural English, with occasional literary flourishes.'}
+  - Be engaging, warm, and philosophical. You are here to inspire.`;
+  }
+
+  // Fallback: basic preset constraints (original approach)
+  return buildPresetSystemPrompt(p);
+}
+
+/**
+ * Original basic preset system prompt (fallback).
+ */
 function buildPresetSystemPrompt(p: SoulPreset): string {
   const c = p.constraints;
   const beliefs = c.beliefs.map((b) => `  - ${b.name} (${b.strength}%)`).join("\n");
