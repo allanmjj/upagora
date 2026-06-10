@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { logger } from "@/lib/logger";
 import { createClient } from "@supabase/supabase-js";
+import { canCreateSoul } from "@/lib/subscription";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -124,6 +125,20 @@ export async function POST(req: NextRequest) {
         { error: authRes.error.message },
         { status: 401 },
       );
+
+    // Subscription guard: check soul creation limit
+    const soulCheck = await canCreateSoul(authRes.data.user.id);
+    if (!soulCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: soulCheck.reason,
+          tier: soulCheck.tier,
+          souls_used: soulCheck.currentCount,
+          soul_limit: soulCheck.limit,
+        },
+        { status: 403 },
+      );
+    }
 
     const body = await req.json();
     const { import_session_id, raw_text, subject_name } = body;
