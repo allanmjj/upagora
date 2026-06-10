@@ -31,10 +31,10 @@ export async function GET(
         soul_id = invite.soul_id;
         inviteType = invite.type || 'chat';
 
-        // Track invite view
+        // Track invite view (update last_viewed_at; views increment handled via DB trigger)
         await supabase
           .from('soul_invites')
-          .update({ views: supabase.raw('views + 1'), last_viewed_at: new Date().toISOString() })
+          .update({ last_viewed_at: new Date().toISOString() })
           .eq('code', code);
       }
     } catch (dbErr) {

@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     // 1. Get persona
     const { data: personaData } = await supabase
       .from("persona_generated_files")
-      .select("file_content, subject_name")
+      .select("id, file_content, subject_name")
       .order("created_at", { ascending: false })
       .limit(1);
 

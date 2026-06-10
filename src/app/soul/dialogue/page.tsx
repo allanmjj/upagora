@@ -140,7 +140,7 @@ export default function SoulDialoguePage() {
       }
 
       const data = await res.json();
-      const newTurns = (data.turns || []).map((t) => ({
+      const newTurns = (data.turns || []).map((t: any) => ({
         speaker: t.speaker || t.soul_id,
         speaker_name: t.speaker_name || (t.speaker === soulA ? soulAData?.name : soulBData?.name) || "Unknown",
         content: t.content || "",
@@ -293,9 +293,9 @@ export default function SoulDialoguePage() {
             <button
               onClick={session ? handleContinue : handleStartDialogue}
               disabled={
-                generating ||
+                !!(generating ||
                 (!session && (!soulA || !soulB)) ||
-                (session && !topic.trim())
+                (session && !topic.trim()))
               }
               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-700 disabled:text-zinc-500 rounded-lg text-white font-medium transition-colors flex items-center gap-2"
             >
