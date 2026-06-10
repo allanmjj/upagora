@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { logger } from '@/lib/logger';
 import Image from 'next/image';
 import { createClient } from "@supabase/supabase-js";
+import { ShareButton } from "@/components/features/ShareButton";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

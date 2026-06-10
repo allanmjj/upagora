@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSoulVoice, detectEmotion, EMOTION_META, type SoulEmotion } from "@/components/soul/SoulVoice";
 import { Volume2, VolumeX, Loader2 } from "lucide-react";
+import { ShareButton } from "@/components/features/ShareButton";
 
 export default function SoulChatPage() {
   const [souls, setSouls] = useState<any[]>([]);

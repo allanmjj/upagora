@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import { trimConversationContext } from '@/lib/conversation-context';
 import { createClient } from "@supabase/supabase-js";
 import { MA_JUNJIE_CONSTRAINTS, buildConstraintPrompt } from "@/lib/soul-constraints"
+import { checkAndRecordMilestones } from "@/lib/milestone-check-server";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -134,6 +135,30 @@ export async function POST(req: NextRequest) {
       ])
       .select()
       .limit(50);
+
+    // 10. Check for new milestones (non-blocking)
+    try {
+      // Count conversations before this turn
+      const { count: totalConvs } = await supabase
+        .from("conversation_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId);
+      const convPerMsg = totalConvs ? Math.floor(totalConvs / 2) : 0; // pairs of user+assistant
+      const prevConversations = convPerMsg - 1; // before this turn
+
+      const soulId = personaData?.[0]?.id || body.soul_id;
+      if (soulId) {
+        const milestoneResult = await checkAndRecordMilestones({
+          soulId,
+          userId,
+          prevConversations: Math.max(0, prevConversations),
+          activity: "chat",
+        });
+      }
+    } catch (milestoneErr) {
+      // Non-blocking — milestone check failure should not break chat
+      logger.warn(`soul.chat milestone check failed: ${milestoneErr}`);
+    }
 
     return NextResponse.json({ response, subject_name: subjectName });
   } catch (err) {

@@ -12,6 +12,8 @@ import { SoulMemoryDisplay } from '@/components/soul/SoulMemoryDisplay';
 import { SoulEvolutionTimeline } from '@/components/soul/SoulEvolutionTimeline';
 import { SoulConstraintCard } from '@/components/soul/SoulConstraintCard';
 import { SoulSchedulePreview } from '@/components/soul/SoulSchedulePreview';
+import { ShareSoulModal } from '@/components/soul/ShareSoulModal';
+import { Share2 } from 'lucide-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,6 +41,22 @@ export default function SoulDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'chat' | 'constraints' | 'evolution' | 'schedule'>('chat');
   const { user } = useAuth();
+
+  // Share modal
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [cardData, setCardData] = useState<any>(null);
+
+  async function handleShare() {
+    if (!soul) return;
+    setShowShareModal(true);
+    try {
+      const res = await fetch(`/api/soul/${soul.id}/card-data`);
+      const data = await res.json();
+      if (data.subject_name) setCardData(data);
+    } catch (err) {
+      console.error('Failed to load card data:', err);
+    }
+  }
 
   useEffect(() => {
     async function fetchSoul() {
@@ -149,6 +167,13 @@ export default function SoulDetailPage() {
               >
                 🧬 Soul Timeline
               </a>
+              <button
+                onClick={handleShare}
+                className="px-5 py-2.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 font-medium hover:bg-indigo-500/20 transition-all text-sm inline-flex items-center gap-2"
+              >
+                <Share2 className="h-4 w-4" />
+                Share
+              </button>
             </div>
           </div>
         </div>
@@ -314,6 +339,24 @@ export default function SoulDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Share Modal */}
+      {soul && (
+        <ShareSoulModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          sessionId={soul.id}
+          sessionSlug=""
+          subjectName={soul.name_native || soul.name}
+          soulData={cardData || {
+            subject_name: soul.name_native || soul.name,
+            initials: (soul.name_native || soul.name || '?').charAt(0),
+            dimensions: {},
+            dimension_labels: {},
+            excerpt: soul.description || '',
+          }}
+        />
+      )}
     </div>
   );
 }

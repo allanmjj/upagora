@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { calculateGrowth, getAchievedMilestones, getNextMilestones, SOUL_LEVELS, SOUL_MILESTONES } from '@/lib/soul-growth';
 import { SOUL_PRESETS, type SoulPreset } from '@/lib/soul-presets';
 import { ArrowRight, Sparkles, MessageCircle, Trophy } from 'lucide-react';
+import { ShareButton } from '@/components/features/ShareButton';
 
 interface Soul {
   id: string;
