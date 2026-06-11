@@ -13,6 +13,7 @@ import { SoulEvolutionTimeline } from '@/components/soul/SoulEvolutionTimeline';
 import { SoulConstraintCard } from '@/components/soul/SoulConstraintCard';
 import { SoulSchedulePreview } from '@/components/soul/SoulSchedulePreview';
 import { ShareSoulModal } from '@/components/soul/ShareSoulModal';
+import { SoulAgentCardDisplay } from '@/components/soul/SoulAgentCardDisplay';
 import { Share2 } from 'lucide-react';
 
 const supabase = createClient(
@@ -39,7 +40,7 @@ export default function SoulDetailPage() {
   const router = useRouter();
   const [soul, setSoul] = useState<SoulData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'chat' | 'constraints' | 'evolution' | 'schedule'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'constraints' | 'evolution' | 'schedule' | 'agent_card'>('chat');
   const { user } = useAuth();
 
   // Share modal
@@ -223,6 +224,16 @@ export default function SoulDetailPage() {
             >
               📅 Schedule
             </button>
+            <button
+              onClick={() => setActiveTab('agent_card')}
+              className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'agent_card'
+                  ? 'border-violet-500 text-violet-400'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              🔗 Agent Card
+            </button>
           </div>
         </div>
       </div>
@@ -336,6 +347,12 @@ export default function SoulDetailPage() {
         {activeTab === 'schedule' && (
           <div className="flex-1">
             <SoulSchedulePreview soulId={soul.id} soulName={soul.name_native || soul.name} />
+          </div>
+        )}
+
+        {activeTab === 'agent_card' && (
+          <div className="flex-1">
+            <SoulAgentCardDisplay soulId={soul.id} />
           </div>
         )}
       </div>
