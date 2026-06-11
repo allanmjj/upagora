@@ -224,10 +224,10 @@ export default function WalletPage() {
             <div className="font-medium text-white text-sm">Badges</div>
             <div className="text-xs text-zinc-500">View achievements</div>
           </Link>
-          <Link href="/soul/economy" className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 hover:border-amber-500/50 transition-colors">
+          <Link href="/pricing" className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 hover:border-amber-500/50 transition-colors">
             <Award className="h-5 w-5 text-purple-400 mb-2" />
-            <div className="font-medium text-white text-sm">Economy</div>
-            <div className="text-xs text-zinc-500">Soul economy</div>
+            <div className="font-medium text-white text-sm">Pricing</div>
+            <div className="text-xs text-zinc-500">Upgrade plan</div>
           </Link>
         </div>
 

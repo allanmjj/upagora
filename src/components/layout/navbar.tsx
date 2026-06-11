@@ -30,6 +30,7 @@ const moreLinks = [
   { href: '/soul/marketplace', label: 'Marketplace', icon: Brain },
   { href: '/voice', label: 'Voice Studio', icon: Settings },
   { href: '/gallery', label: 'Gallery', icon: Search },
+  { href: '/pricing', label: 'Pricing', icon: Settings },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
