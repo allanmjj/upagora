@@ -14,6 +14,7 @@ export const TIERS = {
     soul_limit: 3,
     amount_cents: 0,
     features: ['3 souls max', 'Basic distillation', 'Chat with your souls'],
+    stripe_price_id: undefined,
   },
   creator: {
     name: 'Creator',
@@ -127,7 +128,6 @@ export async function getSubscription(userId: string) {
     return {
       tier: 'free' as Tier,
       status: 'active' as const,
-      amount_cents: 0,
       current_period_end: null,
       ...TIERS.free,
     };
@@ -181,7 +181,7 @@ export async function upsertSubscription(
     .eq('user_id', userId)
     .single();
 
-  const fromTier = existing?.tier || 'free';
+  const fromTier = (existing?.tier as Tier) || 'free';
   const toTier = data.tier;
 
   // Determine event type
@@ -202,7 +202,7 @@ export async function upsertSubscription(
         ...data,
         updated_at: new Date().toISOString(),
       },
-      { on_conflict: 'user_id' },
+      { onConflict: 'user_id' },
     );
 
   if (eventType !== 'subscription_created' || !existing) {

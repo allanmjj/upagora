@@ -18,7 +18,7 @@ interface CurrentSub {
 }
 
 export default function PricingPage() {
-  const { session, isLoading: authLoading } = useAuth();
+  const { user: session, loading: authLoading } = useAuth();
   const router = useRouter();
   const [current, setCurrent] = useState<CurrentSub | null>(null);
   const [loading, setLoading] = useState(false);
@@ -45,7 +45,6 @@ export default function PricingPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ tier }),
       });
@@ -163,7 +162,7 @@ export default function PricingPage() {
                   {loading && tier === (current?.tier === 'free' ? 'creator' : tier) ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    tier === 'free' ? 'Upgrade to' : 'Switch to'
+                    'Switch to'
                   )}
                   {tier === 'creator' ? 'Creator' : 'Explorer'}
                   <ArrowRight className="w-4 h-4" />

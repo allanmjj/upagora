@@ -2,10 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { upsertSubscription, logSubscriptionEvent, Tier } from '@/lib/subscription';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-12-18.acacia',
-});
-
 export const runtime = 'edge';
 
 /**
@@ -13,6 +9,12 @@ export const runtime = 'edge';
  * Handles Stripe events: subscription created, updated, cancelled, payment succeeded/failed.
  */
 export async function POST(request: NextRequest) {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json({ error: 'Stripe not configured' }, { status: 503 });
+  }
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2026-05-27.dahlia',
+  });
   const body = await request.text();
   const sig = request.headers.get('stripe-signature')!;
 
@@ -40,7 +42,7 @@ export async function POST(request: NextRequest) {
           : session.subscription?.id;
 
         if (userId && subscriptionId) {
-          const sub = await stripe.subscriptions.retrieve(subscriptionId);
+          const sub = (await stripe.subscriptions.retrieve(subscriptionId)) as any;
           const periodStart = sub.current_period_start
             ? new Date(sub.current_period_start * 1000).toISOString()
             : undefined;
@@ -66,7 +68,7 @@ export async function POST(request: NextRequest) {
       }
 
       case 'customer.subscription.updated': {
-        const sub = event.data.object as Stripe.Subscription;
+        const sub = event.data.object as any;
         const userId = sub.metadata?.user_id || (await getUserIdFromCustomer(sub.customer as string));
         if (!userId) break;
 
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest) {
       }
 
       case 'customer.subscription.deleted': {
-        const sub = event.data.object as Stripe.Subscription;
+        const sub = event.data.object as any;
         const userId = sub.metadata?.user_id || (await getUserIdFromCustomer(sub.customer as string));
         if (!userId) break;
 
