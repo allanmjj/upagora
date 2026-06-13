@@ -20,6 +20,23 @@ interface Notification {
   created_at: string;
 }
 
+// Icon mapping for notification types
+function getNotificationIcon(type: string): string {
+  switch (type) {
+    case "daily_report": return "📋";
+    case "soul_event": return "🌟";
+    case "encounter": return "💬";
+    case "external_soul": return "👻";
+    case "soul_proactive": return "💌";
+    default: return "🔔";
+  }
+}
+
+// Special styling for proactive messages
+function isProactive(type: string): boolean {
+  return type === "soul_proactive";
+}
+
 export default function NotificationsPage() {
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -56,8 +73,8 @@ export default function NotificationsPage() {
       .from("notifications")
       .update({ is_read: true })
       .eq("id", id);
-    
-    setNotifications(prev => 
+
+    setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, is_read: true } : n)
     );
     setUnreadCount(prev => Math.max(0, prev - 1));
@@ -68,13 +85,16 @@ export default function NotificationsPage() {
       .from("notifications")
       .update({ is_read: true })
       .in("id", notifications.filter(n => !n.is_read).map(n => n.id));
-    
+
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     setUnreadCount(0);
   };
 
   const handleMessage = (type: string, soul_id?: string) => {
-    if (type === "daily_report" && soul_id) {
+    if (type === "soul_proactive" && soul_id) {
+      // Open chat with the soul that reached out
+      router.push(`/chat?soul=${soul_id}`);
+    } else if (type === "daily_report" && soul_id) {
       router.push(`/town/report/${soul_id}`);
     } else if (type === "soul_event" && soul_id) {
       router.push(`/chat?soul=${soul_id}`);
@@ -134,49 +154,55 @@ export default function NotificationsPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {notifications.map((notif) => (
-              <div
-                key={notif.id}
-                onClick={() => {
-                  if (!notif.is_read) markAsRead(notif.id);
-                  handleMessage(notif.type, notif.soul_id);
-                }}
-                className={`cursor-pointer rounded-lg border p-4 transition-colors ${
-                  notif.is_read
-                    ? "border-zinc-800 bg-zinc-900 hover:bg-zinc-800"
-                    : "border-indigo-900/50 bg-indigo-950/20 hover:bg-indigo-950/30"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="mt-1 text-xl">
-                    {notif.type === "daily_report" && "📋"}
-                    {notif.type === "soul_event" && "🌟"}
-                    {notif.type === "encounter" && "💬"}
-                    {notif.type === "external_soul" && "👻"}
-                    {!["daily_report", "soul_event", "encounter", "external_soul"].includes(notif.type) && "🔔"}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium">
-                        {notif.title}
-                        {!notif.is_read && (
-                          <span className="ml-2 h-2 w-2 rounded-full bg-indigo-500" />
-                        )}
-                      </h3>
-                      <span className="text-xs text-zinc-500">
-                        {new Date(notif.created_at).toLocaleString()}
-                      </span>
+            {notifications.map((notif) => {
+              const proactive = isProactive(notif.type);
+              return (
+                <div
+                  key={notif.id}
+                  onClick={() => {
+                    if (!notif.is_read) markAsRead(notif.id);
+                    handleMessage(notif.type, notif.soul_id);
+                  }}
+                  className={`cursor-pointer rounded-lg border p-4 transition-colors ${
+                    proactive
+                      ? notif.is_read
+                        ? "border-pink-900/30 bg-pink-950/10 hover:bg-pink-950/20"
+                        : "border-pink-800/50 bg-pink-950/30 hover:bg-pink-950/40"
+                      : notif.is_read
+                        ? "border-zinc-800 bg-zinc-900 hover:bg-zinc-800"
+                        : "border-indigo-900/50 bg-indigo-950/20 hover:bg-indigo-950/30"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 text-xl">
+                      {getNotificationIcon(notif.type)}
                     </div>
-                    <p className="mt-1 text-sm text-zinc-400">{notif.message}</p>
-                    {notif.soul_name && (
-                      <p className="mt-1 text-xs text-zinc-500">
-                        Soul: {notif.soul_name}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <h3 className={`font-medium ${proactive ? "text-pink-300" : ""}`}>
+                          {notif.title}
+                          {!notif.is_read && (
+                            <span className={`ml-2 h-2 w-2 rounded-full ${proactive ? "bg-pink-500" : "bg-indigo-500"}`} />
+                          )}
+                        </h3>
+                        <span className="text-xs text-zinc-500">
+                          {new Date(notif.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className={`mt-1 text-sm ${proactive ? "italic text-pink-200/70" : "text-zinc-400"}`}>
+                        {proactive && `"${notif.message}"`}
+                        {!proactive && notif.message}
                       </p>
-                    )}
+                      {notif.soul_name && (
+                        <p className="mt-1 text-xs text-zinc-500">
+                          Soul: {notif.soul_name}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

@@ -19,27 +19,49 @@ export async function POST(request: NextRequest) {
     // If no specific guardians, notify all guardians of the soul
     let targetGuardians = guardian_ids;
     if (!targetGuardians && soul_id) {
-      const { data: guardianData } = await supabase
+      // Try soul_guardians first (distilled souls)
+      let guardianData = await supabase
         .from("soul_guardians")
         .select("user_id")
         .eq("soul_id", soul_id);
-      
-      targetGuardians = guardianData?.map(g => g.user_id) || [];
+
+      // Also try town_external_souls (town souls)
+      if (!guardianData.data?.length) {
+        guardianData = await supabase
+          .from("town_external_souls")
+          .select("user_id")
+          .eq("soul_id", soul_id)
+          .eq("is_approved", true);
+      }
+
+      targetGuardians = guardianData.data?.map(g => g.user_id) || [];
     }
 
     if (!targetGuardians || targetGuardians.length === 0) {
       return NextResponse.json({ error: "No target guardians found" }, { status: 400 });
     }
 
-    // Load soul name if applicable
+    // Load soul name if applicable (try multiple sources)
     let soul_name = undefined;
     if (soul_id) {
-      const { data: soulData } = await supabase
+      // Try soul_extraction_results first
+      let soulData = await supabase
         .from("soul_extraction_results")
         .select("name")
         .eq("id", soul_id)
         .single();
-      soul_name = soulData?.name;
+
+      // Fallback to town_souls
+      if (!soulData.data) {
+        const townSoul = await supabase
+          .from("town_souls")
+          .select("name_native")
+          .eq("id", soul_id)
+          .single();
+        soul_name = (townSoul.data as any)?.name_native;
+      } else {
+        soul_name = soulData.data?.name;
+      }
     }
 
     // Create notifications for each guardian
