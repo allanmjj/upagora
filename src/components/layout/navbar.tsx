@@ -9,7 +9,6 @@ import { Avatar } from '@/components/ui/avatar'
 import {
   Brain,
   MessageCircle,
-  Search,
   Settings,
   User,
   Menu,
@@ -17,20 +16,27 @@ import {
   ChevronDown,
   Sparkles,
   Map,
+  Eye,
+  Compass,
+  Heart,
+  Zap,
 } from 'lucide-react'
 
+// Scenario-based navigation (P8 redesign)
 const navItems = [
-  { href: '/', label: 'Home', icon: Brain },
-  { href: '/town', label: 'Town', icon: Map },
-  { href: '/soul/gallery', label: 'Discover', icon: Search },
-  { href: '/chat', label: 'Chat', icon: MessageCircle },
+  { href: '/', label: 'Home', icon: Brain, description: 'Your soul dashboard' },
+  { href: '/town', label: 'Town', icon: Map, description: 'Observer & timeline' },
+  { href: '/chat', label: 'Chat', icon: MessageCircle, description: 'Deep interaction' },
+  { href: '/soul', label: 'Soul', icon: Heart, description: 'Growth & calibration' },
+  { href: '/discover', label: 'Explore', icon: Compass, description: 'Social & marketplace' },
 ]
 
 const moreLinks = [
-  { href: '/soul/marketplace', label: 'Marketplace', icon: Brain },
+  { href: '/town/observer', label: 'Observer', icon: Eye },
+  { href: '/town/relationships', label: 'Relationships', icon: Heart },
+  { href: '/soul/gallery', label: 'Gallery', icon: Compass },
   { href: '/voice', label: 'Voice Studio', icon: Settings },
-  { href: '/gallery', label: 'Gallery', icon: Search },
-  { href: '/pricing', label: 'Pricing', icon: Settings },
+  { href: '/pricing', label: 'Pricing', icon: Zap },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -73,15 +79,18 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-600">
               <Brain className="h-5 w-5 text-white" />
             </div>
             <span className="text-lg font-bold tracking-tight text-zinc-50">
               UpAgora
             </span>
+            <span className="hidden sm:inline-flex items-center rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-400 border border-violet-500/20">
+              Soul Town
+            </span>
           </Link>
 
-          {/* Desktop Nav */}
+          {/* Desktop Nav - Scenario-based */}
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map(({ href, label, icon: Icon }) => (
               <Link
@@ -103,10 +112,10 @@ export function Navbar() {
             {user && !onboardingDone && (
               <Link
                 href="/distill"
-                className="ml-2 flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-medium bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transition-colors"
+                className="ml-2 flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-medium bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white hover:from-violet-600 hover:to-fuchsia-600 transition-colors"
               >
                 <Sparkles className="h-4 w-4" />
-                Create
+                Create Soul
               </Link>
             )}
 
@@ -234,7 +243,7 @@ export function Navbar() {
               <Link
                 href="/distill"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium bg-gradient-to-r from-purple-500 to-pink-500 text-white transition-colors"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white transition-colors"
               >
                 <Sparkles className="h-4 w-4" />
                 Create Soul

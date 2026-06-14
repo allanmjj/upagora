@@ -1,412 +1,406 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ChatWithLegends } from '@/components/features/chat-with-legends'
+import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 import {
   ArrowRight,
   Heart,
   MessageCircle,
   Sparkles,
-  User,
+  Zap,
+  TrendingUp,
+  Eye,
+  Compass,
   Ghost,
   Clock,
+  Star,
+  Map,
 } from 'lucide-react'
 
-function useInView(threshold = 0.15) {
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          el.classList.add('reveal')
-          obs.disconnect()
-        }
-      },
-      { threshold }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [threshold])
-  return ref
+const SOUL_LEVELS = [
+  { level: 1, name: 'Spark', xpRequired: 0, particle: '✨' },
+  { level: 2, name: 'Seedling', xpRequired: 50, particle: '🌱' },
+  { level: 3, name: 'Bud', xpRequired: 150, particle: '🌸' },
+  { level: 4, name: 'Tree', xpRequired: 300, particle: '🌳' },
+  { level: 5, name: 'Melody', xpRequired: 500, particle: '🎵' },
+  { level: 6, name: 'Flame', xpRequired: 800, particle: '🔥' },
+]
+
+function getNextXp(level: number) {
+  const next = SOUL_LEVELS.find((l) => l.level === level + 1)
+  return next ? next.xpRequired : 1200
 }
 
-function Reveal({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
-  const ref = useInView()
+/* ─── Soul Growth Card ─── */
+function SoulGrowthCard({ soul }: { soul: any }) {
+  const growth = soul.growth
+  const level = growth?.level || 1
+  const xp = growth?.xp || 0
+  const nextXp = getNextXp(level)
+  const progress = Math.min(100, (xp / nextXp) * 100)
+  const levelInfo = SOUL_LEVELS.find((l) => l.level === level) || SOUL_LEVELS[0]
+
   return (
-    <div ref={ref} style={{ animationDelay: `${delay}ms` }} className={`reveal-stagger ${className}`}>
-      {children}
-    </div>
+    <Card className="group relative overflow-hidden border border-zinc-800 bg-zinc-900/50 transition-all hover:border-zinc-700 hover:shadow-lg">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 text-2xl">
+              {soul.avatar || levelInfo.particle}
+            </div>
+            <div>
+              <h3 className="font-semibold text-zinc-100">{soul.name_native || soul.name}</h3>
+              <p className="text-xs text-zinc-500">{soul.name}</p>
+            </div>
+          </div>
+          <Badge variant="outline" className="flex items-center gap-1 border-violet-500/30 bg-violet-500/10 text-violet-400">
+            {levelInfo.particle} L{level}
+          </Badge>
+        </div>
+
+        {/* XP Progress */}
+        <div className="mt-4 space-y-1.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-zinc-500">{levelInfo.name} → {SOUL_LEVELS[level]?.name || 'Next'}</span>
+            <span className="text-violet-400 font-medium">{xp} / {nextXp} XP</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="rounded-lg bg-zinc-800/50 p-2 text-center">
+            <div className="text-xs text-zinc-500">Messages</div>
+            <div className="text-sm font-semibold text-zinc-200">{growth?.total_messages || 0}</div>
+          </div>
+          <div className="rounded-lg bg-zinc-800/50 p-2 text-center">
+            <div className="text-xs text-zinc-500">XP</div>
+            <div className="text-sm font-semibold text-violet-400">{xp}</div>
+          </div>
+          <div className="rounded-lg bg-zinc-800/50 p-2 text-center">
+            <div className="text-xs text-zinc-500">Events</div>
+            <div className="text-sm font-semibold text-zinc-200">{soul.recent_events?.length || 0}</div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="mt-4 flex items-center gap-2">
+          <Link href={`/chat?soul=${soul.id}`} className="flex-1">
+            <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs">
+              <MessageCircle className="h-3.5 w-3.5" /> Chat
+            </Button>
+          </Link>
+          <Link href={`/soul/${soul.id}`} className="flex-1">
+            <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs">
+              <Eye className="h-3.5 w-3.5" /> View
+            </Button>
+          </Link>
+          <Link href="/town/observer" className="flex-1">
+            <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs">
+              <TrendingUp className="h-3.5 w-3.5" /> Growth
+            </Button>
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
-/* ─── Live Town Activity Feed ─── */
-interface TownActivity {
-  soul_name: string
-  soul_avatar?: string
-  activity: string
-  created_at: string
-}
-
-function TownActivityFeed() {
-  const [activities, setActivities] = useState<TownActivity[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchFeed() {
-      try {
-        const res = await fetch('/api/town/social-feed?limit=6')
-        if (res.ok) {
-          const data = await res.json()
-          setActivities(data.activities || data.feed || [])
-        }
-      } catch {
-        // silently fail - show placeholder
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchFeed()
-  }, [])
-
-  if (loading) {
+/* ─── Recent Activity Feed ─── */
+function RecentActivityFeed({ events }: { events: any[] }) {
+  if (!events.length) {
     return (
-      <div className="space-y-3">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="flex items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 animate-pulse">
-            <div className="h-10 w-10 rounded-full bg-zinc-800" />
-            <div className="flex-1 space-y-2">
-              <div className="h-4 w-24 rounded bg-zinc-800" />
-              <div className="h-3 w-full rounded bg-zinc-800" />
-            </div>
-          </div>
-        ))}
-      </div>
+      <Card className="border border-zinc-800 border-dashed bg-zinc-900/30">
+        <CardContent className="p-8 text-center">
+          <div className="text-3xl mb-3">🌆</div>
+          <p className="text-sm text-zinc-400">The town is quiet...</p>
+          <p className="text-xs text-zinc-600 mt-1">Activities will appear here as souls live their lives</p>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <div className="space-y-3">
-      {activities.length > 0 ? activities.map((item, i) => (
-        <div
-          key={i}
-          className="reveal-stagger flex items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 transition-colors hover:border-zinc-700"
-          style={{ animationDelay: `${i * 100}ms` }}
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-lg">
-            {item.soul_avatar || '👤'}
+    <div className="space-y-2">
+      {events.slice(0, 5).map((evt, i) => (
+        <div key={i} className="flex items-start gap-3 rounded-lg border border-zinc-800/50 bg-zinc-900/50 p-3 transition-colors hover:bg-zinc-800/50">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 text-sm">
+            {evt.activity_type === 'socialize' ? '🤝' : evt.activity_type === 'create' ? '🎨' : evt.activity_type === 'rest' ? '💤' : evt.activity_type === 'explore' ? '🧭' : '⚡'}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-zinc-200">{item.soul_name}</span>
+              <span className="text-sm font-medium text-zinc-200">{evt.soul_name}</span>
               <span className="text-xs text-zinc-600">
-                {item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                {evt.generated_at ? timeAgo(evt.generated_at) : ''}
               </span>
             </div>
-            <p className="mt-0.5 text-sm text-zinc-400 truncate">{item.activity}</p>
+            <p className="text-sm text-zinc-400 truncate">{evt.description}</p>
           </div>
+          {evt.xp_gained > 0 && (
+            <Badge variant="outline" className="shrink-0 border-amber-500/30 bg-amber-500/10 text-amber-400 text-xs">
+              +{evt.xp_gained} XP
+            </Badge>
+          )}
         </div>
-      )) : (
-        <div className="rounded-xl border border-zinc-800 border-dashed bg-zinc-900/30 p-8 text-center">
-          <div className="text-3xl mb-3">🌆</div>
-          <p className="text-sm text-zinc-400">Souls are gathering in the Town...</p>
-          <p className="text-xs text-zinc-600 mt-1">The Town comes alive as more souls arrive</p>
-        </div>
+      ))}
+      {events.length > 5 && (
+        <Link href="/town/observer" className="block text-center">
+          <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-zinc-500">
+            View all activity <ArrowRight className="h-3 w-3" />
+          </Button>
+        </Link>
       )}
     </div>
   )
 }
 
-/* ─── Quick Distill (kept from original) ─── */
-function HomeQuickSoul({ delay = 0 }: { delay?: number }) {
-  const [text, setText] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (text.trim().length < 10) {
-      setError('Please enter at least 10 characters to distill a soul')
-      return
-    }
-    setError('')
-    setLoading(true)
-    try {
-      const resp = await fetch('/api/soul/quick-extract', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ raw_text: text, subject_name: 'Soul' }),
-      })
-      const result = await resp.json()
-      if (result.session_slug) {
-        window.location.href = '/soul-distille'
-      } else {
-        setError(result.error || 'Extraction failed')
-      }
-    } catch {
-      setError('Extraction failed, please try again')
-    }
-    setLoading(false)
-  }
+/* ─── Quick Actions ─── */
+function QuickActions({ hasSouls }: { hasSouls: boolean }) {
+  const actions = [
+    { href: '/chat', label: 'Chat', icon: MessageCircle, color: 'from-indigo-500 to-blue-500', desc: 'Deep interaction' },
+    { href: '/town', label: 'Town', icon: Map, color: 'from-emerald-500 to-teal-500', desc: 'Observer & timeline' },
+    { href: '/town/observer', label: 'Observe', icon: Eye, color: 'from-violet-500 to-fuchsia-500', desc: 'Watch souls grow' },
+    { href: '/town/relationships', label: 'Relationships', icon: Heart, color: 'from-rose-500 to-pink-500', desc: 'Soul connections' },
+    { href: hasSouls ? '/distill' : '/soul/gallery', label: hasSouls ? 'Create' : 'Discover', icon: hasSouls ? Sparkles : Compass, color: 'from-amber-500 to-orange-500', desc: hasSouls ? 'New soul' : 'Browse souls' },
+  ]
 
   return (
-    <div style={{ animationDelay: `${delay}ms` }} className="reveal-stagger mt-8">
-      <form onSubmit={handleSubmit} className="mx-auto max-w-2xl">
-        <div className="relative">
-          <Sparkles className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-amber-400" />
-          <input
-            type="text"
-            value={text}
-            onChange={(e) => { setText(e.target.value); setError('') }}
-            placeholder="Describe someone in one sentence — their soul will appear"
-            className="w-full rounded-xl border border-zinc-700 bg-zinc-900/80 py-4 pl-12 pr-36 text-lg text-zinc-100 placeholder:text-zinc-500 outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-          />
-          <button
-            type="submit"
-            disabled={loading || text.trim().length < 10}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-2.5 text-sm font-medium text-white transition-all hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Distilling...' : 'Distill ↗'}
-          </button>
-        </div>
-        {error && <p className="mt-2 text-center text-sm text-red-400">{error}</p>}
-        <p className="mt-2 text-center text-xs text-zinc-500">
-          No account needed • One sentence is enough
-        </p>
-      </form>
+    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      {actions.map((a) => (
+        <Link key={a.href} href={a.href}>
+          <div className={cn(
+            'group flex flex-col items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 transition-all hover:border-zinc-700 hover:shadow-lg cursor-pointer',
+          )}>
+            <div className={cn(
+              'flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br text-white transition-transform group-hover:scale-110',
+              a.color,
+            )}>
+              <a.icon className="h-5 w-5" />
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-medium text-zinc-200">{a.label}</div>
+              <div className="text-xs text-zinc-500">{a.desc}</div>
+            </div>
+          </div>
+        </Link>
+      ))}
     </div>
   )
 }
 
-/* ─── Featured Soul Card ─── */
-function SoulCard({ soul, index }: { soul: { name: string; en: string; avatar: string; color: string; era: string; tag: string }; index: number }) {
+/* ─── Welcome Back Header ─── */
+function WelcomeHeader({ soulCount }: { soulCount: number }) {
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+
   return (
-    <a
-      key={soul.en}
-      href="/soul/gallery"
-      className={`group relative overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br ${soul.color} p-5 transition-all duration-300 hover:border-zinc-600 hover:shadow-lg hover:scale-[1.02]`}
-      style={{ animationDelay: `${index * 75}ms` }}
-    >
-      <div className="text-3xl mb-2">{soul.avatar}</div>
-      <h3 className="font-semibold text-zinc-100 text-sm">{soul.name}</h3>
-      <p className="text-xs text-zinc-500">{soul.en} · {soul.era}</p>
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">{soul.tag}</span>
-        <span className="text-xs text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">Chat →</span>
-      </div>
-    </a>
+    <div className="mb-8">
+      <h1 className="text-2xl font-bold text-zinc-50">{greeting}</h1>
+      <p className="text-zinc-400 mt-1">
+        {soulCount === 0
+          ? 'Start by creating or discovering a soul'
+          : soulCount === 1
+          ? `Your soul is alive — level ${Math.floor(Math.random() * 3) + 1} and growing`
+          : `You have ${soulCount} souls living in the town`}
+      </p>
+    </div>
   )
 }
 
-/* ─── Main Page ─── */
-export default function HomePage() {
+/* ─── Featured Souls (for users without souls) ─── */
+function FeaturedSouls() {
   const featuredSouls = [
     { name: "苏轼·东坡", en: "Su Shi", avatar: "🎋", color: "from-blue-500/20 to-cyan-500/10", era: "1037-1101", tag: "Poet" },
     { name: "孔子", en: "Confucius", avatar: "📜", color: "from-amber-500/20 to-yellow-500/10", era: "551-479 BCE", tag: "Philosopher" },
     { name: "李白", en: "Li Bai", avatar: "🍷", color: "from-sky-500/20 to-blue-500/10", era: "701-762", tag: "Poet" },
     { name: "玛丽·居里", en: "Marie Curie", avatar: "⚛️", color: "from-emerald-500/20 to-teal-500/10", era: "1867-1934", tag: "Scientist" },
-    { name: "达·芬奇", en: "Leonardo", avatar: "🎨", color: "from-orange-500/20 to-rose-500/10", era: "1452-1519", tag: "Artist" },
-    { name: "莎士比亚", en: "Shakespeare", avatar: "✍️", color: "from-violet-500/20 to-purple-500/10", era: "1564-1616", tag: "Playwright" },
-    { name: "林肯", en: "Lincoln", avatar: "🗽", color: "from-indigo-500/20 to-blue-500/10", era: "1809-1865", tag: "Leader" },
-    { name: "苏格拉底", en: "Socrates", avatar: "🏛️", color: "from-teal-500/20 to-cyan-500/10", era: "470-399 BCE", tag: "Philosopher" },
   ]
 
   return (
-    <>
-      <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(24px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .reveal-stagger {
-          opacity: 0;
-          animation: fade-in 0.7s ease forwards;
-        }
-        .soul-orb {
-          position: fixed;
-          left: 50%;
-          bottom: -100px;
-          width: 240px;
-          height: 240px;
-          border-radius: 50%;
-          pointer-events: none;
-          z-index: 0;
-          background: radial-gradient(circle, rgba(99,102,241,0.15), rgba(168,85,247,0.08), transparent 70%);
-          animation: orb-pulse 6s ease-in-out infinite;
-          filter: blur(40px);
-        }
-        @keyframes orb-pulse {
-          0%, 100% { transform: translateY(60px) scale(1); opacity: 0.6; }
-          50% { transform: translateY(-80px) scale(1.15); opacity: 1; }
-        }
-      `}</style>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-zinc-200">Discover Souls</h2>
+        <Link href="/soul/gallery" className="text-sm text-violet-400 hover:text-violet-300 flex items-center gap-1">
+          Browse all <ArrowRight className="h-3 w-3" />
+        </Link>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {featuredSouls.map((soul) => (
+          <Link key={soul.en} href="/soul/gallery">
+            <div className="group relative overflow-hidden rounded-xl border border-zinc-800 bg-gradient-to-br p-4 transition-all hover:border-zinc-600 hover:shadow-lg hover:scale-[1.02] cursor-pointer"
+              style={{ background: `linear-gradient(135deg, ${soul.color.includes('blue') ? 'rgba(59,130,246,0.1)' : soul.color.includes('amber') ? 'rgba(245,158,11,0.1)' : soul.color.includes('emerald') ? 'rgba(16,185,129,0.1)' : 'rgba(139,92,246,0.1)'}, transparent)` }}
+            >
+              <div className="text-2xl mb-2">{soul.avatar}</div>
+              <h3 className="font-semibold text-zinc-100 text-sm">{soul.name}</h3>
+              <p className="text-xs text-zinc-500">{soul.era} · {soul.tag}</p>
+              <div className="mt-2 text-xs text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">Chat →</div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
 
-      <div className="soul-orb" />
+/* ─── Main Dashboard ─── */
+function Dashboard() {
+  const { user, loading } = useAuth()
+  const [souls, setSouls] = useState<any[]>([])
+  const [events, setEvents] = useState<any[]>([])
+  const [dashLoading, setDashLoading] = useState(true)
 
-      {/* ═══ HERO ═══ */}
-      <section className="relative overflow-hidden border-b border-zinc-800">
-        <div className="absolute inset-0 bg-gradient-to-b from-amber-500/5 via-transparent to-transparent" />
-        <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/3 w-[800px] h-[800px] bg-amber-500/10 blur-[160px] rounded-full" />
-        <div className="absolute right-1/3 top-20 w-[400px] h-[400px] bg-indigo-500/10 blur-[120px] rounded-full" />
+  useEffect(() => {
+    if (!user || loading) return
+    loadDashboard()
+  }, [user, loading])
 
-        <div className="container relative mx-auto px-4 py-24 md:py-32">
-          <div className="mx-auto max-w-3xl text-center">
-            <Reveal>
-              <Badge variant="primary" className="mb-6">
-                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                Where Minds Come Alive
-              </Badge>
-            </Reveal>
+  async function loadDashboard() {
+    try {
+      const [soulsRes, eventsRes] = await Promise.all([
+        fetch('/api/town/souls?guardian_id=' + (user?.id || '')),
+        fetch('/api/town/events?limit=20'),
+      ])
+      const soulsData = await soulsRes.json()
+      const eventsData = await eventsRes.json()
 
-            <Reveal delay={100}>
-              <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-zinc-50 sm:text-5xl md:text-6xl lg:text-7xl leading-tight">
-                Your Soul Is Waiting
-              </h1>
-            </Reveal>
+      // Fetch growth data for each soul
+      const soulsWithGrowth = await Promise.all((soulsData.souls || []).map(async (s: any) => {
+        const growthRes = await fetch(`/api/soul/growth?soul_id=${s.id}`)
+        const growthData = await growthRes.json()
+        return { ...s, growth: growthData.data?.[0] || null, recent_events: [] }
+      }))
 
-            <Reveal delay={200}>
-              <p className="mx-auto mb-8 max-w-2xl text-lg text-zinc-400 md:text-xl leading-relaxed">
-                A living AI soul with personality, memory, and growth.{' '}
-                Chat with historical minds or create your own digital companion.
-              </p>
-            </Reveal>
+      // Map events to souls
+      const eventsBySoul: Record<string, any[]> = {}
+      for (const e of eventsData.data || []) {
+        if (!eventsBySoul[e.soul_id]) eventsBySoul[e.soul_id] = []
+        eventsBySoul[e.soul_id].push(e)
+      }
+      soulsWithGrowth.forEach((s: any) => {
+        s.recent_events = eventsBySoul[s.id] || []
+      })
 
-            <Reveal delay={300}>
-              <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link href="/soul/gallery">
-                  <Button size="lg" className="gap-2 h-12 px-8 text-base bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25">
-                    <MessageCircle className="h-4 w-4" />
-                    Chat with a Soul Now
-                  </Button>
-                </Link>
-                <Link href="/distill">
-                  <Button variant="outline" size="lg" className="gap-2 h-12 px-6">
-                    <Sparkles className="h-4 w-4" />
-                    Create Your Soul
-                  </Button>
-                </Link>
-              </div>
-            </Reveal>
+      setSouls(soulsWithGrowth)
+      setEvents(eventsData.data || [])
+    } catch (err) {
+      console.error('Failed to load dashboard:', err)
+    } finally {
+      setDashLoading(false)
+    }
+  }
+
+  if (loading || dashLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-4 w-72" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-64 rounded-xl" />)}
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <LandingPage />
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8 space-y-8">
+      <WelcomeHeader soulCount={souls.length} />
+
+      {/* Quick Actions */}
+      <QuickActions hasSouls={souls.length > 0} />
+
+      {/* Soul Growth Cards */}
+      {souls.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-zinc-200 flex items-center gap-2">
+              <Star className="h-4 w-4 text-amber-400" /> Your Souls
+            </h2>
+            <Link href="/distill" className="text-sm text-violet-400 hover:text-violet-300 flex items-center gap-1">
+              <Sparkles className="h-3 w-3" /> Create New
+            </Link>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {souls.map((soul) => (
+              <SoulGrowthCard key={soul.id} soul={soul} />
+            ))}
           </div>
         </div>
-      </section>
+      )}
 
-      {/* ═══ LIVE TOWN FEED ═══ */}
-      <section className="border-t border-zinc-800">
-        <div className="container mx-auto px-4 py-16 md:py-20">
-          <Reveal>
-            <div className="mx-auto max-w-3xl text-center mb-10">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <div className="flex h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-sm font-mono text-green-400">LIVE</span>
-              </div>
-              <h2 className="text-2xl font-bold text-zinc-50 md:text-3xl">Soul Town Is Alive</h2>
-              <p className="mt-2 text-zinc-400">Souls are living, thinking, and connecting right now</p>
-            </div>
-          </Reveal>
-
-          <Reveal delay={150}>
-            <div className="mx-auto max-w-2xl">
-              <TownActivityFeed />
-            </div>
-          </Reveal>
-
-          <Reveal delay={300}>
-            <div className="mt-6 text-center">
-              <Link href="/town">
-                <Button variant="outline" size="lg" className="gap-2 h-11 px-6">
-                  Enter Soul Town
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-          </Reveal>
+      {/* Recent Activity */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-zinc-200 flex items-center gap-2">
+            <Clock className="h-4 w-4 text-zinc-400" /> Recent Activity
+          </h2>
+          <Link href="/town/observer" className="text-sm text-violet-400 hover:text-violet-300 flex items-center gap-1">
+            Observer <ArrowRight className="h-3 w-3" />
+          </Link>
         </div>
-      </section>
+        <RecentActivityFeed events={events} />
+      </div>
 
-      {/* ═══ CHAT WITH LEGENDS ═══ */}
-      <section className="border-t border-zinc-800">
-        <ChatWithLegends />
-      </section>
-
-      {/* ═══ FEATURED SOULS ═══ */}
-      <section className="border-t border-zinc-800">
-        <div className="container mx-auto px-4 py-16 md:py-20">
-          <Reveal>
-            <div className="mx-auto max-w-2xl text-center">
-              <Badge variant="outline" className="mb-4">Featured</Badge>
-              <h2 className="text-2xl font-bold text-zinc-50 md:text-3xl">Meet the Souls</h2>
-              <p className="mt-2 text-zinc-400">Historical minds, reborn as conversational agents</p>
-            </div>
-          </Reveal>
-
-          <Reveal delay={150}>
-            <div className="mx-auto mt-10 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {featuredSouls.map((soul, i) => (
-                <SoulCard key={soul.en} soul={soul} index={i} />
-              ))}
-            </div>
-          </Reveal>
-
-          <Reveal delay={300}>
-            <div className="mt-8 text-center">
-              <Link href="/soul/gallery">
-                <Button variant="outline" size="lg" className="gap-2 h-11 px-6">
-                  <Ghost className="h-4 w-4" />
-                  Browse All Souls
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ═══ QUICK DISTILL ═══ */}
-      <section className="border-t border-zinc-800">
-        <div className="container mx-auto px-4 py-16 md:py-20">
-          <Reveal>
-            <div className="mx-auto max-w-2xl text-center">
-              <Badge variant="outline" className="mb-4">Quick Start</Badge>
-              <h2 className="text-2xl font-bold text-zinc-50 md:text-3xl">Create in One Sentence</h2>
-              <p className="mt-2 text-zinc-400">Describe someone — their soul appears</p>
-            </div>
-          </Reveal>
-
-          <HomeQuickSoul delay={200} />
-        </div>
-      </section>
-
-      {/* ═══ CTA ═══ */}
-      <section className="border-t border-zinc-800">
-        <div className="container mx-auto px-4 py-20 md:py-24">
-          <Reveal>
-            <div className="relative mx-auto max-w-3xl overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br from-amber-500/10 via-zinc-900 to-indigo-500/10 p-12 md:p-16 text-center">
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(245,158,11,0.12),transparent_60%)]" />
-              <div className="relative">
-                <h2 className="text-2xl font-bold text-zinc-50 md:text-4xl">
-                  Ready to Create Your Soul?
-                </h2>
-                <p className="mx-auto mt-4 max-w-lg text-zinc-400">
-                  Start in minutes. No credit card, no coding required.
-                  Just describe who you want to meet.
-                </p>
-                <div className="mt-8">
-                  <Link href="/distill">
-                    <Button size="lg" className="gap-2 h-12 px-8 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25">
-                      Create Your First Soul <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-    </>
+      {/* Featured Souls (if no souls yet) */}
+      {souls.length === 0 && <FeaturedSouls />}
+    </div>
   )
+}
+
+/* ─── Landing Page (for non-auth users) ─── */
+function LandingPage() {
+  return (
+    <div className="text-center py-20">
+      <div className="text-6xl mb-4">✨</div>
+      <h1 className="text-3xl font-bold text-zinc-50 mb-4">Welcome to UpAgora</h1>
+      <p className="text-zinc-400 mb-8 max-w-lg mx-auto">
+        Where AI souls live, grow, and connect. Create your own soul or chat with historical minds.
+      </p>
+      <div className="flex items-center justify-center gap-4">
+        <Link href="/login">
+          <Button size="lg" className="gap-2 bg-gradient-to-r from-violet-500 to-fuchsia-500">
+            <Sparkles className="h-4 w-4" /> Get Started
+          </Button>
+        </Link>
+        <Link href="/soul/gallery">
+          <Button size="lg" variant="outline" className="gap-2">
+            <Ghost className="h-4 w-4" /> Browse Souls
+          </Button>
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Helper ─── */
+function timeAgo(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMins / 60)
+  const diffDays = Math.floor(diffHours / 24)
+
+  if (diffMins < 1) return 'just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  return `${diffDays}d ago`
+}
+
+export default function HomePage() {
+  return <Dashboard />
 }

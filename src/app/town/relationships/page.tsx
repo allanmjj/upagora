@@ -1,240 +1,336 @@
-"use client";
+'use client'
 
-import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
+import { useAuth } from '@/hooks/use-auth'
+import { useRouter } from 'next/navigation'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Heart, ArrowLeft, MessageCircle, TrendingUp, Users, Zap } from 'lucide-react'
 
-const MOOD_EMOJIS: Record<string, string> = {
-  happy: "😊", calm: "😌", melancholic: "😔", anxious: "😟", inspired: "✨", peace: "😇",
-};
-
-const RELATIONSHIP_COLORS: Record<string, string> = {
-  close_friends: "#22c55e", friends: "#06b6d4", acquaintances: "#f97316", strangers: "#6b7280",
-};
-
-interface RelationshipData {
-  network: {
-    total_souls: number; total_pairs: number; avg_interactions: number; strongest_bond: number;
-  };
-  relationships: Array<{
-    soul_a: { id: string; name: string; name_native: string; avatar: string; mood: string };
-    soul_b: { id: string; name: string; name_native: string; avatar: string; mood: string };
-    relationship_type: string; interaction_count: number; closeness: number;
-    shared_spaces: string[]; last_interaction: string;
-  }>;
+interface SoulRelationship {
+  soul_id: string
+  soul_name: string
+  related_soul_id: string
+  related_soul_name: string
+  relationship_type: string
+  strength: number
+  interaction_count: number
+  last_interaction: string
+  description: string
 }
 
-export default function SoulRelationshipsPage() {
-  const router = useRouter();
-  const [data, setData] = useState<RelationshipData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedFilter, setSelectedFilter] = useState<string>("all");
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+export default function RelationshipsPage() {
+  const { user, loading: authLoading } = useAuth()
+  const router = useRouter()
+  const [relationships, setRelationships] = useState<SoulRelationship[]>([])
+  const [loading, setLoading] = useState(true)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [selectedRel, setSelectedRel] = useState<SoulRelationship | null>(null)
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch("/api/town/relationships");
-        const json = await res.json();
-        setData(json);
-      } catch {
-        // silent
-      } finally {
-        setLoading(false);
-      }
+    if (!authLoading && !user) {
+      router.push('/login')
+      return
     }
-    fetchData();
-  }, []);
+    if (user) loadRelationships()
+  }, [authLoading, user, router])
 
-  // Simple force-directed visualization
+  async function loadRelationships() {
+    try {
+      const res = await fetch('/api/town/relationships?guardian_id=' + user!.id)
+      if (res.ok) {
+        const data = await res.json()
+        setRelationships(data.relationships || [])
+      }
+    } catch (err) {
+      console.error('Failed to load relationships:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Draw relationship graph on canvas
   useEffect(() => {
-    if (!data || !canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!canvasRef.current || relationships.length === 0) return
+    drawGraph(canvasRef.current, relationships)
+  }, [relationships])
 
-    const souls = new Map<string, { x: number; y: number; vx: number; vy: number; name: string; name_native: string; avatar: string; mood: string }>();
-    const edges: Array<{ a: string; b: string; closeness: number; rel_type: string }> = [];
-
-    data.relationships.forEach((r: any) => {
-      const keyA = r.soul_a.id;
-      const keyB = r.soul_b.id;
-      if (!souls.has(keyA)) souls.set(keyA, { x: Math.random() * 400 + 50, y: Math.random() * 300 + 50, vx: 0, vy: 0, ...r.soul_a });
-      if (!souls.has(keyB)) souls.set(keyB, { x: Math.random() * 400 + 50, y: Math.random() * 300 + 50, vx: 0, vy: 0, ...r.soul_b });
-      edges.push({ a: keyA, b: keyB, closeness: r.closeness, rel_type: r.relationship_type });
-    });
-
-    // Simple force simulation
-    for (let iter = 0; iter < 50; iter++) {
-      const nodes = Array.from(souls.values());
-      // Repulsion
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          const force = 1000 / (dist * dist);
-          nodes[i].vx += (dx / dist) * force;
-          nodes[i].vy += (dy / dist) * force;
-          nodes[j].vx -= (dx / dist) * force;
-          nodes[j].vy -= (dy / dist) * force;
-        }
-      }
-      // Attraction along edges
-      edges.forEach((e) => {
-        const a = souls.get(e.a);
-        const b = souls.get(e.b);
-        if (a && b) {
-          const dx = b.x - a.x;
-          const dy = b.y - a.y;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          const idealDist = 150 - e.closeness; // closer = shorter distance
-          const force = (dist - idealDist) * 0.01;
-          a.vx += (dx / dist) * force;
-          a.vy += (dy / dist) * force;
-          b.vx -= (dx / dist) * force;
-          b.vy -= (dy / dist) * force;
-        }
-      });
-      // Update positions
-      nodes.forEach((n) => {
-        n.x += n.vx * 0.5;
-        n.y += n.vy * 0.5;
-        n.vx *= 0.8;
-        n.vy *= 0.8;
-        n.x = Math.max(50, Math.min(450, n.x));
-        n.y = Math.max(50, Math.min(350, n.y));
-      });
-    }
-
-    // Draw
-    ctx.clearRect(0, 0, 500, 400);
-    ctx.fillStyle = "#09090b";
-    ctx.fillRect(0, 0, 500, 400);
-
-    // Draw edges
-    edges.forEach((e) => {
-      const a = souls.get(e.a);
-      const b = souls.get(e.b);
-      if (a && b) {
-        ctx.strokeStyle = RELATIONSHIP_COLORS[e.rel_type] || "#6b7280";
-        ctx.globalAlpha = e.closeness / 100;
-        ctx.lineWidth = Math.max(1, e.closeness / 20);
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-      }
-    });
-    ctx.globalAlpha = 1;
-
-    // Draw nodes
-    souls.forEach((s) => {
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "18px sans-serif";
-      ctx.fillText(s.avatar || "👤", s.x, s.y);
-      ctx.font = "10px sans-serif";
-      ctx.fillStyle = "#d4d4d8";
-      ctx.fillText(s.name_native || s.name, s.x, s.y + 14);
-    });
-  }, [data]);
-
-  const filtered = selectedFilter === "all"
-    ? data?.relationships || []
-    : (data?.relationships || []).filter((r) => r.relationship_type === selectedFilter);
-
-  if (loading) {
+  if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
-        <p className="text-zinc-500">Loading relationships...</p>
+      <div className="container mx-auto px-4 py-8 space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 rounded-xl" />)}
+        </div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
+    <div className="container mx-auto px-4 py-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900 px-6 py-4">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push("/town")} className="text-zinc-400 hover:text-white">
-            ← Town
-          </button>
-          <h1 className="text-xl font-bold">🕸️ Soul Relationships</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          {["all", "close_friends", "friends", "acquaintances", "strangers"].map((f) => (
-            <button
-              key={f}
-              onClick={() => setSelectedFilter(f)}
-              className={`rounded-lg px-3 py-1 text-xs capitalize transition-colors ${
-                selectedFilter === f
-                  ? "bg-white text-black"
-                  : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-              }`}
-            >
-              {f.replace("_", " ")}
-            </button>
-          ))}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/town">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
+            <Heart className="h-5 w-5 text-rose-400" />
+            Soul Relationships
+          </h1>
+          <p className="text-sm text-zinc-500">
+            See how your souls connect, interact, and influence each other
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
-        {/* Network graph */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-          <h2 className="text-sm font-semibold text-white mb-3">Network Graph</h2>
-          <canvas ref={canvasRef} width={500} height={400} className="w-full rounded-lg" />
-          <div className="flex flex-wrap gap-3 mt-3 text-xs text-zinc-500">
-            <span><span className="inline-block w-3 h-0.5 bg-green-500 rounded mr-1"></span>Close Friends</span>
-            <span><span className="inline-block w-3 h-0.5 bg-cyan-500 rounded mr-1"></span>Friends</span>
-            <span><span className="inline-block w-3 h-0.5 bg-orange-500 rounded mr-1"></span>Acquaintances</span>
-            <span><span className="inline-block w-3 h-0.5 bg-gray-500 rounded mr-1"></span>Strangers</span>
-          </div>
-        </div>
+      {/* Relationship Graph */}
+      {relationships.length > 0 ? (
+        <>
+          <Card className="border border-zinc-800 bg-zinc-900/50">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Users className="h-4 w-4 text-violet-400" />
+                Connection Map
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <canvas
+                ref={canvasRef}
+                width={800}
+                height={400}
+                className="w-full rounded-lg border border-zinc-800/50 bg-zinc-950"
+                style={{ imageRendering: 'auto' }}
+              />
+            </CardContent>
+          </Card>
 
-        {/* Stats */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-          <h2 className="text-sm font-semibold text-white mb-3">Network Stats</h2>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
-              <div className="text-xl font-bold">{data?.network.total_souls || 0}</div>
-              <div className="text-xs text-zinc-500">Total Souls</div>
-            </div>
-            <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
-              <div className="text-xl font-bold">{data?.network.total_pairs || 0}</div>
-              <div className="text-xs text-zinc-500">Connections</div>
-            </div>
-            <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
-              <div className="text-xl font-bold">{data?.network.avg_interactions || 0}</div>
-              <div className="text-xs text-zinc-500">Avg Interactions</div>
-            </div>
-            <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
-              <div className="text-xl font-bold">{data?.network.strongest_bond || 0}%</div>
-              <div className="text-xs text-zinc-500">Strongest Bond</div>
-            </div>
-          </div>
-
-          {/* Relationships list */}
-          <div className="text-xs text-zinc-500 mb-2">RELATIONSHIPS ({filtered.length})</div>
-          <div className="space-y-2 max-h-[300px] overflow-y-auto">
-            {filtered.map((r: any, i: number) => (
-              <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/60">
-                <span>{r.soul_a.avatar || "👤"}</span>
-                <span className="text-xs text-white min-w-[80px] truncate">{r.soul_a.name_native || r.soul_a.name}</span>
-                <span className="text-zinc-600">—</span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium`} style={{ backgroundColor: (RELATIONSHIP_COLORS[r.relationship_type] || "#6b7280") + "20", color: RELATIONSHIP_COLORS[r.relationship_type] || "#6b7280" }}>
-                  {r.relationship_type.replace("_", " ")}
-                </span>
-                <span className="text-[10px] text-zinc-600">{r.interaction_count}x</span>
-                <span className="text-zinc-600">—</span>
-                <span className="text-xs text-white min-w-[80px] truncate">{r.soul_b.name_native || r.soul_b.name}</span>
-                <span>{r.soul_b.avatar || "👤"}</span>
-              </div>
+          {/* Relationship Cards */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {relationships.map((rel, i) => (
+              <Card
+                key={i}
+                className={cn(
+                  'border border-zinc-800 bg-zinc-900/50 cursor-pointer transition-all hover:border-zinc-700',
+                  selectedRel === rel && 'border-violet-500/50 bg-violet-500/5'
+                )}
+                onClick={() => setSelectedRel(rel)}
+              >
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-rose-500/20 to-pink-500/20 text-lg">
+                      {getRelationshipIcon(rel.relationship_type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-zinc-200">{rel.soul_name}</span>
+                        <span className="text-xs text-zinc-500">↔</span>
+                        <span className="text-sm font-semibold text-zinc-200">{rel.related_soul_name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs border-zinc-700 text-zinc-400">
+                          {rel.relationship_type}
+                        </Badge>
+                        <span className="text-xs text-zinc-500">
+                          {rel.interaction_count} interactions
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-zinc-500">Strength</div>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: 5 }).map((_, j) => (
+                          <Heart
+                            key={j}
+                            className={cn(
+                              'h-3 w-3',
+                              j < Math.ceil(rel.strength / 20)
+                                ? 'fill-rose-400 text-rose-400'
+                                : 'text-zinc-700'
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  {rel.description && (
+                    <p className="mt-3 text-sm text-zinc-400">{rel.description}</p>
+                  )}
+                </CardContent>
+              </Card>
             ))}
-            {filtered.length === 0 && (
-              <div className="text-center py-4 text-xs text-zinc-600">No relationships found for this filter.</div>
-            )}
           </div>
-        </div>
-      </div>
+        </>
+      ) : (
+        <Card className="border border-zinc-800 border-dashed bg-zinc-900/30">
+          <CardContent className="p-12 text-center">
+            <div className="text-4xl mb-4">🤝</div>
+            <h2 className="text-lg font-semibold text-zinc-200 mb-2">No Relationships Yet</h2>
+            <p className="text-sm text-zinc-400 mb-6 max-w-md mx-auto">
+              Soul relationships form through encounters and interactions in the town.{' '}
+              As souls meet and converse, their connections strengthen and appear here.
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <Button asChild variant="outline">
+                <Link href="/town">
+                  <Zap className="h-4 w-4" /> Enter Town
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link href="/distill">
+                  <Heart className="h-4 w-4" /> Create More Souls
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
-  );
+  )
+}
+
+function cn(...classes: (string | boolean | undefined)[]) {
+  return classes.filter(Boolean).join(' ')
+}
+
+function getRelationshipIcon(type: string): string {
+  const icons: Record<string, string> = {
+    friend: '🤝',
+    mentor: '🎓',
+    rival: '⚔️',
+    lover: '❤️',
+    stranger: '👋',
+    ally: '🛡️',
+  }
+  return icons[type] || '🔗'
+}
+
+/* ─── Simple Force-Directed Graph Drawing ─── */
+function drawGraph(canvas: HTMLCanvasElement, relationships: SoulRelationship[]) {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+
+  const W = canvas.width
+  const H = canvas.height
+  ctx.clearRect(0, 0, W, H)
+
+  // Extract unique souls and their positions
+  const souls = new Map<string, { name: string; x: number; y: number }>()
+  relationships.forEach((rel) => {
+    if (!souls.has(rel.soul_id)) {
+      souls.set(rel.soul_id, {
+        name: rel.soul_name,
+        x: Math.random() * (W - 100) + 50,
+        y: Math.random() * (H - 100) + 50,
+      })
+    }
+    if (!souls.has(rel.related_soul_id)) {
+      souls.set(rel.related_soul_id, {
+        name: rel.related_soul_name,
+        x: Math.random() * (W - 100) + 50,
+        y: Math.random() * (H - 100) + 50,
+      })
+    }
+  })
+
+  // Simple force-directed layout (run a few iterations)
+  const nodes = Array.from(souls.values())
+  for (let iter = 0; iter < 50; iter++) {
+    // Repulsion between all nodes
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[j].x - nodes[i].x
+        const dy = nodes[j].y - nodes[i].y
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1
+        const force = 2000 / (dist * dist)
+        const fx = (dx / dist) * force
+        const fy = (dy / dist) * force
+        nodes[i].x -= fx
+        nodes[i].y -= fy
+        nodes[j].x += fx
+        nodes[j].y += fy
+      }
+    }
+
+    // Attraction along edges
+    relationships.forEach((rel) => {
+      const a = souls.get(rel.soul_id)
+      const b = souls.get(rel.related_soul_id)
+      if (!a || !b) return
+      const dx = b.x - a.x
+      const dy = b.y - a.y
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1
+      const force = (dist - 100) * 0.01 * (rel.strength / 50)
+      const fx = (dx / dist) * force
+      const fy = (dy / dist) * force
+      a.x += fx
+      a.y += fy
+      b.x -= fx
+      b.y -= fy
+    })
+
+    // Center gravity
+    nodes.forEach((n) => {
+      n.x += (W / 2 - n.x) * 0.01
+      n.y += (H / 2 - n.y) * 0.01
+    })
+
+    // Boundary constraints
+    nodes.forEach((n) => {
+      n.x = Math.max(50, Math.min(W - 50, n.x))
+      n.y = Math.max(50, Math.min(H - 50, n.y))
+    })
+  }
+
+  // Update soul positions
+  nodes.forEach((node, i) => {
+    const [id] = Array.from(souls.keys())[i]
+    if (id) souls.set(id, { ...souls.get(id)!, x: node.x, y: node.y })
+  })
+
+  // Draw edges
+  relationships.forEach((rel) => {
+    const a = souls.get(rel.soul_id)
+    const b = souls.get(rel.related_soul_id)
+    if (!a || !b) return
+
+    ctx.beginPath()
+    ctx.moveTo(a.x, a.y)
+    ctx.lineTo(b.x, b.y)
+    ctx.strokeStyle = `rgba(139, 92, 246, ${0.2 + rel.strength / 100})`
+    ctx.lineWidth = 1 + rel.strength / 25
+    ctx.stroke()
+
+    // Edge label
+    const mx = (a.x + b.x) / 2
+    const my = (a.y + b.y) / 2
+    ctx.fillStyle = 'rgba(161, 161, 170, 0.6)'
+    ctx.font = '10px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillText(rel.relationship_type, mx, my - 5)
+  })
+
+  // Draw nodes
+  souls.forEach((soul, id) => {
+    // Node circle
+    ctx.beginPath()
+    ctx.arc(soul.x, soul.y, 25, 0, Math.PI * 2)
+    ctx.fillStyle = 'rgba(24, 24, 27, 0.9)'
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(139, 92, 246, 0.5)'
+    ctx.lineWidth = 2
+    ctx.stroke()
+
+    // Node label
+    ctx.fillStyle = '#e4e4e7'
+    ctx.font = 'bold 11px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillText(soul.name, soul.x, soul.y + 40)
+  })
 }
