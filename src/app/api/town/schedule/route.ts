@@ -29,7 +29,7 @@ async function loadSoulsWithProfiles(): Promise<
 > {
   const { data: souls, error: soulsErr } = await supabase
     .from("town_souls")
-    .select("id, name, personality, is_active");
+    .select("id, name, personality_dims, is_active");
 
   if (soulsErr || !souls?.length) {
     return [];
@@ -49,7 +49,7 @@ async function loadSoulsWithProfiles(): Promise<
     const profile = {
       id: soul.id,
       name: soul.name,
-      ...soul.personality,
+      ...soul.personality_dims,
     };
 
     let state: SoulState = stateRow
