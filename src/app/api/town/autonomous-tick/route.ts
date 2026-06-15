@@ -36,10 +36,14 @@ const MAX_LEVEL = 6; // soul_growth table CHECK constraint
  */
 export async function POST(req: NextRequest) {
   try {
-    // Auth check for manual triggers (cron is trusted)
+    // Auth check: Bearer token (manual), x-vercel-cron (Vercel cron), x-hermes-cron (Hermes cron)
     const authHeader = req.headers.get('authorization');
     const secret = process.env.TOWN_AUTONOMY_SECRET;
-    if (secret && !req.headers.get('x-vercel-cron') && (!authHeader || authHeader !== `Bearer ${secret}`)) {
+    const isVercelCron = !!req.headers.get('x-vercel-cron');
+    const isHermesCron = !!req.headers.get('x-hermes-cron');
+    const hasValidBearer = authHeader && authHeader === `Bearer ${secret}`;
+
+    if (secret && !isVercelCron && !isHermesCron && !hasValidBearer) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -158,16 +162,18 @@ async function runAutonomousTick(): Promise<any[]> {
 
     if (leveledUp) levelUps.push(soul.id);
 
-    // Record activity event
+    // Record activity event (town_events schema: event_type, space, content, summary, is_public)
     activityEvents.push({
-      type: 'autonomous_activity',
-      soul_id: soul.id,
-      soul_name: soulProfile.name,
-      activity_type: activity.type,
-      location: activity.location,
-      description: activity.description,
-      xp_gained: xpGain,
-      generated_at: new Date().toISOString(),
+      event_type: activity.type,
+      space: activity.location,
+      content: {
+        soul_id: soul.id,
+        soul_name: soulProfile.name,
+        activity_type: activity.type,
+        xp_gained: xpGain,
+      },
+      summary: activity.description,
+      is_public: true,
     });
 
     results.push({

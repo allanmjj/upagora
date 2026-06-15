@@ -114,10 +114,14 @@ export async function GET(request: Request) {
       };
     });
 
+    const phaseNames = { dawn: 'Dawn', morning: 'Morning', midday: 'Midday', afternoon: 'Afternoon', dusk: 'Dusk', night: 'Night' };
+    const time_string = `Day ${townDay}, ${townHour}:00 (${phaseNames[getDayPhase(townHour)] || 'Unknown'})`;
+
     return NextResponse.json({
       townHour,
       townDay,
       phase: getDayPhase(townHour),
+      time_string,
       souls: scheduleStatus,
     });
   } catch (err: any) {

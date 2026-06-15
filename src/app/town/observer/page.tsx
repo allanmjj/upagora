@@ -90,10 +90,11 @@ export default function ObserverPage() {
 
       // Group events by soul
       const eventsBySoul = new Map<string, SoulEvent[]>();
-      for (const e of eventsData?.data || []) {
-        const list = eventsBySoul.get(e.soul_id) || [];
+      for (const e of (eventsData?.events || eventsData?.data || [])) {
+        const soulId = e.soul_id || (typeof e.content === 'object' && e.content?.soul_id) || 'unknown';
+        const list = eventsBySoul.get(soulId) || [];
         list.push(e);
-        eventsBySoul.set(e.soul_id, list);
+        eventsBySoul.set(soulId, list);
       }
 
       const summaries: SoulSummary[] = (soulsData?.souls || []).map((s: any) => ({
